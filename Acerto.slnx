@@ -6,5 +6,6 @@
   <Folder Name="/tests/">
     <Project Path="tests/Acerto.Core.Tests/Acerto.Core.Tests.csproj" />
     <Project Path="tests/Acerto.SmokePad/Acerto.SmokePad.csproj" />
+    <Project Path="tests/Acerto.UiShots/Acerto.UiShots.csproj" />
   </Folder>
 </Solution>

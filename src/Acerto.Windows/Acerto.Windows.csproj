@@ -5,21 +5,26 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UseWindowsForms>true</UseWindowsForms>
-    <!-- só para System.Windows.Automation (detectar campo de senha) -->
+    <!-- Interface em WPF com o tema Fluent (Windows 11). WinForms fica só pelo ícone da bandeja e utilitários Win32. -->
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>Acerto</AssemblyName>
     <RootNamespace>Acerto.Windows</RootNamespace>
-    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <NoWarn>$(NoWarn);SYSLIB1054</NoWarn>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- WPF0001: ThemeMode (tema Fluent) ainda é marcado como experimental -->
+    <NoWarn>$(NoWarn);SYSLIB1054;WPF0001;WFO0003</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Acerto.Core\Acerto.Core.csproj" />
     <!-- com UseWPF o SDK tira System.IO dos usings implícitos -->
     <Using Include="System.IO" />
+    <!-- WinForms e WPF têm tipos com o mesmo nome (Button, Application...): WinForms só com nome completo -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
     <!-- créditos de terceiros vão junto com o programa -->
     <None Include="..\..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <InternalsVisibleTo Include="AcertoUiShots" />
   </ItemGroup>
 
 </Project>

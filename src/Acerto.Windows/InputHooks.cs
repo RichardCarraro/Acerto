@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 using Acerto.Core;
 using static Acerto.Windows.Native;
 
@@ -34,6 +35,11 @@ internal sealed class InputHooks : IDisposable
 
     public event Action? PauseToggled;
 
+    /// <summary>Uma palavra foi corrigida. Disparado de dentro do hook: quem ouve tem que ser rápido.</summary>
+    public event Action<EngineAction>? Corrected;
+
+    private SynchronizationContext _ui = null!; // capturado no Install, na thread da UI
+
     public InputHooks(TextEngine engine, AppSettings settings, ForegroundInfo fg)
     {
         _engine = engine;
@@ -62,11 +68,10 @@ internal sealed class InputHooks : IDisposable
             return;
         }
         long generation = _engine.Generation;
-        var ui = SynchronizationContext.Current!;
         Task.Run(() =>
         {
             var text = CaretContext.TextBeforeCaret(); // UIA é lenta: fora da thread do hook
-            ui.Post(_ =>
+            _ui.Post(_ =>
             {
                 if (generation != _engine.Generation) return; // houve outro reset; ele agendou a própria consulta
                 bool ok = text is not null && _engine.ConfirmContext(generation, text);
@@ -78,6 +83,7 @@ internal sealed class InputHooks : IDisposable
 
     public void Install()
     {
+        _ui = SynchronizationContext.Current ?? throw new InvalidOperationException("Install precisa rodar na thread da UI.");
         InstallLowLevelHooks();
 
         // O Windows remove hook lento sem avisar. Se houve entrada que o hook não viu, reinstala.
@@ -157,7 +163,10 @@ internal sealed class InputHooks : IDisposable
                 bool sameWindow = GetForegroundWindow() == _fg.Hwnd;
                 if (Diag.On && (modifiers || !sameWindow)) Diag.Log($"SWALLOW cancelado modifiers={modifiers} sameWindow={sameWindow}");
                 if (!modifiers && sameWindow && InputSender.Send(action.Backspaces, action.Insert))
+                {
+                    if (action.WordLength > 0) Corrected?.Invoke(action);
                     return 1;
+                }
                 ResetAll(); // não deu para corrigir: deixa a tecla original passar
             }
         }

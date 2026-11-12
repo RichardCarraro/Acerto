@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Ferramenta de desenvolvimento: desenha as telas do Acertô fora da área visível e salva PNGs para conferir o visual. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>AcertoUiShots</AssemblyName>
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Acerto.Windows\Acerto.Windows.csproj" />
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+</Project>
