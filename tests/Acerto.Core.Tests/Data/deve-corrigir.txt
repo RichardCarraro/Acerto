@@ -15,3 +15,7 @@ ligacao	ligação
 relogio	relógio
 portugues	português
 Joao	João
+trabalo	trabalho
+obrigaod	obrigado
+porbelma	problema
+dinheior	dinheiro

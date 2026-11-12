@@ -15,11 +15,13 @@ public sealed class Corrector
 
     private readonly CoreData _data;
     private readonly AccentIndex _accents;
+    private readonly TypoRanker _typos;
 
     public Corrector(CoreData data)
     {
         _data = data;
         _accents = new AccentIndex(data.Frequency, data.Lexicon);
+        _typos = new TypoRanker(data.Lexicon, data.Frequency);
     }
 
     /// <param name="word">Só letras e hífen, sem pontuação.</param>
@@ -67,7 +69,8 @@ public sealed class Corrector
         if (TextUtil.IsAllCaps(word) || w.Length < 3) return null;
         if (char.IsUpper(word[0]) && !atSentenceStart) return null;
 
-        // 8. Erro de digitação (Task 4)
-        return null;
+        // 8. Erro de digitação
+        var typo = _typos.Best(w);
+        return typo is null ? null : new Correction(TextUtil.ApplyCase(word, typo), CorrectionKind.Typo);
     }
 }
