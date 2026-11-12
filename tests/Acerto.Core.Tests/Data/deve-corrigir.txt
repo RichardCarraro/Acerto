@@ -20,3 +20,10 @@ corrijir	corrigir
 presiso	preciso
 pesosa	pessoa
 quqndo	quando
+erado	errado
+coputador	computador
+progrma	programa
+mensgem	mensagem
+hje	hoje
+autmática	automática
+tambme	também

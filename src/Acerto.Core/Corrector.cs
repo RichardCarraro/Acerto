@@ -11,25 +11,31 @@ public sealed class Corrector
     public const double AccentDominance = 3.0;
 
     /// <summary>
-    /// Palavra que aparece pelo menos isso no corpus é escrita de propósito (curitiba, apps, voice, mail): não é erro
-    /// de digitação. Erros que muita gente comete (palvra, geito) também caem aqui; esses vão em correcoes.txt.
-    /// Já tentei liberar pela proporção de uso da correção: estragou 286 palavras (voice→você, mail→mais).
+    /// Palavra que aparece pelo menos isso no corpus é escrita de propósito (curitiba, apps, voice, mail): não passa
+    /// pela regra de digitação. Erros que muita gente comete (palvra, apra, mutio) também caem aqui; esses foram
+    /// minerados do corpus, revisados um a um e estão em correcoes.txt.
+    /// Tentativas de liberar automaticamente, todas reprovadas pelo teste de corpus:
+    ///  - pela proporção de uso da correção: 286 palavras estragadas (voice→você, mail→mais, save→sabe);
+    ///  - só inversão, letra dobrada ou letra faltando: 52, metade estrangeiras (mass→mas, toad→toda, problem→problema).
     /// </summary>
     public const long AttestedCount = 10;
 
-    /// <summary>Palavras menores que isso (siglas, "obs", "pdf", "job") não passam pela regra de digitação.</summary>
+    /// <summary>Palavras menores que isso só são corrigidas em casos bem restritos (ver TypoOptions.ShortWordMinCount).</summary>
     public const int MinTypoLength = 4;
 
     private readonly CoreData _data;
     private readonly AccentIndex _accents;
     private readonly TypoRanker _typos;
 
-    public Corrector(CoreData data)
+    public Corrector(CoreData data, TypoOptions? typoOptions = null)
     {
         _data = data;
         _accents = new AccentIndex(data.Frequency, data.Lexicon);
-        _typos = new TypoRanker(data.Lexicon, data.Frequency);
+        _typos = new TypoRanker(data.Lexicon, data.Frequency, typoOptions);
     }
+
+    /// <summary>Candidatas do ranqueador de digitação, para diagnóstico (tests/Acerto.Eval).</summary>
+    public TypoRanker Typos => _typos;
 
     /// <param name="word">Só letras e hífen, sem pontuação.</param>
     public Correction? Correct(string word)
@@ -56,23 +62,42 @@ public sealed class Corrector
         // 4. Caixa mista ("iPhone") e hífen só passam pelas regras acima
         if (TextUtil.IsMixedCase(word) || w.Contains('-')) return null;
 
-        // 5. Palavra que o dicionário aceita nunca é trocada (ficara/ficará, duvida/dúvida, capita/capitã)
-        if (_data.Lexicon.IsValid(word)) return null;
+        // 5. Palavra que o dicionário aceita não é trocada (ficara/ficará, duvida/dúvida, capita/capitã).
+        //    Única exceção: ela quase nunca aparece no corpus e está a um erro de uma palavra muito usada (erado → errado).
+        if (_data.Lexicon.IsValid(word))
+        {
+            if (_data.Frequency.Count(w) >= AttestedCount || w.Length < MinTypoLength || char.IsUpper(word[0])) return null;
+            return _typos.Best(w) is { } rare && rare.Count >= _typos.Options.RareValidMinCandidate
+                ? new Correction(TextUtil.ApplyCase(word, rare.Word), CorrectionKind.Typo)
+                : null;
+        }
 
-        // 6. Acento esquecido: a acentuada tem que ganhar com folga da segunda e da própria forma digitada
-        //    ("ana", nome, é muito mais escrita que "anã")
+        // 6. Erro de digitação: só minúsculas (maiúscula no meio da frase é nome; sigla fica como está)
+        TypoMatch? typo = null;
+        if (!TextUtil.IsAllCaps(word) && !char.IsUpper(word[0]) && w.Length >= 3 && _typos.Best(w) is { } t)
+        {
+            long typedCount = _data.Frequency.Count(w);
+            bool shortOk = w.Length >= MinTypoLength
+                || (t.Kind is TypoKind.MissingLetter && t.Count >= _typos.Options.ShortWordMinCount);
+            if (shortOk && typedCount < AttestedCount) typo = t;
+        }
+
+        // 7. Acento esquecido: a acentuada tem que ganhar com folga da segunda e da própria forma digitada
+        //    ("ana", nome, é muito mais escrita que "anã"). Ganha do erro de digitação, a não ser que este seja
+        //    uma explicação muito melhor (vaos → vamos, não o raro "vãos").
         var cands = _accents.Lookup(TextUtil.StripAccents(w)).Where(c => c.Word != w).ToList();
         if (cands.Count > 0
+            && cands[0].Count >= _typos.Options.AccentMinCount
             && (cands.Count == 1 || cands[0].Count >= AccentDominance * cands[1].Count)
             && cands[0].Count >= AccentDominance * _data.Frequency.Count(w))
-            return new Correction(TextUtil.ApplyCase(word, cands[0].Word), CorrectionKind.Accent);
+        {
+            var accent = cands[0];
+            if (typo is { } better && better.Word != accent.Word
+                && better.Score - Math.Log(accent.Count) >= _typos.Options.AccentYield)
+                return new Correction(TextUtil.ApplyCase(word, better.Word), CorrectionKind.Typo);
+            return new Correction(TextUtil.ApplyCase(word, accent.Word), CorrectionKind.Accent);
+        }
 
-        // 7. Sigla, palavra curta, nome próprio ou palavra que as pessoas escrevem de propósito
-        if (TextUtil.IsAllCaps(word) || w.Length < MinTypoLength || char.IsUpper(word[0])) return null;
-        if (_data.Frequency.Count(w) >= AttestedCount) return null;
-
-        // 8. Erro de digitação
-        var typo = _typos.Best(w);
-        return typo is null ? null : new Correction(TextUtil.ApplyCase(word, typo), CorrectionKind.Typo);
+        return typo is { } m ? new Correction(TextUtil.ApplyCase(word, m.Word), CorrectionKind.Typo) : null;
     }
 }

@@ -1,28 +1,96 @@
 namespace Acerto.Core;
 
+/// <summary>Como o erro de digitação se parece. A regra de palavras "atestadas" do Corrector depende disso.</summary>
+public enum TypoKind
+{
+    /// <summary>Duas letras vizinhas trocadas de lugar (apra → para).</summary>
+    Transposition,
+    /// <summary>Uma letra a mais, igual à vizinha (paara → para).</summary>
+    DoubledLetter,
+    /// <summary>Faltou uma letra (hje → hoje).</summary>
+    MissingLetter,
+    Other,
+}
+
+/// <param name="Score">ln(contagem) − peso × custo do erro; serve para comparar com outras explicações.</param>
+public readonly record struct TypoMatch(string Word, long Count, TypoKind Kind, double Score);
+
+/// <summary>
+/// Pesos do modelo de erro e limiares de decisão. Os valores padrão foram ajustados com tests/Acerto.Eval
+/// (erros sintéticos nas palavras mais usadas) sob a condição de os testes de corpus continuarem passando.
+/// </summary>
+public sealed record TypoOptions
+{
+    /// <summary>Quanto um erro "custa" em relação à frequência: score = ln(contagem) − CostWeight × custo.</summary>
+    public double CostWeight { get; init; } = 5.0;
+    /// <summary>Folga mínima de score entre a melhor candidata e a segunda. Abaixo disso, desiste.</summary>
+    public double Margin { get; init; } = 1.2;
+    public long MinBestCount { get; init; } = 50;
+
+    public double Transposition { get; init; } = 0.4;
+    /// <summary>Letra a mais igual à vizinha.</summary>
+    public double DoubledLetter { get; init; } = 0.5;
+    /// <summary>Letra a mais que é tecla vizinha de uma letra ao lado (esbarrão).</summary>
+    public double NeighborInsert { get; init; } = 0.75;
+    /// <summary>Faltou uma das letras de um par dobrado (caro → carro).</summary>
+    public double MissingDoubled { get; init; } = 0.6;
+    public double NeighborSubstitution { get; init; } = 0.6;
+    /// <summary>Troca por letra de som parecido (s/z, g/j, m/n...).</summary>
+    public double PhoneticSubstitution { get; init; } = 0.7;
+    /// <summary>A primeira letra quase nunca sai errada: mexer nela custa a mais.</summary>
+    public double FirstLetterPenalty { get; init; } = 0.4;
+    /// <summary>Faltou uma letra qualquer.</summary>
+    public double MissingLetter { get; init; } = 0.7;
+    /// <summary>Sobrou uma letra que não é dobrada nem tecla vizinha (raro ao digitar).</summary>
+    public double ExtraLetter { get; init; } = 1.3;
+
+    /// <summary>
+    /// Quando falta só o acento (maos → mãos) essa é quase sempre a explicação certa. O erro de digitação só ganha
+    /// do acento se o score dele for pelo menos isso maior que ln(contagem) da forma acentuada (vaos → vamos, não vãos).
+    /// </summary>
+    public double AccentYield { get; init; } = 4.0;
+
+    /// <summary>
+    /// Palavra que o dicionário aceita mas que nunca aparece no corpus (erado, de "erar") só é tratada como erro de
+    /// digitação se a correção for pelo menos tão usada assim (errado). Formas raras de verbo continuam protegidas:
+    /// as vizinhas delas não chegam nem perto dessa contagem.
+    /// </summary>
+    public long RareValidMinCandidate { get; init; } = 20000;
+
+    /// <summary>A forma acentuada precisa ser pelo menos tão usada assim para a regra de acento valer (icar não vira "içar").</summary>
+    public long AccentMinCount { get; init; } = 200;
+
+    /// <summary>
+    /// Palavras digitadas com 3 letras só são corrigidas quando falta uma letra e a correção é pelo menos tão usada
+    /// assim (hje → hoje). Inversão fica de fora (cmo: "com" ou "como"?), assim como siglas (cpf, pdf, sql).
+    /// </summary>
+    public long ShortWordMinCount { get; init; } = 20000;
+}
+
 /// <summary>
 /// Acha a palavra que a pessoa quis digitar quando errou letras (troca, falta, sobra, inversão).
 /// Só responde quando uma candidata ganha com folga; na dúvida devolve null.
 /// </summary>
 public sealed class TypoRanker
 {
-    public const double TypoMargin = 1.5;
     private const int MinIndexCount = 5;
-    private const long MinBestCount = 50;
-    private const double CostWeight = 4.0;
     private const double MaxCost = 2.0;
 
     private const string Alphabet = "abcdefghijklmnopqrstuvwxyz";
     private static readonly string[] Abnt2Rows = ["qwertyuiop", "asdfghjklç", "zxcvbnm"];
     private static readonly Dictionary<char, (int Row, int Col)> KeyPos = BuildKeyPos();
+    private static readonly HashSet<(char, char)> Phonetic = BuildPhonetic("sz", "sc", "gj", "mn", "ei", "ou", "lu", "xs", "xz", "cq", "ck");
 
+    private readonly TypoOptions _o;
+    public TypoOptions Options => _o;
     // forma sem acento → palavras reais (com acento) e contagem
     private readonly Dictionary<string, List<(string Word, long Count)>> _byStripped = new(StringComparer.Ordinal);
     // (1ª letra, tamanho) → formas sem acento; usado na busca de distância 2
     private readonly Dictionary<(char, int), List<string>> _buckets = [];
 
-    public TypoRanker(Lexicon lex, FrequencyTable freq)
+    public TypoRanker(Lexicon lex, FrequencyTable freq, TypoOptions? options = null)
     {
+        _o = options ?? new TypoOptions();
         foreach (var (word, count) in freq.Entries)
         {
             if (count < MinIndexCount || !word.All(char.IsLetter) || !lex.IsValid(word)) continue;
@@ -38,10 +106,21 @@ public sealed class TypoRanker
         }
     }
 
-    public string? Best(string lowerWord)
+    public TypoMatch? Best(string lowerWord)
+    {
+        var ranked = Candidates(lowerWord);
+        if (ranked.Count == 0) return null;
+        var best = ranked[0];
+        if (best.Count < _o.MinBestCount) return null;
+        if (ranked.Count > 1 && best.Score - ranked[1].Score < _o.Margin) return null;
+        return new TypoMatch(best.Word, best.Count, Classify(TextUtil.StripAccents(lowerWord), TextUtil.StripAccents(best.Word)), best.Score);
+    }
+
+    /// <summary>Todas as candidatas, da melhor para a pior. Público para diagnóstico (tests/Acerto.Eval).</summary>
+    public IReadOnlyList<(string Word, long Count, double Cost, double Score)> Candidates(string lowerWord)
     {
         var typed = TextUtil.StripAccents(lowerWord);
-        if (typed.Length == 0 || !typed.All(c => c is >= 'a' and <= 'z')) return null;
+        if (typed.Length == 0 || !typed.All(c => c is >= 'a' and <= 'z')) return [];
 
         var cands = new Dictionary<string, double>(StringComparer.Ordinal); // forma sem acento → custo
         foreach (var e in Edits1(typed))
@@ -58,29 +137,41 @@ public sealed class TypoRanker
                         if (c <= MaxCost) cands.TryAdd(s, c);
                     }
         }
-        if (cands.Count == 0) return null;
 
-        string? best = null, second = null;
-        double bestScore = double.NegativeInfinity, secondScore = double.NegativeInfinity;
-        long bestCount = 0;
+        var ranked = new List<(string Word, long Count, double Cost, double Score)>();
         foreach (var (stripped, cost) in cands)
             foreach (var (word, count) in _byStripped[stripped])
-            {
-                var score = Math.Log(count) - CostWeight * cost;
-                if (score > bestScore)
-                {
-                    (second, secondScore) = (best, bestScore);
-                    (best, bestScore, bestCount) = (word, score, count);
-                }
-                else if (score > secondScore)
-                {
-                    (second, secondScore) = (word, score);
-                }
-            }
+                ranked.Add((word, count, cost, Math.Log(count) - _o.CostWeight * cost));
+        ranked.Sort((x, y) => y.Score.CompareTo(x.Score));
+        return ranked;
+    }
 
-        if (bestCount < MinBestCount) return null;
-        if (second is not null && bestScore - secondScore < TypoMargin) return null;
-        return best;
+    private static TypoKind Classify(string typed, string cand)
+    {
+        if (typed.Length == cand.Length)
+        {
+            int i = 0;
+            while (i < typed.Length && typed[i] == cand[i]) i++;
+            if (i < typed.Length - 1 && typed[i] == cand[i + 1] && typed[i + 1] == cand[i]
+                && typed.AsSpan(i + 2).SequenceEqual(cand.AsSpan(i + 2)))
+                return TypoKind.Transposition;
+        }
+        else if (typed.Length == cand.Length + 1)
+        {
+            int i = 0;
+            while (i < cand.Length && typed[i] == cand[i]) i++;
+            // typed[i] é a letra a mais; tem que ser igual a uma vizinha e o resto bater
+            if (typed.AsSpan(i + 1).SequenceEqual(cand.AsSpan(i))
+                && ((i > 0 && typed[i] == typed[i - 1]) || (i + 1 < typed.Length && typed[i] == typed[i + 1])))
+                return TypoKind.DoubledLetter;
+        }
+        else if (typed.Length == cand.Length - 1)
+        {
+            int i = 0;
+            while (i < typed.Length && typed[i] == cand[i]) i++;
+            if (typed.AsSpan(i).SequenceEqual(cand.AsSpan(i + 1))) return TypoKind.MissingLetter;
+        }
+        return TypoKind.Other;
     }
 
     private static IEnumerable<string> Edits1(string w)
@@ -97,29 +188,51 @@ public sealed class TypoRanker
         }
     }
 
-    /// <summary>Distância Damerau (OSA) com pesos: tecla vizinha 0.6, inversão 0.7, resto 1.0. Para cedo acima de MaxCost.</summary>
-    private static double Cost(string a, string b)
+    /// <summary>
+    /// Distância Damerau (OSA) com pesos do modelo de erro: <paramref name="a"/> é o digitado, <paramref name="b"/> a
+    /// candidata. Para cedo acima de MaxCost.
+    /// </summary>
+    private double Cost(string a, string b)
     {
-        if (Math.Abs(a.Length - b.Length) > MaxCost) return double.MaxValue;
+        if (Math.Abs(a.Length - b.Length) > 2) return double.MaxValue;
         var d = new double[a.Length + 1, b.Length + 1];
-        for (int i = 0; i <= a.Length; i++) d[i, 0] = i;
-        for (int j = 0; j <= b.Length; j++) d[0, j] = j;
+        for (int i = 1; i <= a.Length; i++) d[i, 0] = d[i - 1, 0] + ExtraCost(a, i - 1);
+        for (int j = 1; j <= b.Length; j++) d[0, j] = d[0, j - 1] + MissingCost(b, j - 1);
         for (int i = 1; i <= a.Length; i++)
         {
             double rowMin = double.MaxValue;
             for (int j = 1; j <= b.Length; j++)
             {
-                double sub = a[i - 1] == b[j - 1] ? 0 : Adjacent(a[i - 1], b[j - 1]) ? 0.6 : 1.0;
-                double v = Math.Min(Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1), d[i - 1, j - 1] + sub);
-                if (i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1])
-                    v = Math.Min(v, d[i - 2, j - 2] + 0.7);
+                char x = a[i - 1], y = b[j - 1];
+                double sub = x == y ? 0 : Adjacent(x, y) ? _o.NeighborSubstitution : Phonetic.Contains((x, y)) ? _o.PhoneticSubstitution : 1.0;
+                double v = Math.Min(Math.Min(d[i - 1, j] + ExtraCost(a, i - 1), d[i, j - 1] + MissingCost(b, j - 1)), d[i - 1, j - 1] + sub);
+                if (i > 1 && j > 1 && x == b[j - 2] && a[i - 2] == y && x != y)
+                    v = Math.Min(v, d[i - 2, j - 2] + _o.Transposition);
                 d[i, j] = v;
                 rowMin = Math.Min(rowMin, v);
             }
             if (rowMin > MaxCost) return double.MaxValue;
         }
-        return d[a.Length, b.Length];
+        double cost = d[a.Length, b.Length];
+        // 1ª letra diferente pesa (a não ser que sejam só as duas primeiras invertidas: "apra")
+        if (a[0] != b[0] && !(a.Length > 1 && b.Length > 1 && a[0] == b[1] && a[1] == b[0]))
+            cost += _o.FirstLetterPenalty;
+        return cost;
     }
+
+    /// <summary>Custo de uma letra a mais no digitado (posição <paramref name="i"/>).</summary>
+    private double ExtraCost(string a, int i)
+    {
+        char c = a[i];
+        bool left = i > 0, right = i + 1 < a.Length;
+        if ((left && a[i - 1] == c) || (right && a[i + 1] == c)) return _o.DoubledLetter;
+        if ((left && Adjacent(a[i - 1], c)) || (right && Adjacent(a[i + 1], c))) return _o.NeighborInsert;
+        return _o.ExtraLetter;
+    }
+
+    /// <summary>Custo de uma letra da candidata que faltou no digitado (posição <paramref name="j"/> da candidata).</summary>
+    private double MissingCost(string b, int j) =>
+        (j > 0 && b[j - 1] == b[j]) || (j + 1 < b.Length && b[j + 1] == b[j]) ? _o.MissingDoubled : _o.MissingLetter;
 
     private static bool Adjacent(char x, char y)
     {
@@ -135,5 +248,16 @@ public sealed class TypoRanker
             for (int c = 0; c < Abnt2Rows[r].Length; c++)
                 map[Abnt2Rows[r][c]] = (r, c);
         return map;
+    }
+
+    private static HashSet<(char, char)> BuildPhonetic(params string[] pairs)
+    {
+        var set = new HashSet<(char, char)>();
+        foreach (var p in pairs)
+        {
+            set.Add((p[0], p[1]));
+            set.Add((p[1], p[0]));
+        }
+        return set;
     }
 }

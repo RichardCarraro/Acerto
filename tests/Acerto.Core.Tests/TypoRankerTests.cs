@@ -20,7 +20,7 @@ public class TypoRankerTests(SharedRanker s) : IClassFixture<SharedRanker>
     [InlineData("porbelma", "problema")]
     [InlineData("trabalo", "trabalho")]
     [InlineData("obrigaod", "obrigado")]
-    public void Corrige(string i, string o) => Assert.Equal(o, s.Ranker.Best(i));
+    public void Corrige(string i, string o) => Assert.Equal(o, s.Ranker.Best(i)?.Word);
 
     [Theory]
     [InlineData("xkzq")]

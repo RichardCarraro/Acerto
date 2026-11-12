@@ -110,7 +110,8 @@ public class FixedListGuardTests(SharedCorrector s) : IClassFixture<SharedCorrec
     {
         "ate", "numero", "numeros", "pagina", "paginas", "ultimo", "ultima", "historia", "agua", "area", "areas",
         "encima", "secretario", "musica", "tao", "acoes", "apos", "porem", "salario", "experiencia", "conferencia",
-        "faco", "video", "oque", "emfim", "anida", "intendi", "intender", "intendeu",
+        "faco", "video", "oque", "emfim", "anida", "intendi", "intender", "intendeu", "amanha", "medico", "titulo",
+        "transito", "policia", "noticia", "agencia", "irma", "dai",
     };
 
     [Fact]
