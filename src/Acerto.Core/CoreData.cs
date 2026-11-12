@@ -9,6 +9,12 @@ public sealed class CoreData
     public required PersonalDictionary Personal { get; init; }
     public required ShortcutTable Shortcuts { get; init; }
 
+    /// <summary>
+    /// Estrangeirismos e nomes que o dicionário pt-BR não tem mas que são palavras de verdade (mail, voice, office).
+    /// Nunca passam pela regra de digitação. Gerada com "AcertoEval data protegidas".
+    /// </summary>
+    public IReadOnlySet<string> Protected { get; init; } = new HashSet<string>();
+
     public static CoreData Load(string dataDir, string userDir) => new()
     {
         Lexicon = new Lexicon(Path.Combine(dataDir, "pt_BR.aff"), Path.Combine(dataDir, "pt_BR.dic")),
@@ -16,5 +22,8 @@ public sealed class CoreData
         Fixed = new FixedCorrections(Path.Combine(dataDir, "correcoes.txt")),
         Personal = new PersonalDictionary(Path.Combine(userDir, "palavras.txt")),
         Shortcuts = new ShortcutTable(Path.Combine(userDir, "atalhos.txt"), Path.Combine(dataDir, "atalhos-padrao.txt")),
+        Protected = File.Exists(Path.Combine(dataDir, "protegidas.txt"))
+            ? File.ReadLines(Path.Combine(dataDir, "protegidas.txt")).Select(l => l.Trim()).Where(l => l.Length > 0).ToHashSet(StringComparer.Ordinal)
+            : new HashSet<string>(),
     };
 }

@@ -57,6 +57,40 @@ public sealed record TypoOptions
     /// </summary>
     public long RareValidMinCandidate { get; init; } = 20000;
 
+    /// <summary>
+    /// Erros que muita gente comete também aparecem no corpus ("atestados"). 0 = nunca corrigir palavra atestada.
+    /// Acima de 0: corrige quando o erro é um deslize (inversão, letra dobrada, letra faltando) e a correção é
+    /// pelo menos isso vezes mais usada que a forma digitada.
+    /// </summary>
+    public long AttestedSlipRatio { get; init; }
+
+    /// <summary>O mesmo para os outros tipos de erro (troca de letra, letra sobrando), onde há mais coincidência
+    /// com palavras estrangeiras. 0 = nunca.</summary>
+    public long AttestedOtherRatio { get; init; }
+
+    /// <summary>Palavras de 3 letras também são corrigidas quando há inversão (cmo → com).</summary>
+    public bool ShortWordTransposition { get; init; }
+
+    /// <summary>
+    /// Perfil padrão do app: tenta sempre, como o teclado do celular. Escolhe a melhor candidata mesmo quando a
+    /// segunda está perto e corrige erros comuns do corpus. Às vezes troca um nome ou uma palavra estrangeira em
+    /// minúsculo; a pessoa apaga, digita de novo e o Acertô aprende.
+    /// </summary>
+    public static TypoOptions Aggressive { get; } = new()
+    {
+        Margin = 0,
+        MinBestCount = 20,
+        AttestedSlipRatio = 300,
+        AttestedOtherRatio = 3000,
+        ShortWordMinCount = 5000,
+        ShortWordTransposition = true,
+        RareValidMinCandidate = 5000,
+        AccentYield = 3.0,
+    };
+
+    /// <summary>Perfil cuidadoso: na dúvida, não troca. É o que os testes de corpus exigem com zero trocas indevidas.</summary>
+    public static TypoOptions Careful { get; } = new();
+
     /// <summary>A forma acentuada precisa ser pelo menos tão usada assim para a regra de acento valer (icar não vira "içar").</summary>
     public long AccentMinCount { get; init; } = 200;
 
@@ -81,8 +115,9 @@ public sealed class TypoRanker
     private static readonly Dictionary<char, (int Row, int Col)> KeyPos = BuildKeyPos();
     private static readonly HashSet<(char, char)> Phonetic = BuildPhonetic("sz", "sc", "gj", "mn", "ei", "ou", "lu", "xs", "xz", "cq", "ck");
 
-    private readonly TypoOptions _o;
-    public TypoOptions Options => _o;
+    private TypoOptions _o;
+    /// <summary>Pode ser trocado em uso (interruptor "corrigir mais" nas configurações).</summary>
+    public TypoOptions Options { get => _o; set => _o = value; }
     // forma sem acento → palavras reais (com acento) e contagem
     private readonly Dictionary<string, List<(string Word, long Count)>> _byStripped = new(StringComparer.Ordinal);
     // (1ª letra, tamanho) → formas sem acento; usado na busca de distância 2

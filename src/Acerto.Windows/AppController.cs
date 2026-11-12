@@ -27,6 +27,7 @@ internal sealed class AppController
     private readonly DispatcherTimer _saveTimer;
     private Drawing.Icon? _icon;
     private TextEngine? _engine;
+    private Corrector? _corrector;
     private InputHooks? _hooks;
     private MainWindow? _window;
     private TrayFlyout? _flyout;
@@ -77,7 +78,8 @@ internal sealed class AppController
 
         Data = load.Result.data;
         // Aprender grava arquivo: nunca dentro do hook. Vai para a fila da UI e roda depois que o callback volta.
-        _engine = new TextEngine(load.Result.corrector, word => _ui.BeginInvoke(() => AddWord(word)));
+        _corrector = load.Result.corrector;
+        _engine = new TextEngine(_corrector, word => _ui.BeginInvoke(() => AddWord(word)));
         ApplyEngineOptions();
         if (_preview)
         {
@@ -234,6 +236,8 @@ internal sealed class AppController
         if (_engine is null) return;
         _engine.AutoCapitalize = Settings.AutoCapitalize;
         _engine.DoubleSpacePeriod = Settings.DoubleSpacePeriod;
+        if (_corrector is not null)
+            _corrector.Typos.Options = Settings.CorrectMore ? TypoOptions.Aggressive : TypoOptions.Careful;
     }
 
     private void TryIo(Action action)

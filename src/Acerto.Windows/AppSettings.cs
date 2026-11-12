@@ -28,6 +28,9 @@ internal sealed class AppSettings
     public bool DoubleSpacePeriod { get; set; } = true;
     public bool CorrectionAnimation { get; set; } = true;
 
+    /// <summary>Tenta corrigir sempre, como o teclado do celular, mesmo que às vezes erre. Desligado = na dúvida, não troca.</summary>
+    public bool CorrectMore { get; set; } = true;
+
     /// <summary>Quantas palavras o Acertô já corrigiu (só o número, nunca o texto).</summary>
     public long CorrectionCount { get; set; }
 

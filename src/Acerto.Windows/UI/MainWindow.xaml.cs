@@ -71,6 +71,7 @@ internal partial class MainWindow : Window
         CountText.Text = count;
         SupportCount.Text = s.CorrectionCount > 0 ? $"O Acertô já corrigiu {count} palavras para você." : "";
 
+        MoreSwitch.IsChecked = s.CorrectMore;
         CapSwitch.IsChecked = s.AutoCapitalize;
         PeriodSwitch.IsChecked = s.DoubleSpacePeriod;
         AnimationSwitch.IsChecked = s.CorrectionAnimation;
@@ -96,6 +97,7 @@ internal partial class MainWindow : Window
     private void Option_Click(object sender, RoutedEventArgs e)
     {
         var s = _app.Settings;
+        s.CorrectMore = MoreSwitch.IsChecked == true;
         s.AutoCapitalize = CapSwitch.IsChecked == true;
         s.DoubleSpacePeriod = PeriodSwitch.IsChecked == true;
         s.CorrectionAnimation = AnimationSwitch.IsChecked == true;

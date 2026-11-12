@@ -125,3 +125,53 @@ public class FixedListGuardTests(SharedCorrector s) : IClassFixture<SharedCorrec
         Assert.True(surprising.Count == 0, "válidas no dicionário: " + string.Join(", ", surprising));
     }
 }
+
+/// <summary>Perfil padrão do app ("corrigir mais"): tenta sempre, mas não toca no que é claramente palavra.</summary>
+public class AggressiveCorrectorTests : IClassFixture<SharedData>
+{
+    private readonly CoreData _data;
+    private readonly Corrector _c;
+
+    public AggressiveCorrectorTests(SharedData shared)
+    {
+        _data = CoreData.Load(SharedData.DataDir, SharedData.NewUserDir());
+        _c = new Corrector(_data, TypoOptions.Aggressive);
+    }
+
+    [Theory]
+    [InlineData("corrigndo")] // empate entre corrigindo e corrigido: no perfil cuidadoso desiste, aqui escolhe uma
+    [InlineData("dizr")]
+    [InlineData("precso")]
+    public void Sempre_Tenta(string errado) => Assert.NotNull(_c.Correct(errado));
+
+    [Theory]
+    [InlineData("voice")] [InlineData("mail")] [InlineData("office")] [InlineData("apps")] [InlineData("build")]
+    [InlineData("curitiba")] [InlineData("richard")]
+    public void Protegidas_Ficam(string palavra) => Assert.Null(_c.Correct(palavra));
+
+    [Theory]
+    [InlineData("Carraro")] [InlineData("CRCPR")] [InlineData("iPhone")] [InlineData("cpf")] [InlineData("pdf")]
+    public void Nomes_Siglas_Ficam(string palavra) => Assert.Null(_c.Correct(palavra));
+
+    [Fact]
+    public void PalavrasValidasFrequentes_NuncaMudam()
+    {
+        var wrong = _data.Frequency.Entries
+            .Where(e => e.Word.All(char.IsLetter) && _data.Lexicon.IsValid(e.Word))
+            .OrderByDescending(e => e.Count).Take(30000)
+            .Where(e => _c.Correct(e.Word) is { Kind: not CorrectionKind.Fixed })
+            .Select(e => e.Word).ToList();
+        Assert.True(wrong.Count == 0, string.Join(", ", wrong.Take(40)));
+    }
+
+    /// <summary>O preço conhecido do perfil: algumas palavras estrangeiras do corpus são trocadas. Se passar muito disso, algo quebrou.</summary>
+    [Fact]
+    public void TrocasIndevidas_FicamAbaixoDoLimite()
+    {
+        int changed = _data.Frequency.Entries
+            .Where(e => e.Word.All(char.IsLetter))
+            .OrderByDescending(e => e.Count).Take(60000)
+            .Count(e => _c.Correct(e.Word) is { Kind: CorrectionKind.Typo });
+        Assert.True(changed <= 300, $"{changed} palavras frequentes trocadas (medido em 2026-11-12: 227)");
+    }
+}

@@ -64,3 +64,14 @@ letra faltando 55% (o resto é ambíguo sem contexto: `cas` é casa ou caso?).
 
 Limite conhecido: erros muito frequentes que coincidem com palavras de outros idiomas (`save`, `estaba`, `ahora`)
 não são corrigidos, porque o corpus não distingue erro de palavra estrangeira.
+
+## Modo "Corrigir mais" (2026-11-12, padrão ligado)
+
+Pedido do usuário: melhor tentar e errar às vezes do que não corrigir, como o teclado do celular.
+Medição (`AcertoEval data 3000 0 perfil=agressivo`): acerto 93,6% dos erros corrigíveis (cuidadoso: 89,1%),
+correção errada 4,7% (cuidadoso: 1,7%), quase nunca desiste. Preço medido: 227 das 60 mil palavras mais frequentes
+do corpus passam a ser trocadas, várias em inglês ou espanhol (`code`→`pode`, `plan`→`plano`, `send`→`sendo`,
+`ahora`→`agora`). `data/protegidas.txt` (10.596 nomes e estrangeirismos que o corretor do Windows aceita) fica de fora.
+
+- [ ] Se trocar uma palavra que você queria: apague e digite de novo; ele mantém e aprende (Minhas palavras).
+- [ ] Início → "Corrigir mais" desligado volta ao modo que só corrige quando tem certeza.

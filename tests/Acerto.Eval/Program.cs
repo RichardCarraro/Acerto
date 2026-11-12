@@ -15,11 +15,14 @@ var userDir = Path.Combine(Path.GetTempPath(), "acerto-eval-" + Guid.NewGuid().T
 Directory.CreateDirectory(userDir);
 File.WriteAllText(Path.Combine(userDir, "atalhos.txt"), ""); // sem atalhos: eles mascaram o resultado
 var data = CoreData.Load(dataDir, userDir);
-var opt = new TypoOptions();
-foreach (var kv in args.Where(a => a.Contains('=')).Select(a => a.Split('=')))
+// perfil=agressivo usa o perfil padrão do app; sem isso, o cuidadoso
+var opt = args.Contains("perfil=agressivo") ? TypoOptions.Aggressive : TypoOptions.Careful;
+foreach (var kv in args.Where(a => a.Contains('=') && !a.StartsWith("perfil=")).Select(a => a.Split('=')))
 {
     var prop = typeof(TypoOptions).GetProperty(kv[0]) ?? throw new ArgumentException("opção desconhecida: " + kv[0]);
-    object value = prop.PropertyType == typeof(long) ? (object)long.Parse(kv[1]) : double.Parse(kv[1], CultureInfo.InvariantCulture);
+    object value = prop.PropertyType == typeof(long) ? long.Parse(kv[1])
+        : prop.PropertyType == typeof(bool) ? bool.Parse(kv[1])
+        : (object)double.Parse(kv[1], CultureInfo.InvariantCulture);
     opt = (TypoOptions)opt.GetType().GetMethod("<Clone>$")!.Invoke(opt, null)!;
     prop.SetValue(opt, value);
 }
@@ -35,6 +38,38 @@ if (positional.Length > 1 && positional[1] == "explicar")
         foreach (var c in corrector.Typos.Candidates(w).Take(5))
             Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"     {c.Word,-14} n={c.Count,-9} custo={c.Cost:F2} nota={c.Score:F2}"));
     }
+    Directory.Delete(userDir, true);
+    return;
+}
+
+// modo "protegidas": AcertoEval data protegidas > data/protegidas.txt
+// Palavras do corpus que o dicionário pt-BR (VERO) não tem, mas que o corretor do próprio Windows aceita
+// (estrangeirismos e nomes: mail, voice, office, Frazier). Nunca passam pela regra de digitação.
+if (positional.Length > 1 && positional[1] == "protegidas")
+{
+    var windows = WindowsSpeller.TryCreate("pt-BR") ?? throw new InvalidOperationException("corretor pt-BR do Windows não disponível");
+    foreach (var (w, n) in data.Frequency.Entries.OrderByDescending(e => e.Count))
+    {
+        if (n < Corrector.AttestedCount || w.Length < 3 || !w.All(char.IsLetter) || data.Lexicon.IsValid(w)) continue;
+        if (windows.IsValid(w) || windows.IsValid(char.ToUpperInvariant(w[0]) + w[1..])) Console.WriteLine(w);
+    }
+    Directory.Delete(userDir, true);
+    return;
+}
+
+// modo "trocas": AcertoEval data trocas [quantas=60000] [perfil=agressivo]
+// Palavras frequentes do corpus (válidas ou não) que o corretor mudaria. No perfil cuidadoso tem que dar zero
+// para a regra de digitação; no agressivo mostra o preço: nomes e estrangeirismos trocados.
+if (positional.Length > 1 && positional[1] == "trocas")
+{
+    int n = positional.Length > 2 ? int.Parse(positional[2]) : 60000;
+    var changed = data.Frequency.Entries.Where(e => e.Word.All(char.IsLetter))
+        .OrderByDescending(e => e.Count).Take(n)
+        .Select(e => (e.Word, e.Count, R: corrector.Correct(e.Word)))
+        .Where(x => x.R is { Kind: CorrectionKind.Typo })
+        .ToList();
+    Console.Error.WriteLine($"{changed.Count} de {n} palavras frequentes seriam trocadas pela regra de digitação");
+    foreach (var c in changed) Console.WriteLine($"{c.Word}>{c.R!.Replacement}\t{c.Count}");
     Directory.Delete(userDir, true);
     return;
 }

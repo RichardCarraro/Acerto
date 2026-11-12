@@ -78,8 +78,14 @@ public sealed class Corrector
         {
             long typedCount = _data.Frequency.Count(w);
             bool shortOk = w.Length >= MinTypoLength
-                || (t.Kind is TypoKind.MissingLetter && t.Count >= _typos.Options.ShortWordMinCount);
-            if (shortOk && typedCount < AttestedCount) typo = t;
+                || ((t.Kind is TypoKind.MissingLetter || (t.Kind is TypoKind.Transposition && _typos.Options.ShortWordTransposition))
+                    && t.Count >= _typos.Options.ShortWordMinCount);
+            var o = _typos.Options;
+            bool slip = t.Kind is TypoKind.Transposition or TypoKind.DoubledLetter or TypoKind.MissingLetter;
+            long ratio = slip ? o.AttestedSlipRatio : o.AttestedOtherRatio;
+            bool attestedOk = typedCount < AttestedCount
+                || (ratio > 0 && t.Count >= ratio * typedCount && !_data.Protected.Contains(w));
+            if (shortOk && attestedOk) typo = t;
         }
 
         // 7. Acento esquecido: a acentuada tem que ganhar com folga da segunda e da própria forma digitada

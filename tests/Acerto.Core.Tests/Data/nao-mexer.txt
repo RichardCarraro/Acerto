@@ -43,7 +43,6 @@ haha
 release
 request
 iphone
-Richard
 Teams
 Office
 saíra
@@ -61,7 +60,6 @@ duvida
 duvidas
 cpf
 cnpj
-pdf
 sql
 php
 usb

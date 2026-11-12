@@ -1,7 +1,7 @@
 <Window x:Class="Acerto.Windows.UI.MainWindow" x:ClassModifier="internal"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Acertô" Width="880" Height="740" MinWidth="720" MinHeight="480"
+        Title="Acertô" Width="880" Height="820" MinWidth="720" MinHeight="480"
         WindowStartupLocation="CenterScreen" UseLayoutRounding="True">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -105,6 +105,17 @@
 
                         <Border Style="{StaticResource Card}">
                             <DockPanel>
+                                <CheckBox x:Name="MoreSwitch" DockPanel.Dock="Right" Style="{StaticResource Switch}" Click="Option_Click" />
+                                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Glyph}" Text="&#xE945;" Margin="0,0,16,0" />
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Corrigir mais" Style="{StaticResource RowTitle}" />
+                                    <TextBlock Style="{StaticResource RowHint}"
+                                               Text="Tenta corrigir sempre, como o teclado do celular, mesmo quando há dúvida. Às vezes troca um nome ou uma palavra em inglês: apague, digite de novo e o Acertô aprende. Desligado, ele só corrige quando tem certeza." />
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}">
+                            <DockPanel>
                                 <CheckBox x:Name="CapSwitch" DockPanel.Dock="Right" Style="{StaticResource Switch}" Click="Option_Click" />
                                 <TextBlock DockPanel.Dock="Left" Style="{StaticResource Glyph}" Text="&#xE8D2;" Margin="0,0,16,0" />
                                 <StackPanel>
@@ -126,7 +137,7 @@
                         <Border Style="{StaticResource Card}">
                             <DockPanel>
                                 <CheckBox x:Name="AnimationSwitch" DockPanel.Dock="Right" Style="{StaticResource Switch}" Click="Option_Click" />
-                                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Glyph}" Text="&#xE945;" Margin="0,0,16,0" />
+                                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Glyph}" Text="&#xE7E6;" Margin="0,0,16,0" />
                                 <StackPanel>
                                     <TextBlock Text="Destacar a palavra corrigida" Style="{StaticResource RowTitle}" />
                                     <TextBlock Text="Mostra um realce rápido sobre a palavra, como no celular." Style="{StaticResource RowHint}" />
