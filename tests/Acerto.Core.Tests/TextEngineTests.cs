@@ -69,6 +69,9 @@ public class TextEngineTests : IClassFixture<SharedCorrector>
     }
     [Fact] public void Maiuscula_Apos_Ponto() => Assert.Equal(" Ok. Não ", Type(" Ok. nao "));
     [Fact] public void Maiuscula_Nao_Estraga_CaixaMista() => Assert.Equal(" Ok. iPhone ", Type(" Ok. iPhone ")); // m1 da revisão
+    // Quem digita a maiúscula do começo da frase também erra: ali não é nome, pode corrigir.
+    [Fact] public void ErroComMaiuscula_NoComecoDaFrase_Corrige() => Assert.Equal(" Ok. Corrigir ", Type(" Ok. Corigir "));
+    [Fact] public void ErroComMaiuscula_NoMeioDaFrase_Fica() => Assert.Equal(" o Corigir ", Type(" o Corigir "));
     [Fact] public void Maiuscula_Apos_Enter() => Assert.Equal(" ok\nCasa ", Type(" ok\ncasa "));
     [Fact] public void Espaco_Duplo() => Assert.Equal(" Fim. ", Type(" Fim  "));
     [Fact] public void Espaco_Duplo_Backspace_So_Apaga() => Assert.Equal(" Fim.", Type(" Fim  \b"));

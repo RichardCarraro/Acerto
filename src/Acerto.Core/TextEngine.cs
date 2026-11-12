@@ -167,7 +167,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
         if (_tokenKnown && _tokenPure && _word.Length > 0 && c != '\t')
         {
             var word = _word.ToString();
-            var corr = corrector.Correct(word);
+            var corr = corrector.Correct(word, atSentenceStart: _capNext);
 
             if (corr is not null && _backspacedSinceCorrection
                 && string.Equals(word, _lastCorrectedWord, StringComparison.OrdinalIgnoreCase))

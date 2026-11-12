@@ -108,7 +108,7 @@ internal sealed class InputHooks : IDisposable
                 UnhookWindowsHookEx(_keyboardHook);
                 UnhookWindowsHookEx(_mouseHook);
                 InstallLowLevelHooks();
-                ResetAll();
+                ResetAll("vigia");
             }
         };
         _watchdog.Start();
@@ -136,7 +136,7 @@ internal sealed class InputHooks : IDisposable
     {
         _settings.Paused = !_settings.Paused;
         _settings.Save();
-        ResetAll();
+        ResetAll("pausa");
         PauseToggled?.Invoke();
     }
 
@@ -158,14 +158,18 @@ internal sealed class InputHooks : IDisposable
             if (!Active)
             {
                 if (Diag.On) Diag.Log($"KEY inativo paused={_settings.Paused} own={_fg.IsOwnProcess} elev={_fg.IsElevated} full={_fg.IsFullScreenApp} resolved={_fg.FocusResolved} pwd={_fg.FocusIsPassword} excl={_settings.IsExcluded(_fg.ProcessName)} proc={_fg.ProcessName}");
-                ResetAll();
+                ResetAll("inativo");
                 return CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
             }
 
             long generation = _engine.Generation;
             _fedChars = 0;
             var action = Handle(k);
-            if (generation != _engine.Generation) ScheduleProbe(); // o motor resetou por conta própria (ex.: Backspace)
+            if (generation != _engine.Generation) // o motor resetou por conta própria (ex.: Backspace)
+            {
+                if (Diag.On) Diag.Log("RESET motor (backspace em contexto vazio)");
+                ScheduleProbe();
+            }
             if (Diag.On) Diag.Log($"KEY ativo swallow={action.Swallow} bs={action.Backspaces} ins={action.Insert.Length} proc={_fg.ProcessName}");
             if (action.Swallow)
             {
@@ -188,7 +192,7 @@ internal sealed class InputHooks : IDisposable
                     }
                     return 1;
                 }
-                ResetAll(); // não deu para corrigir: deixa a tecla original passar
+                ResetAll("envio-falhou"); // não deu para corrigir: deixa a tecla original passar
             }
             else if (_charsSinceCorrection >= 0)
             {
@@ -201,7 +205,7 @@ internal sealed class InputHooks : IDisposable
         catch (Exception)
         {
             // exceção saindo de callback nativo derruba o processo; na dúvida, deixa a tecla passar
-            ResetAll();
+            ResetAll("excecao");
         }
         return CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
     }
@@ -217,19 +221,19 @@ internal sealed class InputHooks : IDisposable
         bool ctrl = IsDown(VK_CONTROL), alt = IsDown(VK_MENU);
         bool altGr = ctrl && IsDown(VK_RMENU);
         if (IsDown(VK_LWIN) || IsDown(VK_RWIN) || ((ctrl || alt) && !altGr))
-            return ResetAll(); // atalhos: Ctrl+C, Alt+Tab, Ctrl+Backspace...
+            return ResetAll("atalho"); // atalhos: Ctrl+C, Alt+Tab, Ctrl+Backspace...
 
         // Tecla morta pendente no app + Backspace/Enter/Tab: o app vai combinar a morta com o que injetarmos.
         if (_pendingDead is not null && vk is VK_BACK or VK_RETURN or VK_TAB)
-            return ResetAll();
+            return ResetAll("morta+enter/back/tab");
 
         switch (vk)
         {
             case VK_BACK: return _engine.OnBackspace();
             case VK_RETURN: return _engine.OnChar('\n');
-            case VK_TAB: return IsDown(VK_SHIFT) ? ResetAll() : _engine.OnChar('\t');
+            case VK_TAB: return IsDown(VK_SHIFT) ? ResetAll("shift+tab") : _engine.OnChar('\t');
             case VK_ESCAPE or VK_INSERT or VK_DELETE or VK_APPS or (>= VK_PRIOR and <= VK_DOWN):
-                return ResetAll();
+                return ResetAll("navegacao");
             case VK_PACKET:
                 return Feed(((char)k.scanCode).ToString());
         }
@@ -237,17 +241,17 @@ internal sealed class InputHooks : IDisposable
         var text = KeyTranslator.Translate(k.vkCode, k.scanCode, out bool dead);
         if (dead)
         {
-            if (_pendingDead is not null) return ResetAll(); // duas mortas seguidas: não tentar adivinhar
+            if (_pendingDead is not null) return ResetAll("duas-mortas"); // duas mortas seguidas: não tentar adivinhar
             _pendingDead = text[0];
             return EngineAction.None;
         }
-        if (text.Length == 0) return ResetAll();
+        if (text.Length == 0) return ResetAll("tecla-sem-caractere");
 
         if (_pendingDead is { } d)
         {
             _pendingDead = null;
             text = DeadKeys.Compose(d, text[0]) + text[1..];
-            if (text.Length != 1) return ResetAll(); // "~x": o app compõe sozinho; não arriscar engolir
+            if (text.Length != 1) return ResetAll("morta-composta"); // "~x": o app compõe sozinho; não arriscar engolir
         }
         return Feed(text);
     }
@@ -257,7 +261,7 @@ internal sealed class InputHooks : IDisposable
         var action = EngineAction.None;
         foreach (var ch in text) action = _engine.OnChar(ch);
         _fedChars = text.Length;
-        if (text.Length > 1 && action.Swallow) return ResetAll(); // vários caracteres numa tecla só: não engolir
+        if (text.Length > 1 && action.Swallow) return ResetAll("varios-caracteres"); // vários caracteres numa tecla só: não engolir
         return action;
     }
 
@@ -268,8 +272,10 @@ internal sealed class InputHooks : IDisposable
         ContextLost?.Invoke();
     }
 
-    private EngineAction ResetAll()
+    /// <param name="why">Motivo, só para o diagnóstico (nunca inclui o que foi digitado).</param>
+    private EngineAction ResetAll(string why)
     {
+        if (Diag.On && why != "inativo") Diag.Log("RESET " + why);
         _engine.Reset();
         _pendingDead = null;
         LoseContext();
@@ -283,7 +289,7 @@ internal sealed class InputHooks : IDisposable
         try
         {
             if (nCode >= 0 && wParam is WM_LBUTTONDOWN or WM_RBUTTONDOWN or WM_MBUTTONDOWN or WM_XBUTTONDOWN)
-                ResetAll();
+                ResetAll("mouse");
         }
         catch (Exception) { /* nunca deixar exceção sair de callback nativo */ }
         return CallNextHookEx(_mouseHook, nCode, wParam, lParam);
@@ -293,7 +299,7 @@ internal sealed class InputHooks : IDisposable
     {
         try
         {
-            ResetAll();
+            ResetAll("foco");
             _fg.Refresh();
             if (Diag.On) Diag.Log($"FOCO ev={(ev == EVENT_SYSTEM_FOREGROUND ? "foreground" : "focus")} proc={_fg.ProcessName}");
         }

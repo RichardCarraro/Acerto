@@ -38,8 +38,11 @@ public sealed class Corrector
     public TypoRanker Typos => _typos;
 
     /// <param name="word">Só letras e hífen, sem pontuação.</param>
-    public Correction? Correct(string word)
+    /// <param name="atSentenceStart">A palavra começa uma frase: maiúscula ali é só maiúscula de início de frase.
+    /// No meio da frase, palavra com maiúscula é tratada como nome e não passa pela regra de digitação.</param>
+    public Correction? Correct(string word, bool atSentenceStart = false)
     {
+        bool looksLikeName = char.IsUpper(word.Length > 0 ? word[0] : ' ') && !atSentenceStart;
         if (word.Length == 0) return null;
         var w = word.ToLowerInvariant();
 
@@ -66,7 +69,7 @@ public sealed class Corrector
         //    Única exceção: ela quase nunca aparece no corpus e está a um erro de uma palavra muito usada (erado → errado).
         if (_data.Lexicon.IsValid(word))
         {
-            if (_data.Frequency.Count(w) >= AttestedCount || w.Length < MinTypoLength || char.IsUpper(word[0])) return null;
+            if (_data.Frequency.Count(w) >= AttestedCount || w.Length < MinTypoLength || looksLikeName) return null;
             return _typos.Best(w) is { } rare && rare.Count >= _typos.Options.RareValidMinCandidate
                 ? new Correction(TextUtil.ApplyCase(word, rare.Word), CorrectionKind.Typo)
                 : null;
@@ -74,7 +77,7 @@ public sealed class Corrector
 
         // 6. Erro de digitação: só minúsculas (maiúscula no meio da frase é nome; sigla fica como está)
         TypoMatch? typo = null;
-        if (!TextUtil.IsAllCaps(word) && !char.IsUpper(word[0]) && w.Length >= 3 && _typos.Best(w) is { } t)
+        if (!TextUtil.IsAllCaps(word) && !looksLikeName && w.Length >= 3 && _typos.Best(w) is { } t)
         {
             long typedCount = _data.Frequency.Count(w);
             bool shortOk = w.Length >= MinTypoLength
