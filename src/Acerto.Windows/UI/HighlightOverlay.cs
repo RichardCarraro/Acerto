@@ -16,7 +16,7 @@ internal sealed class HighlightOverlay : Window
 {
     private const int GWL_EXSTYLE = -20;
     private const int WS_EX_TRANSPARENT = 0x20, WS_EX_TOOLWINDOW = 0x80, WS_EX_NOACTIVATE = 0x08000000;
-    private const uint SWP_NOACTIVATE = 0x0010, SWP_SHOWWINDOW = 0x0040;
+    private const uint SWP_NOACTIVATE = 0x0010;
     private static readonly nint HWND_TOPMOST = -1;
 
     private readonly Border _fill, _line;
@@ -38,6 +38,8 @@ internal sealed class HighlightOverlay : Window
         var accent = SystemColors.AccentColor;
         _fill = new Border { CornerRadius = new CornerRadius(4), Background = new SolidColorBrush(Color.FromArgb(0x59, accent.R, accent.G, accent.B)) };
         _line = new Border { Height = 2, VerticalAlignment = VerticalAlignment.Bottom, Background = new SolidColorBrush(accent), CornerRadius = new CornerRadius(1) };
+        _fill.Opacity = 0;
+        _line.Opacity = 0;
         Content = new Grid { Children = { _fill, _line } };
     }
 
@@ -53,24 +55,33 @@ internal sealed class HighlightOverlay : Window
     public void Flash(Rect word)
     {
         if (word.Width < 2 || word.Height < 2) return;
+        // A janela nunca é escondida (esconder e mostrar de novo faz ela piscar na posição antiga):
+        // parada, ela fica 100% transparente e deixa o clique passar.
         if (!IsVisible) Show(); // ShowActivated=false: não rouba o foco de quem está digitando
-        SetWindowPos(_hwnd, HWND_TOPMOST, (int)word.X - 3, (int)word.Y - 1, (int)word.Width + 6, (int)word.Height + 3,
-            SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        SetWindowPos(_hwnd, HWND_TOPMOST, (int)word.X - 3, (int)word.Y - 1, (int)word.Width + 6, (int)word.Height + 3, SWP_NOACTIVATE);
 
-        // fundo: aparece na hora, segura 200 ms e some em 450 ms
-        var fill = new DoubleAnimationUsingKeyFrames();
+        // fundo: aparece na hora, segura 180 ms e some em 400 ms
+        var fill = new DoubleAnimationUsingKeyFrames { FillBehavior = FillBehavior.HoldEnd };
         fill.KeyFrames.Add(new DiscreteDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-        fill.KeyFrames.Add(new DiscreteDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(200))));
-        fill.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(650)), new QuadraticEase()));
+        fill.KeyFrames.Add(new DiscreteDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(180))));
+        fill.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(580)), new QuadraticEase()));
         _fill.BeginAnimation(OpacityProperty, fill);
 
-        // sublinhado: fica 1,2 s e some
-        var line = new DoubleAnimationUsingKeyFrames();
+        // sublinhado: fica 900 ms e some
+        var line = new DoubleAnimationUsingKeyFrames { FillBehavior = FillBehavior.HoldEnd };
         line.KeyFrames.Add(new DiscreteDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-        line.KeyFrames.Add(new DiscreteDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(1200))));
-        line.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(1600)), new QuadraticEase()));
-        line.Completed += (_, _) => { if (_line.Opacity == 0) Hide(); };
+        line.KeyFrames.Add(new DiscreteDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(900))));
+        line.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(1250)), new QuadraticEase()));
         _line.BeginAnimation(OpacityProperty, line);
+    }
+
+    /// <summary>Apaga na hora (a pessoa clicou em outro lugar, mudou de linha ou de janela: o texto não está mais ali).</summary>
+    public void Cancel()
+    {
+        _fill.BeginAnimation(OpacityProperty, null);
+        _line.BeginAnimation(OpacityProperty, null);
+        _fill.Opacity = 0;
+        _line.Opacity = 0;
     }
 
     [DllImport("user32.dll")] private static extern int GetWindowLongW(nint hwnd, int index);

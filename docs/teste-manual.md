@@ -50,3 +50,17 @@ Observação: uma rodada isolada com 20 ms apagou o começo do primeiro caso e n
 - [ ] Backspace depois de uma correção só apaga (o item M8 antigo, "Backspace desfaz", deixou de valer).
 - [ ] Apagar a palavra corrigida e digitar a mesma de novo: fica como digitada e entra em "Minhas palavras".
 - [ ] `palvra`, `geito`, `anida`, `intendi` são corrigidas (lista embutida com ~300 entradas).
+
+## Corretor de digitação e animação (2026-11-12, fim da tarde) — conferir no uso
+
+Medição com `tests/Acerto.Eval` (103 mil erros gerados nas 3000 palavras mais usadas): acerto 89,1% dos erros
+corrigíveis, 1,7% de correção errada. Por tipo: letra dobrada 97%, inversão 93%, tecla a mais 91%, tecla vizinha 85%,
+letra faltando 55% (o resto é ambíguo sem contexto: `cas` é casa ou caso?).
+
+- [ ] Erros comuns: `palvras mutio vcoê tabém obigado probelma trablho dificl coputador hje erado` são corrigidos.
+- [ ] Nomes, siglas e estrangeirismos em minúsculo continuam intactos (`curitiba apps office cpf pdf`).
+- [ ] Animação: aparece em cima da palavra corrigida mesmo quando você continua digitando; some ao clicar,
+      trocar de janela ou apertar Enter; não pisca em posição antiga.
+
+Limite conhecido: erros muito frequentes que coincidem com palavras de outros idiomas (`save`, `estaba`, `ahora`)
+não são corrigidos, porque o corpus não distingue erro de palavra estrangeira.

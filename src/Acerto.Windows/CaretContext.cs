@@ -36,10 +36,11 @@ internal static class CaretContext
     }
 
     /// <summary>
-    /// Retângulo na tela (pixels) da palavra que termina <paramref name="trailing"/> caracteres antes do cursor.
-    /// Usado só para desenhar a animação da correção; null se o app não informa.
+    /// Retângulo na tela (pixels) da palavra corrigida, que termina <paramref name="trailing"/> caracteres antes do
+    /// cursor. Só devolve se o texto nessa posição for exatamente <paramref name="word"/>: se o app ainda não recebeu
+    /// a correção ou o cursor já está em outro lugar, é melhor não animar do que animar no lugar errado.
     /// </summary>
-    public static System.Windows.Rect? WordRect(int wordLength, int trailing)
+    public static System.Windows.Rect? WordRect(string word, int trailing)
     {
         try
         {
@@ -52,11 +53,17 @@ internal static class CaretContext
             var range = selection[0].Clone();
             if (range.GetText(1).Length != 0) return null;
 
-            if (range.MoveEndpointByUnit(TextPatternRangeEndpoint.Start, TextUnit.Character, -(wordLength + trailing)) == 0) return null;
-            range.MoveEndpointByUnit(TextPatternRangeEndpoint.End, TextUnit.Character, -trailing);
+            int back = word.Length + trailing;
+            if (range.MoveEndpointByUnit(TextPatternRangeEndpoint.Start, TextUnit.Character, -back) != -back) return null;
+            if (trailing > 0 && range.MoveEndpointByUnit(TextPatternRangeEndpoint.End, TextUnit.Character, -trailing) != -trailing) return null;
+            if (!string.Equals(range.GetText(word.Length + 1), word, StringComparison.Ordinal)) return null;
+
             var rects = range.GetBoundingRectangles();
             if (rects.Length == 0) return null;
-            return rects[^1]; // palavra quebrada em duas linhas: anima o pedaço final
+            var r = rects[^1]; // palavra quebrada em duas linhas: anima o pedaço final
+            // retângulo absurdo (linha inteira, altura enorme): alguns apps informam errado
+            if (r.Height < 4 || r.Height > 120 || r.Width < 4 || r.Width > word.Length * r.Height * 1.6 + 8) return null;
+            return r;
         }
         catch (Exception)
         {

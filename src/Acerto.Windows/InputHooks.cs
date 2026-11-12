@@ -24,6 +24,14 @@ internal sealed class InputHooks : IDisposable
     private nint _keyboardHook, _mouseHook, _foregroundHook, _focusHook;
     private HotkeyWindow? _hotkeyWindow;
     private char? _pendingDead;
+
+    // Para a animação achar a palavra corrigida mesmo se a pessoa continuou digitando:
+    // quantos caracteres entraram depois da última correção (negativo = não dá mais para saber).
+    private int _charsSinceCorrection = -1;
+    private int _fedChars; // caracteres que a tecla atual produziu
+    public int CharsSinceCorrection => _charsSinceCorrection;
+    /// <summary>Aumenta a cada palavra corrigida; a animação usa para saber se ainda é a correção mais recente.</summary>
+    public int CorrectionSequence { get; private set; }
     private System.Windows.Forms.Timer? _watchdog;
     private uint _lastHookTick; // mesmo relógio do GetLastInputInfo
 
@@ -37,6 +45,9 @@ internal sealed class InputHooks : IDisposable
 
     /// <summary>Uma palavra foi corrigida. Disparado de dentro do hook: quem ouve tem que ser rápido.</summary>
     public event Action<EngineAction>? Corrected;
+
+    /// <summary>O fio da digitação foi perdido (clique, troca de janela, seta, Enter): animações em curso não valem mais.</summary>
+    public event Action? ContextLost;
 
     private SynchronizationContext _ui = null!; // capturado no Install, na thread da UI
 
@@ -152,6 +163,7 @@ internal sealed class InputHooks : IDisposable
             }
 
             long generation = _engine.Generation;
+            _fedChars = 0;
             var action = Handle(k);
             if (generation != _engine.Generation) ScheduleProbe(); // o motor resetou por conta própria (ex.: Backspace)
             if (Diag.On) Diag.Log($"KEY ativo swallow={action.Swallow} bs={action.Backspaces} ins={action.Insert.Length} proc={_fg.ProcessName}");
@@ -164,10 +176,26 @@ internal sealed class InputHooks : IDisposable
                 if (Diag.On && (modifiers || !sameWindow)) Diag.Log($"SWALLOW cancelado modifiers={modifiers} sameWindow={sameWindow}");
                 if (!modifiers && sameWindow && InputSender.Send(action.Backspaces, action.Insert))
                 {
-                    if (action.WordLength > 0) Corrected?.Invoke(action);
+                    if (action.WordLength > 0)
+                    {
+                        _charsSinceCorrection = 0;
+                        CorrectionSequence++;
+                        Corrected?.Invoke(action);
+                    }
+                    else if (_charsSinceCorrection >= 0)
+                    {
+                        _charsSinceCorrection += action.Insert.Length - action.Backspaces; // espaço duplo, só maiúscula
+                    }
                     return 1;
                 }
                 ResetAll(); // não deu para corrigir: deixa a tecla original passar
+            }
+            else if (_charsSinceCorrection >= 0)
+            {
+                int vk = (int)k.vkCode;
+                if (vk == VK_BACK) _charsSinceCorrection--;            // negativo = apagou para antes da correção
+                else if (vk is VK_RETURN or VK_TAB) LoseContext();     // mudou de linha/campo: a posição não vale mais
+                else _charsSinceCorrection += _fedChars;
             }
         }
         catch (Exception)
@@ -228,14 +256,23 @@ internal sealed class InputHooks : IDisposable
     {
         var action = EngineAction.None;
         foreach (var ch in text) action = _engine.OnChar(ch);
+        _fedChars = text.Length;
         if (text.Length > 1 && action.Swallow) return ResetAll(); // vários caracteres numa tecla só: não engolir
         return action;
+    }
+
+    private void LoseContext()
+    {
+        if (_charsSinceCorrection == -1) return;
+        _charsSinceCorrection = -1;
+        ContextLost?.Invoke();
     }
 
     private EngineAction ResetAll()
     {
         _engine.Reset();
         _pendingDead = null;
+        LoseContext();
         ScheduleProbe();
         return EngineAction.None;
     }

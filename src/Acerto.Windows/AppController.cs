@@ -88,6 +88,7 @@ internal sealed class AppController
         var hooks = new InputHooks(_engine, Settings, new ForegroundInfo());
         hooks.PauseToggled += OnStateChanged;
         hooks.Corrected += OnCorrected;
+        hooks.ContextLost += () => _overlay?.Cancel();
         try
         {
             hooks.Install();
@@ -193,15 +194,30 @@ internal sealed class AppController
     {
         Settings.CorrectionCount++;
         _settingsDirty = true;
-        int wordLength = action.WordLength, trailing = action.Insert.Length - action.WordLength;
-        bool animate = Settings.CorrectionAnimation;
+        var hooks = _hooks;
+        bool animate = Settings.CorrectionAnimation && hooks is not null && !action.Insert.EndsWith('\n'); // Enter: o texto já foi embora
+        string word = action.Insert[..action.WordLength];
+        int trailing = action.Insert.Length - action.WordLength;
+        int sequence = hooks?.CorrectionSequence ?? 0;
         _ui.BeginInvoke(async () =>
         {
             if (_window is not null || _flyout is not null) StateChanged?.Invoke(); // contador ao vivo
             if (!animate) return;
-            await Task.Delay(60); // o app precisa terminar de receber o texto corrigido
-            var rect = await Task.Run(() => CaretContext.WordRect(wordLength, trailing));
-            if (rect is { } r) (_overlay ??= new HighlightOverlay()).Flash(r);
+            // O app leva alguns milissegundos para receber o texto corrigido; tenta três vezes e desiste.
+            foreach (int wait in (int[])[50, 80, 140])
+            {
+                await Task.Delay(wait);
+                int extra = hooks!.CharsSinceCorrection;                        // o que a pessoa digitou depois da correção
+                if (hooks.CorrectionSequence != sequence || extra < 0) return;  // já houve outra correção, ou perdeu o fio
+                int back = trailing + extra;
+                var rect = await Task.Run(() => CaretContext.WordRect(word, back));
+                if (hooks.CorrectionSequence != sequence || hooks.CharsSinceCorrection < 0) return;
+                if (rect is { } r)
+                {
+                    (_overlay ??= new HighlightOverlay()).Flash(r);
+                    return;
+                }
+            }
         });
     }
 
