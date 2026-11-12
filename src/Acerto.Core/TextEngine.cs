@@ -36,10 +36,42 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     private Undo? _undo;
     private Deferred? _deferred;   // correção esperando ver o que vem depois de "." ou ":"
     private string? _pendingLearn; // desfeita, mas só aprende se a próxima tecla não for outro Backspace
+    private readonly StringBuilder _sinceReset = new(); // digitado desde o Reset, enquanto o contexto é desconhecido
+
+    /// <summary>Muda a cada Reset; o host usa para descartar respostas de contexto atrasadas.</summary>
+    public long Generation { get; private set; }
+
+    /// <summary>
+    /// O host diz o que havia antes do cursor (ex.: via UI Automation). Se o que foi digitado desde o Reset
+    /// bate com o final desse texto e antes disso há início de campo, espaço ou prefixo, a primeira palavra
+    /// passa a poder ser corrigida (e ganha maiúscula se o campo estava vazio ou depois de . ! ?).
+    /// </summary>
+    /// <returns>true se o contexto foi aceito.</returns>
+    public bool ConfirmContext(long generation, string textBeforeCaret)
+    {
+        if (generation != Generation || _tokenKnown) return false;
+        var typed = _sinceReset.ToString();
+        if (!textBeforeCaret.EndsWith(typed, StringComparison.Ordinal)) return false;
+        var context = textBeforeCaret[..^typed.Length];
+        char prev = context.Length == 0 ? '\0' : context[^1];
+        if (!(prev == '\0' || char.IsWhiteSpace(prev) || Prefixes.Contains(prev))) return false;
+
+        _tokenKnown = true;
+        var trimmed = context.TrimEnd(' ', '\t');
+        _capNext = trimmed.Length == 0 || trimmed[^1] is '.' or '!' or '?' or '\n' or '\r';
+        if (typed.Length == 0)
+        {
+            _prev1 = prev;
+            _prev2 = context.Length > 1 ? context[^2] : '\0';
+        }
+        return true;
+    }
 
     public void Reset()
     {
         CommitLearn();
+        Generation++;
+        _sinceReset.Clear();
         _word.Clear();
         _tokenKnown = false;
         _tokenPure = true;
@@ -55,6 +87,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     {
         _undo = null;
         CommitLearn();
+        if (!_tokenKnown) _sinceReset.Append(c);
         bool whitespace = c is ' ' or '\n' or '\t';
 
         if (_deferred is { } d)
@@ -106,6 +139,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
             return EngineAction.None;
         }
         _word.Length--;
+        if (_sinceReset.Length > 0) _sinceReset.Length--;
         _prev1 = _word.Length > 0 ? _word[^1] : '\0';
         _prev2 = '\0';
         return EngineAction.None;

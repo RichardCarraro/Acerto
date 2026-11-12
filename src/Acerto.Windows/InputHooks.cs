@@ -26,6 +26,12 @@ internal sealed class InputHooks : IDisposable
     private System.Windows.Forms.Timer? _watchdog;
     private uint _lastHookTick; // mesmo relógio do GetLastInputInfo
 
+    // Depois de um reset (clique, foco, seta), pergunta ao app o que há antes do cursor.
+    // Espera um pouco para o app terminar de mover o cursor.
+    private readonly System.Windows.Forms.Timer _probeTimer = new() { Interval = 150 };
+    private int _probeAttempts;
+    private const int MaxProbeAttempts = 3;
+
     public event Action? PauseToggled;
 
     public InputHooks(TextEngine engine, AppSettings settings, ForegroundInfo fg)
@@ -36,6 +42,38 @@ internal sealed class InputHooks : IDisposable
         _keyboardProc = KeyboardProc;
         _mouseProc = MouseProc;
         _winEventProc = WinEventProc;
+        _probeTimer.Tick += (_, _) => ProbeContext();
+    }
+
+    private void ScheduleProbe()
+    {
+        _probeAttempts = 0;
+        _probeTimer.Stop();
+        _probeTimer.Start();
+    }
+
+    private void ProbeContext()
+    {
+        _probeTimer.Stop();
+        if (++_probeAttempts > MaxProbeAttempts) return;
+        if (!Active)
+        {
+            if (!_fg.FocusResolved) _probeTimer.Start(); // a checagem de senha ainda não terminou
+            return;
+        }
+        long generation = _engine.Generation;
+        var ui = SynchronizationContext.Current!;
+        Task.Run(() =>
+        {
+            var text = CaretContext.TextBeforeCaret(); // UIA é lenta: fora da thread do hook
+            ui.Post(_ =>
+            {
+                if (generation != _engine.Generation) return; // houve outro reset; ele agendou a própria consulta
+                bool ok = text is not null && _engine.ConfirmContext(generation, text);
+                if (Diag.On) Diag.Log($"CONTEXTO ok={ok} lido={text?.Length ?? -1} tentativa={_probeAttempts}");
+                if (!ok && text is not null) _probeTimer.Start(); // digitou no meio da consulta: tenta de novo
+            }, null);
+        });
     }
 
     public void Install()
@@ -81,7 +119,7 @@ internal sealed class InputHooks : IDisposable
     {
         _settings.Paused = !_settings.Paused;
         _settings.Save();
-        _engine.Reset();
+        ResetAll();
         PauseToggled?.Invoke();
     }
 
@@ -107,7 +145,9 @@ internal sealed class InputHooks : IDisposable
                 return CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
             }
 
+            long generation = _engine.Generation;
             var action = Handle(k);
+            if (generation != _engine.Generation) ScheduleProbe(); // o motor resetou por conta própria (ex.: Backspace)
             if (Diag.On) Diag.Log($"KEY ativo swallow={action.Swallow} bs={action.Backspaces} ins={action.Insert.Length} proc={_fg.ProcessName}");
             if (action.Swallow)
             {
@@ -187,6 +227,7 @@ internal sealed class InputHooks : IDisposable
     {
         _engine.Reset();
         _pendingDead = null;
+        ScheduleProbe();
         return EngineAction.None;
     }
 
@@ -216,6 +257,7 @@ internal sealed class InputHooks : IDisposable
     public void Dispose()
     {
         _watchdog?.Dispose();
+        _probeTimer.Dispose();
         if (_hotkeyWindow is not null)
         {
             UnregisterHotKey(_hotkeyWindow.Handle, PauseHotkeyId);

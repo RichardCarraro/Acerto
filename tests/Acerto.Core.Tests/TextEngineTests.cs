@@ -123,3 +123,75 @@ public class TextEngineEnderecoTests(SharedCorrector s) : IClassFixture<SharedCo
     // I5 da revisão final: Tab costuma aceitar sugestão do app; não corrigir
     [Fact] public void Tab_Nao_Corrige() => Assert.Equal(" nao\t", Type(" nao\t"));
 }
+
+/// <summary>Depois de um Reset, o host pode confirmar o que havia antes do cursor (UI Automation).</summary>
+public class TextEngineContextTests(SharedCorrector s) : IClassFixture<SharedCorrector>
+{
+    private readonly TextEngine _engine = new(s.Corrector, _ => { });
+    private readonly StringBuilder _doc = new();
+
+    private string Type(string keys)
+    {
+        foreach (var k in keys)
+        {
+            var a = k == '\b' ? _engine.OnBackspace() : _engine.OnChar(k);
+            if (a.Swallow) { _doc.Length -= a.Backspaces; _doc.Append(a.Insert); }
+            else if (k == '\b') { if (_doc.Length > 0) _doc.Length--; }
+            else _doc.Append(k);
+        }
+        return _doc.ToString();
+    }
+
+    [Fact]
+    public void CampoVazio_CorrigePrimeiraPalavra_ComMaiuscula()
+    {
+        _engine.ConfirmContext(_engine.Generation, "");
+        Assert.Equal("Teste ", Type("testi "));
+    }
+
+    [Fact]
+    public void EspacoAntes_CorrigePrimeiraPalavra()
+    {
+        _engine.ConfirmContext(_engine.Generation, "bom dia ");
+        Assert.Equal("não ", Type("nao "));
+    }
+
+    [Fact]
+    public void ConfirmacaoDepoisDeDigitar_Funciona() // a resposta da UIA chega com letras já digitadas
+    {
+        Type("na");
+        _engine.ConfirmContext(_engine.Generation, "oi na");
+        Assert.Equal("não ", Type("o "));
+    }
+
+    [Fact]
+    public void LetraAntes_NaoCorrige() // cursor no meio de "informa|"
+    {
+        _engine.ConfirmContext(_engine.Generation, "informa");
+        Assert.Equal("cao ", Type("cao "));
+    }
+
+    [Fact]
+    public void TextoNaoBate_NaoCorrige() // a UIA viu outra coisa: não confiar
+    {
+        Type("na");
+        _engine.ConfirmContext(_engine.Generation, "oi xy");
+        Assert.Equal("nao ", Type("o "));
+    }
+
+    [Fact]
+    public void GeracaoVelha_Ignorada() // resposta de antes de outro clique
+    {
+        var old = _engine.Generation;
+        _engine.Reset();
+        _engine.ConfirmContext(old, "");
+        Assert.Equal("nao ", Type("nao "));
+    }
+
+    [Fact]
+    public void DepoisDePonto_Maiuscula()
+    {
+        _engine.ConfirmContext(_engine.Generation, "Tudo certo. ");
+        Assert.Equal("Não ", Type("nao "));
+    }
+}
