@@ -36,37 +36,42 @@ public class TextEngineTests : IClassFixture<SharedCorrector>
     [Fact] public void Corrige_Na_Pontuacao() => Assert.Equal(" você?", Type(" voce?"));
     [Fact] public void Corrige_Entre_Parenteses() => Assert.Equal(" (não)", Type(" (nao)"));
 
+    // Backspace depois de uma correção só apaga, como em qualquer texto (pedido do usuário: sem "desfazer").
+    [Fact] public void Backspace_Depois_De_Correcao_So_Apaga() => Assert.Equal(" não", Type(" nao \b"));
+    [Fact] public void Backspace_Depois_De_Atalho_So_Apaga() => Assert.Equal(" valeu", Type(" vlw \b"));
+    [Fact] public void Backspace_Depois_De_Enter_So_Apaga() => Assert.Equal(" não", Type(" nao\n\b"));
+
     [Fact]
-    public void Backspace_Desfaz_E_Aprende_Ao_Continuar()
+    public void Redigitar_A_Mesma_Palavra_Mantem_E_Aprende() // apagou a correção e escreveu de novo: é de propósito
     {
-        Assert.Equal(" oque ", Type(" oque \b"));
-        Assert.Empty(_learned); // ainda pode ser Backspace segurado
-        Type("x");
+        Assert.Equal(" ", Type(" oque \b\b\b\b\b\b"));
+        _engine.ConfirmContext(_engine.Generation, "oi "); // o host confirma: há um espaço antes do cursor
+        Assert.Equal(" oque ", Type("oque "));
         Assert.Equal(["oque"], _learned);
     }
 
     [Fact]
-    public void Backspace_Segurado_Nao_Aprende() // I4 da revisão final
+    public void Palavra_Diferente_Depois_De_Apagar_Corrige_Normal()
     {
-        Assert.Equal(" oqu", Type(" oque \b\b\b"));
-        Type("x ");
+        Type(" oque \b\b\b\b\b\b");
+        _engine.ConfirmContext(_engine.Generation, "oi ");
+        Assert.Equal(" não ", Type("nao "));
         Assert.Empty(_learned);
     }
 
     [Fact]
-    public void Desfazer_Atalho_Nao_Aprende()
+    public void Clique_Esquece_A_Palavra_Rejeitada()
     {
-        Assert.Equal(" vlw x", Type(" vlw \bx"));
-        Assert.Empty(_learned);
+        Type(" oque ");
+        _engine.Reset(); // clicou em outro lugar
+        _engine.ConfirmContext(_engine.Generation, "oi ");
+        Assert.Equal(" o que o que ", Type("oque "));
     }
-
-    [Fact] public void Desfazer_So_Logo_Depois() => Assert.Equal(" não ", Type(" nao x\b"));
-    [Fact] public void Enter_Nao_Gera_Undo() => Assert.Equal(" não", Type(" nao\n\b"));
     [Fact] public void Maiuscula_Apos_Ponto() => Assert.Equal(" Ok. Não ", Type(" Ok. nao "));
     [Fact] public void Maiuscula_Nao_Estraga_CaixaMista() => Assert.Equal(" Ok. iPhone ", Type(" Ok. iPhone ")); // m1 da revisão
     [Fact] public void Maiuscula_Apos_Enter() => Assert.Equal(" ok\nCasa ", Type(" ok\ncasa "));
     [Fact] public void Espaco_Duplo() => Assert.Equal(" Fim. ", Type(" Fim  "));
-    [Fact] public void Espaco_Duplo_Desfaz() => Assert.Equal(" Fim  ", Type(" Fim  \b"));
+    [Fact] public void Espaco_Duplo_Backspace_So_Apaga() => Assert.Equal(" Fim.", Type(" Fim  \b"));
     [Fact] public void Espaco_Triplo_Nao_Repete() => Assert.Equal(" Fim.  ", Type(" Fim   "));
 
     [Fact]
@@ -117,7 +122,7 @@ public class TextEngineEnderecoTests(SharedCorrector s) : IClassFixture<SharedCo
     [Fact] public void Ponto_Depois_Espaco_Corrige() => Assert.Equal(" não. ", Type(" nao. "));
     [Fact] public void Ponto_Depois_Enter_Corrige() => Assert.Equal(" não.\n", Type(" nao.\n"));
     [Fact] public void DoisPontos_Depois_Espaco_Corrige() => Assert.Equal(" não: ", Type(" nao: "));
-    [Fact] public void Ponto_Corrigido_Desfaz() => Assert.Equal(" nao. ", Type(" nao. \b"));
+    [Fact] public void Ponto_Corrigido_Backspace_So_Apaga() => Assert.Equal(" não.", Type(" nao. \b"));
     [Fact] public void Ponto_Apagado_Nao_Corrige() => Assert.Equal(" nao ", Type(" nao.\b "));
     [Fact] public void Ponto_Depois_Maiuscula() => Assert.Equal(" Ok. Não. ", Type(" Ok. nao. "));
 

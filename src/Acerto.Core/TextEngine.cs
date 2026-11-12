@@ -5,17 +5,20 @@ namespace Acerto.Core;
 /// <summary>
 /// O que o host faz com uma tecla. Se <see cref="Swallow"/>, a tecla não chega ao app:
 /// o host envia <see cref="Backspaces"/> × Backspace e depois <see cref="Insert"/> ('\n' = Enter, '\t' = Tab).
+/// <see cref="WordLength"/> é o tamanho da palavra corrigida no começo de <see cref="Insert"/> (0 se não houve
+/// correção de palavra); o host usa para animar a palavra.
 /// </summary>
-public readonly record struct EngineAction(bool Swallow, int Backspaces, string Insert)
+public readonly record struct EngineAction(bool Swallow, int Backspaces, string Insert, int WordLength = 0)
 {
     public static readonly EngineAction None = new(false, 0, "");
 }
 
 /// <summary>
 /// Acompanha o que a pessoa digita, caractere a caractere, e decide as correções.
-/// Só corrige o que viu nascer: depois de um Reset, espera o próximo espaço/Enter/Tab.
+/// Só corrige o que viu nascer: depois de um Reset, espera o próximo espaço/Enter/Tab
+/// ou a confirmação do host sobre o que há antes do cursor.
 /// </summary>
-/// <param name="learn">Chamado com a palavra que o usuário ensinou desfazendo uma correção.
+/// <param name="learn">Chamado com a palavra que o usuário mostrou querer: apagou a correção e digitou de novo.
 /// O host decide quando gravar (o hook do Windows não pode fazer I/O).</param>
 public sealed class TextEngine(Corrector corrector, Action<string> learn)
 {
@@ -23,8 +26,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     private const string ClosingEnds = ".,;:!?)]}\"”»";
     private const string DeferredEnds = ".:"; // podem ser meio de e-mail, domínio ou arquivo
 
-    private readonly record struct Undo(int Backspaces, string Insert, string? Learn);
-    private readonly record struct Deferred(string Word, string Result, char End, string? Learn);
+    private readonly record struct Deferred(string Word, string Result, char End);
 
     private readonly StringBuilder _word = new();
     private bool _tokenKnown;      // vimos o começo deste token?
@@ -33,10 +35,13 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     private bool _capNext;
     private bool _lastWasDoubleSpace;
     private char _prev1, _prev2;   // dois últimos caracteres do texto ('\0' = desconhecido)
-    private Undo? _undo;
     private Deferred? _deferred;   // correção esperando ver o que vem depois de "." ou ":"
-    private string? _pendingLearn; // desfeita, mas só aprende se a próxima tecla não for outro Backspace
     private readonly StringBuilder _sinceReset = new(); // digitado desde o Reset, enquanto o contexto é desconhecido
+
+    // Última palavra corrigida, como foi digitada. Se o usuário apagar e digitar a mesma de novo, é de propósito.
+    private string? _lastCorrectedWord;
+    private bool _lastCorrectionLearns;
+    private bool _backspacedSinceCorrection;
 
     /// <summary>Maiúscula automática no começo da frase.</summary>
     public bool AutoCapitalize { get; set; } = true;
@@ -73,9 +78,15 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
         return true;
     }
 
+    /// <summary>O host perdeu o fio (clique, troca de janela, seta, atalho): esquece tudo.</summary>
     public void Reset()
     {
-        CommitLearn();
+        _lastCorrectedWord = null;
+        ResetState();
+    }
+
+    private void ResetState()
+    {
         Generation++;
         _sinceReset.Clear();
         _word.Clear();
@@ -85,14 +96,11 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
         _capNext = false;
         _lastWasDoubleSpace = false;
         _prev1 = _prev2 = '\0';
-        _undo = null;
         _deferred = null;
     }
 
     public EngineAction OnChar(char c)
     {
-        _undo = null;
-        CommitLearn();
         if (!_tokenKnown) _sinceReset.Append(c);
         bool whitespace = c is ' ' or '\n' or '\t';
 
@@ -101,10 +109,8 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
             _deferred = null;
             if (c is ' ' or '\n')
             {
-                var insert = d.Result + d.End + c;
                 OnWordEnd(c, whitespace: true); // atualiza estado; a palavra já foi consumida
-                if (c != '\n') _undo = new Undo(insert.Length, d.Word + d.End + c, d.Learn);
-                return new EngineAction(true, d.Word.Length + 1, insert);
+                return new EngineAction(true, d.Word.Length + 1, d.Result + d.End + c, d.Result.Length);
             }
         }
 
@@ -126,22 +132,14 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
         return EngineAction.None;
     }
 
+    /// <summary>Backspace nunca é engolido: só apaga, como em qualquer texto.</summary>
     public EngineAction OnBackspace()
     {
-        _pendingLearn = null; // Backspace seguido de Backspace: está apagando, não ensinando
         _deferred = null;
-        if (_undo is { } u)
-        {
-            _undo = null;
-            _pendingLearn = u.Learn;
-            _prev1 = u.Insert[^1];
-            _prev2 = u.Insert.Length > 1 ? u.Insert[^2] : '\0';
-            _lastWasDoubleSpace = true; // não refazer espaço duplo em cima do que foi desfeito
-            return new EngineAction(true, u.Backspaces, u.Insert);
-        }
+        if (_lastCorrectedWord is not null) _backspacedSinceCorrection = true;
         if (_word.Length == 0)
         {
-            Reset(); // apagou para dentro de algo que não estamos vendo
+            ResetState(); // apagou para dentro de algo que não estamos vendo
             return EngineAction.None;
         }
         _word.Length--;
@@ -157,14 +155,12 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
 
         if (DoubleSpacePeriod && c == ' ' && _prev1 == ' ' && char.IsLetterOrDigit(_prev2) && !_lastWasDoubleSpace)
         {
-            action = new EngineAction(true, 1, ". ");
-            _undo = new Undo(2, "  ", null);
             _capNext = true;
             _prev2 = '.';
             _prev1 = ' ';
             _lastWasDoubleSpace = true;
             EndToken();
-            return action;
+            return new EngineAction(true, 1, ". ");
         }
 
         // Tab não corrige: em muitos apps ele aceita uma sugestão do próprio app
@@ -172,23 +168,40 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
         {
             var word = _word.ToString();
             var corr = corrector.Correct(word);
+
+            if (corr is not null && _backspacedSinceCorrection
+                && string.Equals(word, _lastCorrectedWord, StringComparison.OrdinalIgnoreCase))
+            {
+                // Apagou a correção e digitou a mesma palavra: é de propósito. Fica como está e aprende.
+                if (_lastCorrectionLearns) learn(word);
+                _lastCorrectedWord = null;
+                corr = null;
+            }
+            else if (corr is not null)
+            {
+                _lastCorrectedWord = word;
+                _lastCorrectionLearns = corr.Kind is CorrectionKind.Fixed or CorrectionKind.Accent or CorrectionKind.Typo;
+                _backspacedSinceCorrection = false;
+            }
+            else
+            {
+                _lastCorrectedWord = null;
+            }
+
             var result = corr?.Replacement ?? word;
             if (AutoCapitalize && _capNext && char.IsLower(word[0]) && result.Length > 0 && !TextUtil.IsMixedCase(word)) // "iPhone" fica
                 result = char.ToUpper(result[0], TextUtil.PtBr) + result[1..];
 
             if (result != word)
             {
-                bool learns = corr?.Kind is CorrectionKind.Fixed or CorrectionKind.Accent or CorrectionKind.Typo;
+                int animated = corr is null ? 0 : result.Length; // só maiúscula automática não anima
                 if (DeferredEnds.Contains(c))
                 {
-                    _deferred = new Deferred(word, result, c, learns ? word : null);
+                    _deferred = new Deferred(word, result, c);
                 }
                 else
                 {
-                    var insert = result + c;
-                    action = new EngineAction(true, word.Length, insert);
-                    if (c != '\n') // Enter pode ter enviado a mensagem: desfazer não é seguro
-                        _undo = new Undo(insert.Length, word + c, learns ? word : null);
+                    action = new EngineAction(true, word.Length, result + c, animated);
                     _prev1 = result[^1];
                 }
             }
@@ -208,12 +221,6 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
             _tokenHadEnd = true;
         }
         return action;
-    }
-
-    private void CommitLearn()
-    {
-        if (_pendingLearn is { } w) learn(w);
-        _pendingLearn = null;
     }
 
     private void EndToken()

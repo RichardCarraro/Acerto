@@ -10,8 +10,8 @@ int delay = args.Length > 1 ? int.Parse(args[1]) : 40;
 [
     (" nao voce informacao poblema oque ", " não você informação problema o que ", false),
     (" vlw{BACKSPACE}", " vl", false),
-    (" vlw {BACKSPACE}", " vlw ", false),
-    (" nao x{BACKSPACE}{BACKSPACE}", " não", false), // desfazer só vale logo depois da correção
+    (" vlw {BACKSPACE}", " valeu", false), // Backspace só apaga, não desfaz
+    (" nao x{BACKSPACE}{BACKSPACE}", " não", false),
     (" fim.  nao ", " fim.  Não ", false),
     (" Ok. nao ", " Ok. Não ", false),
     (" Fim  ", " Fim. ", false),

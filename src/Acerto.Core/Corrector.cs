@@ -10,7 +10,11 @@ public sealed class Corrector
     /// <summary>A melhor forma acentuada precisa ser pelo menos isso vezes mais usada que a segunda.</summary>
     public const double AccentDominance = 3.0;
 
-    /// <summary>Palavra que aparece pelo menos isso no corpus é escrita de propósito: não é erro de digitação.</summary>
+    /// <summary>
+    /// Palavra que aparece pelo menos isso no corpus é escrita de propósito (curitiba, apps, voice, mail): não é erro
+    /// de digitação. Erros que muita gente comete (palvra, geito) também caem aqui; esses vão em correcoes.txt.
+    /// Já tentei liberar pela proporção de uso da correção: estragou 286 palavras (voice→você, mail→mais).
+    /// </summary>
     public const long AttestedCount = 10;
 
     /// <summary>Palavras menores que isso (siglas, "obs", "pdf", "job") não passam pela regra de digitação.</summary>

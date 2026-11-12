@@ -78,12 +78,12 @@ public class CorrectorCorpusTests(SharedCorrector s) : IClassFixture<SharedCorre
     {
         var wrong = s.Data.Frequency.Entries
             .Where(e => e.Word.All(char.IsLetter))
-            .OrderByDescending(e => e.Count).Take(30000)
+            .OrderByDescending(e => e.Count).Take(60000)
             .Select(e => (e.Word, C: s.Corrector.Correct(e.Word)))
             .Where(x => x.C?.Kind == CorrectionKind.Typo)
             .Select(x => $"{x.Word}→{x.C!.Replacement}")
             .ToList();
-        Assert.True(wrong.Count == 0, $"{wrong.Count} trocadas: {string.Join(", ", wrong.Take(30))}");
+        Assert.True(wrong.Count == 0, $"{wrong.Count} trocadas: {string.Join(", ", wrong.Take(60))}");
     }
 
     /// <summary>A regra de acento nunca troca uma palavra que o dicionário aceita (C3 da revisão final).</summary>
@@ -92,12 +92,35 @@ public class CorrectorCorpusTests(SharedCorrector s) : IClassFixture<SharedCorre
     {
         var wrong = s.Data.Frequency.Entries
             .Where(e => e.Word.All(char.IsLetter))
-            .OrderByDescending(e => e.Count).Take(30000)
+            .OrderByDescending(e => e.Count).Take(60000)
             .Where(e => s.Data.Lexicon.IsValid(e.Word))
             .Select(e => (e.Word, C: s.Corrector.Correct(e.Word)))
             .Where(x => x.C?.Kind == CorrectionKind.Accent)
             .Select(x => $"{x.Word}→{x.C!.Replacement}")
             .ToList();
-        Assert.True(wrong.Count == 0, $"{wrong.Count} trocadas: {string.Join(", ", wrong.Take(30))}");
+        Assert.True(wrong.Count == 0, $"{wrong.Count} trocadas: {string.Join(", ", wrong.Take(60))}");
+    }
+}
+
+public class FixedListGuardTests(SharedCorrector s) : IClassFixture<SharedCorrector>
+{
+    // Entradas da lista embutida cuja forma "errada" o dicionário aceita. São escolhas feitas à mão
+    // (agua→água, pagina→página...). Qualquer nova precisa ser decidida de propósito e adicionada aqui.
+    private static readonly HashSet<string> KnownValid = new(StringComparer.Ordinal)
+    {
+        "ate", "numero", "numeros", "pagina", "paginas", "ultimo", "ultima", "historia", "agua", "area", "areas",
+        "encima", "secretario", "musica", "tao", "acoes", "apos", "porem", "salario", "experiencia", "conferencia",
+        "faco", "video", "oque", "emfim", "anida", "intendi", "intender", "intendeu",
+    };
+
+    [Fact]
+    public void ListaEmbutida_NaoTrocaPalavraValida_SemDecisao()
+    {
+        var path = Path.Combine(SharedData.DataDir, "correcoes.txt");
+        var surprising = SharedCorrector.ReadPairs(path)
+            .Select(p => p[0])
+            .Where(k => s.Data.Lexicon.IsValid(k) && !KnownValid.Contains(k))
+            .ToList();
+        Assert.True(surprising.Count == 0, "válidas no dicionário: " + string.Join(", ", surprising));
     }
 }

@@ -16,3 +16,7 @@ trabalo	trabalho
 obrigaod	obrigado
 porbelma	problema
 dinheior	dinheiro
+corrijir	corrigir
+presiso	preciso
+pesosa	pessoa
+quqndo	quando
