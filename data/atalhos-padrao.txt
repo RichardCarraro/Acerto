@@ -1,0 +1,5 @@
+vlw=valeu
+att=Atenciosamente,
+tbm=também
+obg=obrigado
+blz=beleza
