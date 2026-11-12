@@ -49,6 +49,7 @@ internal sealed class InputHooks : IDisposable
             var info = new LASTINPUTINFO { cbSize = (uint)Marshal.SizeOf<LASTINPUTINFO>() };
             if (GetLastInputInfo(ref info) && unchecked((int)(info.dwTime - _lastHookTick)) > 2000)
             {
+                Diag.Log($"WATCHDOG reinstala (lastInput={info.dwTime} lastHook={_lastHookTick})");
                 UnhookWindowsHookEx(_keyboardHook);
                 UnhookWindowsHookEx(_mouseHook);
                 InstallLowLevelHooks();
@@ -101,17 +102,20 @@ internal sealed class InputHooks : IDisposable
 
             if (!Active)
             {
+                if (Diag.On) Diag.Log($"KEY inativo paused={_settings.Paused} own={_fg.IsOwnProcess} elev={_fg.IsElevated} full={_fg.IsFullScreenApp} resolved={_fg.FocusResolved} pwd={_fg.FocusIsPassword} excl={_settings.IsExcluded(_fg.ProcessName)} proc={_fg.ProcessName}");
                 ResetAll();
                 return CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
             }
 
             var action = Handle(k);
+            if (Diag.On) Diag.Log($"KEY ativo swallow={action.Swallow} bs={action.Backspaces} ins={action.Insert.Length} proc={_fg.ProcessName}");
             if (action.Swallow)
             {
                 // Com Ctrl/Alt/Win apertado, um Backspace injetado vira atalho (Ctrl+Backspace apaga palavra).
                 bool modifiers = IsDown(VK_CONTROL) || IsDown(VK_MENU) || IsDown(VK_LWIN) || IsDown(VK_RWIN);
                 // Janela trocou e o evento de foco ainda não chegou: os Backspaces iriam para texto que não vimos.
                 bool sameWindow = GetForegroundWindow() == _fg.Hwnd;
+                if (Diag.On && (modifiers || !sameWindow)) Diag.Log($"SWALLOW cancelado modifiers={modifiers} sameWindow={sameWindow}");
                 if (!modifiers && sameWindow && InputSender.Send(action.Backspaces, action.Insert))
                     return 1;
                 ResetAll(); // não deu para corrigir: deixa a tecla original passar
@@ -204,6 +208,7 @@ internal sealed class InputHooks : IDisposable
         {
             ResetAll();
             _fg.Refresh();
+            if (Diag.On) Diag.Log($"FOCO ev={(ev == EVENT_SYSTEM_FOREGROUND ? "foreground" : "focus")} proc={_fg.ProcessName}");
         }
         catch (Exception) { /* nunca deixar exceção sair de callback nativo */ }
     }
