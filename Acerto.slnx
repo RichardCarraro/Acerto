@@ -1,8 +1,10 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Acerto.Core/Acerto.Core.csproj" />
+    <Project Path="src/Acerto.Windows/Acerto.Windows.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Acerto.Core.Tests/Acerto.Core.Tests.csproj" />
+    <Project Path="tests/Acerto.SmokePad/Acerto.SmokePad.csproj" />
   </Folder>
 </Solution>

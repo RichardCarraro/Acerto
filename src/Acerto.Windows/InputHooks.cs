@@ -1,0 +1,198 @@
+using System.Runtime.InteropServices;
+using Acerto.Core;
+using static Acerto.Windows.Native;
+
+namespace Acerto.Windows;
+
+/// <summary>
+/// Escuta teclado e mouse do sistema inteiro e conversa com o <see cref="TextEngine"/>.
+/// Tudo roda na thread da UI; o callback do teclado precisa voltar rápido.
+/// </summary>
+internal sealed class InputHooks : IDisposable
+{
+    private const int PauseHotkeyId = 1;
+
+    private readonly TextEngine _engine;
+    private readonly AppSettings _settings;
+    private readonly ForegroundInfo _fg;
+
+    // delegates guardados em campos: se o GC coletar, o Windows chama memória solta
+    private readonly HookProc _keyboardProc;
+    private readonly HookProc _mouseProc;
+    private readonly WinEventProc _winEventProc;
+    private nint _keyboardHook, _mouseHook, _foregroundHook, _focusHook;
+    private HotkeyWindow? _hotkeyWindow;
+    private char? _pendingDead;
+
+    public event Action? PauseToggled;
+
+    public InputHooks(TextEngine engine, AppSettings settings, ForegroundInfo fg)
+    {
+        _engine = engine;
+        _settings = settings;
+        _fg = fg;
+        _keyboardProc = KeyboardProc;
+        _mouseProc = MouseProc;
+        _winEventProc = WinEventProc;
+    }
+
+    public void Install()
+    {
+        var module = GetModuleHandleW(null);
+        _keyboardHook = SetWindowsHookExW(WH_KEYBOARD_LL, _keyboardProc, module, 0);
+        _mouseHook = SetWindowsHookExW(WH_MOUSE_LL, _mouseProc, module, 0);
+        if (_keyboardHook == 0 || _mouseHook == 0)
+            throw new InvalidOperationException($"Não foi possível instalar o hook de teclado/mouse (erro {Marshal.GetLastWin32Error()}).");
+
+        _foregroundHook = SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, 0, _winEventProc, 0, 0, WINEVENT_OUTOFCONTEXT);
+        _focusHook = SetWinEventHook(EVENT_OBJECT_FOCUS, EVENT_OBJECT_FOCUS, 0, _winEventProc, 0, 0, WINEVENT_OUTOFCONTEXT);
+
+        _hotkeyWindow = new HotkeyWindow(TogglePause);
+        RegisterHotKey(_hotkeyWindow.Handle, PauseHotkeyId, MOD_CONTROL | MOD_SHIFT | MOD_NOREPEAT, VK_F12);
+
+        _fg.Refresh();
+    }
+
+    public void TogglePause()
+    {
+        _settings.Paused = !_settings.Paused;
+        _settings.Save();
+        _engine.Reset();
+        PauseToggled?.Invoke();
+    }
+
+    private bool Active =>
+        !_settings.Paused && !_fg.IsOwnProcess && !_fg.IsElevated && _fg.FocusResolved && !_fg.FocusIsPassword
+        && !_settings.IsExcluded(_fg.ProcessName);
+
+    private nint KeyboardProc(int nCode, nint wParam, nint lParam)
+    {
+        if (nCode < 0 || (wParam != WM_KEYDOWN && wParam != WM_SYSKEYDOWN))
+            return CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
+
+        var k = Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam);
+        if ((k.flags & LLKHF_INJECTED) != 0 && k.dwExtraInfo == InputSender.Marker)
+            return CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
+
+        if (!Active)
+        {
+            _engine.Reset();
+            _pendingDead = null;
+            return CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
+        }
+
+        var action = Handle(k);
+        if (action.Swallow)
+        {
+            // Com Ctrl/Alt/Win apertado, um Backspace injetado vira atalho (Ctrl+Backspace apaga palavra).
+            bool modifiers = IsDown(VK_CONTROL) || IsDown(VK_MENU) || IsDown(VK_LWIN) || IsDown(VK_RWIN);
+            if (!modifiers && InputSender.Send(action.Backspaces, action.Insert))
+                return 1;
+            _engine.Reset(); // não deu para corrigir: deixa a tecla original passar
+        }
+        return CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
+    }
+
+    private EngineAction Handle(KBDLLHOOKSTRUCT k)
+    {
+        int vk = (int)k.vkCode;
+
+        if (vk is VK_SHIFT or VK_CONTROL or VK_MENU or VK_CAPITAL or VK_NUMLOCK or VK_SCROLL or VK_PAUSE
+            or VK_LWIN or VK_RWIN or (>= VK_LSHIFT and <= VK_RMENU) or (>= VK_F1 and <= VK_F24))
+            return EngineAction.None;
+
+        bool ctrl = IsDown(VK_CONTROL), alt = IsDown(VK_MENU);
+        bool altGr = ctrl && IsDown(VK_RMENU);
+        if (IsDown(VK_LWIN) || IsDown(VK_RWIN) || ((ctrl || alt) && !altGr))
+            return ResetAll(); // atalhos: Ctrl+C, Alt+Tab, Ctrl+Backspace...
+
+        switch (vk)
+        {
+            case VK_BACK: _pendingDead = null; return _engine.OnBackspace();
+            case VK_RETURN: _pendingDead = null; return _engine.OnChar('\n');
+            case VK_TAB:
+                _pendingDead = null;
+                return IsDown(VK_SHIFT) ? ResetAll() : _engine.OnChar('\t');
+            case VK_ESCAPE or VK_INSERT or VK_DELETE or VK_APPS or (>= VK_PRIOR and <= VK_DOWN):
+                return ResetAll();
+            case VK_PACKET:
+                return Feed(((char)k.scanCode).ToString());
+        }
+
+        var text = KeyTranslator.Translate(k.vkCode, k.scanCode, out bool dead);
+        if (dead)
+        {
+            if (_pendingDead is not null) return ResetAll(); // duas mortas seguidas: não tentar adivinhar
+            _pendingDead = text[0];
+            return EngineAction.None;
+        }
+        if (text.Length == 0) return ResetAll();
+
+        if (_pendingDead is { } d)
+        {
+            _pendingDead = null;
+            text = DeadKeys.Compose(d, text[0]) + text[1..];
+            if (text.Length != 1) return ResetAll(); // "~x": o app compõe sozinho; não arriscar engolir
+        }
+        return Feed(text);
+    }
+
+    private EngineAction Feed(string text)
+    {
+        var action = EngineAction.None;
+        foreach (var ch in text) action = _engine.OnChar(ch);
+        if (text.Length > 1 && action.Swallow) return ResetAll(); // vários caracteres numa tecla só: não engolir
+        return action;
+    }
+
+    private EngineAction ResetAll()
+    {
+        _engine.Reset();
+        _pendingDead = null;
+        return EngineAction.None;
+    }
+
+    private nint MouseProc(int nCode, nint wParam, nint lParam)
+    {
+        if (nCode >= 0 && wParam is WM_LBUTTONDOWN or WM_RBUTTONDOWN or WM_MBUTTONDOWN or WM_XBUTTONDOWN)
+            ResetAll();
+        return CallNextHookEx(_mouseHook, nCode, wParam, lParam);
+    }
+
+    private void WinEventProc(nint hook, uint ev, nint hwnd, int idObject, int idChild, uint thread, uint time)
+    {
+        ResetAll();
+        _fg.Refresh();
+    }
+
+    public void Dispose()
+    {
+        if (_hotkeyWindow is not null)
+        {
+            UnregisterHotKey(_hotkeyWindow.Handle, PauseHotkeyId);
+            _hotkeyWindow.DestroyHandle();
+        }
+        if (_keyboardHook != 0) UnhookWindowsHookEx(_keyboardHook);
+        if (_mouseHook != 0) UnhookWindowsHookEx(_mouseHook);
+        if (_foregroundHook != 0) UnhookWinEvent(_foregroundHook);
+        if (_focusHook != 0) UnhookWinEvent(_focusHook);
+    }
+
+    /// <summary>Janela invisível só para receber o atalho global de pausa.</summary>
+    private sealed class HotkeyWindow : NativeWindow
+    {
+        private readonly Action _onHotkey;
+
+        public HotkeyWindow(Action onHotkey)
+        {
+            _onHotkey = onHotkey;
+            CreateHandle(new CreateParams());
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            if (m.Msg == WM_HOTKEY) _onHotkey();
+            base.WndProc(ref m);
+        }
+    }
+}
