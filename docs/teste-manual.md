@@ -41,3 +41,12 @@ Observação: uma rodada isolada com 20 ms apagou o começo do primeiro caso e n
 - [ ] M9 Enter no chat do Claude com `nao` → envia "não", e o Backspace seguinte não reenvia nada
 - [ ] M10 Ctrl+Shift+F12 pausa e retoma; o ícone fica cinza/azul
 - [ ] M11 Menu: Palavras aprendidas, Atalhos (criar `fds=fim de semana` e testar), Apps excluídos, Iniciar com o Windows (reiniciar o PC), Apoie
+
+## Mudanças depois da etapa 1 (2026-11-12, tarde) — conferir no uso
+
+- [ ] Interface nova: clique no ícone ô abre o painel translúcido; "Configurações" abre a janela no estilo do Windows 11 (fundo translúcido só aparece na tela de verdade; as imagens de conferência usam cor sólida).
+- [ ] Animação: ao corrigir, a palavra ganha um realce que some em ~0,5 s e um sublinhado que some em ~1,5 s. Conferir se cai em cima da palavra certa no Claude, Chrome, Word e Bloco de Notas. Dá para desligar em Início → "Destacar a palavra corrigida".
+- [ ] Primeira palavra: clicar num campo vazio e digitar `testi ` → `Teste `. Em apps que não informam o texto antes do cursor continua valendo "espera o primeiro espaço".
+- [ ] Backspace depois de uma correção só apaga (o item M8 antigo, "Backspace desfaz", deixou de valer).
+- [ ] Apagar a palavra corrigida e digitar a mesma de novo: fica como digitada e entra em "Minhas palavras".
+- [ ] `palvra`, `geito`, `anida`, `intendi` são corrigidas (lista embutida com ~300 entradas).
