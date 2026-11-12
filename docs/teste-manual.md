@@ -22,6 +22,12 @@ Build: `dotnet publish src/Acerto.Windows -c Release -r win-x64 --self-contained
 
 Observação: uma rodada isolada com 20 ms apagou o começo do primeiro caso e não se repetiu em 44 casos seguidos. Provavelmente foi interferência de uso da área de trabalho durante o teste. Fique de olho no M3.
 
+## Riscos abertos depois da revisão final
+
+- Rajada sem intervalo (0 ms entre teclas): em 1 de 4 rodadas, ` nao. voce: ` perdeu o ponto, embora o motor tenha mandado a correção certa. Em velocidade de digitação real (30 ms) passou sempre. Confira no M3, com foco em frases terminadas em ponto.
+- Campos com autocompletar que seleciona texto (Excel, barra de endereço do navegador, Executar): a correção pode sair errada ("nnão"). Se acontecer, adicione o app em "Apps excluídos".
+- Tab não corrige mais a palavra anterior, porque em Word, Outlook e Gmail ele aceita a sugestão do próprio app.
+
 ## Manual — falta fazer (Bloco de Notas, Chrome, app do Claude, Teams, Word)
 
 - [ ] M1 `nao voce informacao poblema oque ` → `não você informação problema o que ` em cada app
