@@ -35,6 +35,9 @@ public class DataTests(SharedData data) : IClassFixture<SharedData>
     [Fact]
     public void Frequency_Ausente_Zero() => Assert.Equal(0, data.Frequency.Count("xkzqwv"));
 
+    [Fact] // palavras quase nunca usadas não entram: só gastam memória
+    public void Frequency_SoPalavrasComUsoMinimo() => Assert.All(data.Frequency.Entries, e => Assert.True(e.Count >= FrequencyTable.MinCount));
+
     [Fact]
     public void Fixed_Carrega()
     {

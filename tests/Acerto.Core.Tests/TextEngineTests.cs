@@ -63,6 +63,7 @@ public class TextEngineTests : IClassFixture<SharedCorrector>
     [Fact] public void Desfazer_So_Logo_Depois() => Assert.Equal(" não ", Type(" nao x\b"));
     [Fact] public void Enter_Nao_Gera_Undo() => Assert.Equal(" não", Type(" nao\n\b"));
     [Fact] public void Maiuscula_Apos_Ponto() => Assert.Equal(" Ok. Não ", Type(" Ok. nao "));
+    [Fact] public void Maiuscula_Nao_Estraga_CaixaMista() => Assert.Equal(" Ok. iPhone ", Type(" Ok. iPhone ")); // m1 da revisão
     [Fact] public void Maiuscula_Apos_Enter() => Assert.Equal(" ok\nCasa ", Type(" ok\ncasa "));
     [Fact] public void Espaco_Duplo() => Assert.Equal(" Fim. ", Type(" Fim  "));
     [Fact] public void Espaco_Duplo_Desfaz() => Assert.Equal(" Fim  ", Type(" Fim  \b"));
@@ -194,4 +195,28 @@ public class TextEngineContextTests(SharedCorrector s) : IClassFixture<SharedCor
         _engine.ConfirmContext(_engine.Generation, "Tudo certo. ");
         Assert.Equal("Não ", Type("nao "));
     }
+}
+
+/// <summary>Opções que o usuário pode desligar nas configurações.</summary>
+public class TextEngineOptionsTests(SharedCorrector s) : IClassFixture<SharedCorrector>
+{
+    private string Type(TextEngine engine, string keys)
+    {
+        var doc = new StringBuilder();
+        foreach (var k in keys)
+        {
+            var a = engine.OnChar(k);
+            if (a.Swallow) { doc.Length -= a.Backspaces; doc.Append(a.Insert); }
+            else doc.Append(k);
+        }
+        return doc.ToString();
+    }
+
+    [Fact]
+    public void SemMaiusculaAutomatica() =>
+        Assert.Equal(" Ok. não ", Type(new TextEngine(s.Corrector, _ => { }) { AutoCapitalize = false }, " Ok. nao "));
+
+    [Fact]
+    public void SemEspacoDuplo() =>
+        Assert.Equal(" Fim  ", Type(new TextEngine(s.Corrector, _ => { }) { DoubleSpacePeriod = false }, " Fim  "));
 }

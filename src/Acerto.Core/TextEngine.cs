@@ -38,6 +38,12 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     private string? _pendingLearn; // desfeita, mas só aprende se a próxima tecla não for outro Backspace
     private readonly StringBuilder _sinceReset = new(); // digitado desde o Reset, enquanto o contexto é desconhecido
 
+    /// <summary>Maiúscula automática no começo da frase.</summary>
+    public bool AutoCapitalize { get; set; } = true;
+
+    /// <summary>Dois espaços seguidos viram ". ".</summary>
+    public bool DoubleSpacePeriod { get; set; } = true;
+
     /// <summary>Muda a cada Reset; o host usa para descartar respostas de contexto atrasadas.</summary>
     public long Generation { get; private set; }
 
@@ -149,7 +155,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     {
         var action = EngineAction.None;
 
-        if (c == ' ' && _prev1 == ' ' && char.IsLetterOrDigit(_prev2) && !_lastWasDoubleSpace)
+        if (DoubleSpacePeriod && c == ' ' && _prev1 == ' ' && char.IsLetterOrDigit(_prev2) && !_lastWasDoubleSpace)
         {
             action = new EngineAction(true, 1, ". ");
             _undo = new Undo(2, "  ", null);
@@ -167,7 +173,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
             var word = _word.ToString();
             var corr = corrector.Correct(word);
             var result = corr?.Replacement ?? word;
-            if (_capNext && char.IsLower(word[0]) && result.Length > 0)
+            if (AutoCapitalize && _capNext && char.IsLower(word[0]) && result.Length > 0 && !TextUtil.IsMixedCase(word)) // "iPhone" fica
                 result = char.ToUpper(result[0], TextUtil.PtBr) + result[1..];
 
             if (result != word)

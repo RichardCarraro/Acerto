@@ -53,7 +53,11 @@ internal sealed class ForegroundInfo
 
     private static string NameOf(uint pid)
     {
-        try { return Process.GetProcessById((int)pid).ProcessName + ".exe"; }
+        try
+        {
+            using var p = Process.GetProcessById((int)pid);
+            return p.ProcessName + ".exe";
+        }
         catch (ArgumentException) { return ""; }
         catch (InvalidOperationException) { return ""; }
     }
