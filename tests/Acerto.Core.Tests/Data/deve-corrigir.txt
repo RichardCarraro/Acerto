@@ -1,0 +1,17 @@
+informacao	informação
+voce	você
+agua	água
+pagina	página
+numero	número
+secretario	secretário
+atencao	atenção
+configuracoes	configurações
+aviao	avião
+licenca	licença
+coracao	coração
+atraves	através
+cancao	canção
+ligacao	ligação
+relogio	relógio
+portugues	português
+Joao	João

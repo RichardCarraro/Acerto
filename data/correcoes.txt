@@ -168,3 +168,4 @@ mortandela	mortadela
 asteristico	asterisco
 bicabornato	bicarbonato
 encima	em cima
+musica	música
