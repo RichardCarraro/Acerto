@@ -76,12 +76,16 @@ public sealed record TypoOptions
     /// segunda está perto e corrige erros comuns do corpus. Às vezes troca um nome ou uma palavra estrangeira em
     /// minúsculo; a pessoa apaga, digita de novo e o Acertô aprende.
     /// </summary>
+    // Limites de "atestados" escolhidos pelo usuário em 2026-11-12 ("melhor tentar e errar do que não corrigir"),
+    // sabendo o preço medido: com 30/50 o acerto vai a 94,2% e 1636 das 60 mil palavras frequentes do corpus passam
+    // a ser trocadas, várias em inglês digitadas em minúsculo (put→puta, one→onde, list→lista, save→sabe).
+    // Com 300/3000 eram 227. Uma lista de palavras em inglês/espanhol em data/protegidas.txt resolveria sem perder acerto.
     public static TypoOptions Aggressive { get; } = new()
     {
         Margin = 0,
         MinBestCount = 20,
-        AttestedSlipRatio = 300,
-        AttestedOtherRatio = 3000,
+        AttestedSlipRatio = 30,
+        AttestedOtherRatio = 50,
         ShortWordMinCount = 5000,
         ShortWordTransposition = true,
         RareValidMinCandidate = 5000,

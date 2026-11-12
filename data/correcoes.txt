@@ -954,3 +954,6 @@ agencia	agência
 irma	irmã
 dai	daí
 dificl	difícil
+corrije	corrige
+corrijir	corrigir
+corrijido	corrigido

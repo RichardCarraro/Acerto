@@ -21,12 +21,18 @@ internal static class CaretContext
             if (el is null || el.Current.IsPassword) return null;
             if (!el.TryGetCurrentPattern(TextPattern.Pattern, out var pattern)) return null;
 
-            var selection = ((TextPattern)pattern).GetSelection();
+            var text = (TextPattern)pattern;
+            var selection = text.GetSelection();
             if (selection.Length != 1) return null;
             var range = selection[0].Clone();
             if (range.GetText(1).Length != 0) return null; // texto selecionado: digitar vai substituir, não arriscar
 
             range.MoveEndpointByUnit(TextPatternRangeEndpoint.Start, TextUnit.Character, -MaxChars);
+            // Em apps Chromium/Electron (Claude, Chrome, Teams) o intervalo atravessa a caixa de texto e lê o resto
+            // da página. Limita ao começo do próprio campo: caixa vazia tem que dar texto vazio.
+            var field = text.DocumentRange;
+            if (range.CompareEndpoints(TextPatternRangeEndpoint.Start, field, TextPatternRangeEndpoint.Start) < 0)
+                range.MoveEndpointByRange(TextPatternRangeEndpoint.Start, field, TextPatternRangeEndpoint.Start);
             return range.GetText(MaxChars);
         }
         catch (Exception)

@@ -75,3 +75,14 @@ do corpus passam a ser trocadas, várias em inglês ou espanhol (`code`→`pode`
 
 - [ ] Se trocar uma palavra que você queria: apague e digite de novo; ele mantém e aprende (Minhas palavras).
 - [ ] Início → "Corrigir mais" desligado volta ao modo que só corrige quando tem certeza.
+
+## Filtro afrouxado e primeira palavra (2026-11-12, 15h)
+
+Decisão do usuário: afrouxar o filtro de erros "atestados" do modo Corrigir mais (30/50 em vez de 300/3000).
+Medição: acerto 94,2%, correção errada 4,9%; 1636 das 60 mil palavras frequentes do corpus passam a ser trocadas,
+várias em inglês digitadas em minúsculo (`put`→`puta`, `one`→`onde`, `list`→`lista`, `save`→`sabe`).
+Saída sem esse preço: lista de palavras em inglês/espanhol em `data/protegidas.txt`.
+
+- [ ] Primeira palavra no app do Claude, Chrome e Teams: clicar na caixa vazia e digitar `testi ` → `Teste `.
+      (A consulta do texto antes do cursor atravessava a caixa e lia o resto da página; agora é limitada ao campo.)
+- [ ] `corrie`, `escrevu`, `corrigndo` são corrigidas (pode não ser para a palavra que você queria).

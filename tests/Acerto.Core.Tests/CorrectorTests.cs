@@ -140,6 +140,7 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
 
     [Theory]
     [InlineData("corrigndo")] // empate entre corrigindo e corrigido: no perfil cuidadoso desiste, aqui escolhe uma
+    [InlineData("corrie")]    // aparece no corpus (nome em inglês): o cuidadoso não mexe, este tenta
     [InlineData("dizr")]
     [InlineData("precso")]
     public void Sempre_Tenta(string errado) => Assert.NotNull(_c.Correct(errado));
@@ -172,6 +173,6 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
             .Where(e => e.Word.All(char.IsLetter))
             .OrderByDescending(e => e.Count).Take(60000)
             .Count(e => _c.Correct(e.Word) is { Kind: CorrectionKind.Typo });
-        Assert.True(changed <= 300, $"{changed} palavras frequentes trocadas (medido em 2026-11-12: 227)");
+        Assert.True(changed <= 2000, $"{changed} palavras frequentes trocadas (medido em 2026-11-12: 1636)");
     }
 }

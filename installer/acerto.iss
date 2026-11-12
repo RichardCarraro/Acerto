@@ -7,6 +7,10 @@
 #define AppName "Acertô"
 #define AppVersion "1.0.0"
 #define AppExe "Acerto.exe"
+; pasta com o resultado do dotnet publish; dá para trocar: ISCC /DPublishDir=..\outra-pasta
+#ifndef PublishDir
+  #define PublishDir "..\publish"
+#endif
 
 [Setup]
 AppId={{6F0B2B7E-3C55-4E0B-9C0A-ACE27D0A0001}
@@ -40,7 +44,7 @@ Name: "startup"; Description: "Iniciar o Acertô junto com o Windows"; GroupDesc
 Name: "desktopicon"; Description: "Criar atalho na área de trabalho"; GroupDescription: "Opções:"; Flags: unchecked
 
 [Files]
-Source: "..\publish\*"; DestDir: "{app}"; Excludes: "*.pdb"; Flags: recursesubdirs ignoreversion
+Source: "{#PublishDir}\*"; DestDir: "{app}"; Excludes: "*.pdb"; Flags: recursesubdirs ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"
