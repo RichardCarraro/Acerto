@@ -10,8 +10,11 @@ public sealed class Corrector
     /// <summary>A melhor forma acentuada precisa ser pelo menos isso vezes mais usada que a segunda.</summary>
     public const double AccentDominance = 3.0;
 
-    /// <summary>Palavra que existe sem acento só vira a acentuada se esta for pelo menos isso vezes mais usada.</summary>
-    public const double RareFormRatio = 50.0;
+    /// <summary>Palavra que aparece pelo menos isso no corpus é escrita de propósito: não é erro de digitação.</summary>
+    public const long AttestedCount = 10;
+
+    /// <summary>Palavras menores que isso (siglas, "obs", "pdf", "job") não passam pela regra de digitação.</summary>
+    public const int MinTypoLength = 4;
 
     private readonly CoreData _data;
     private readonly AccentIndex _accents;
@@ -25,8 +28,7 @@ public sealed class Corrector
     }
 
     /// <param name="word">Só letras e hífen, sem pontuação.</param>
-    /// <param name="atSentenceStart">Se a palavra começa uma frase (maiúscula ali não indica nome próprio).</param>
-    public Correction? Correct(string word, bool atSentenceStart)
+    public Correction? Correct(string word)
     {
         if (word.Length == 0) return null;
         var w = word.ToLowerInvariant();
@@ -43,31 +45,27 @@ public sealed class Corrector
         // 2. Palavra ensinada pelo usuário
         if (_data.Personal.Contains(w)) return null;
 
-        // 3. Lista embutida
+        // 3. Lista embutida (inclui as formas válidas-mas-raras como agua→água, escolhidas à mão)
         if (_data.Fixed.TryGet(w, out var fixedRep))
             return new Correction(TextUtil.ApplyCase(word, fixedRep), CorrectionKind.Fixed);
 
         // 4. Caixa mista ("iPhone") e hífen só passam pelas regras acima
         if (TextUtil.IsMixedCase(word) || w.Contains('-')) return null;
 
-        // 5. Acento esquecido
-        bool valid = _data.Lexicon.IsValid(word);
+        // 5. Palavra que o dicionário aceita nunca é trocada (ficara/ficará, duvida/dúvida, capita/capitã)
+        if (_data.Lexicon.IsValid(word)) return null;
+
+        // 6. Acento esquecido: a acentuada tem que ganhar com folga da segunda e da própria forma digitada
+        //    ("ana", nome, é muito mais escrita que "anã")
         var cands = _accents.Lookup(TextUtil.StripAccents(w)).Where(c => c.Word != w).ToList();
-        if (cands.Count > 0)
-        {
-            var best = cands[0];
-            bool dominates = cands.Count == 1 || best.Count >= AccentDominance * cands[1].Count;
-            bool rareTyped = best.Count >= RareFormRatio * Math.Max(_data.Frequency.Count(w), 1);
-            if (dominates && (!valid || rareTyped))
-                return new Correction(TextUtil.ApplyCase(word, best.Word), CorrectionKind.Accent);
-        }
+        if (cands.Count > 0
+            && (cands.Count == 1 || cands[0].Count >= AccentDominance * cands[1].Count)
+            && cands[0].Count >= AccentDominance * _data.Frequency.Count(w))
+            return new Correction(TextUtil.ApplyCase(word, cands[0].Word), CorrectionKind.Accent);
 
-        // 6. Palavra existe
-        if (valid) return null;
-
-        // 7. Sigla, palavra curta ou provável nome próprio
-        if (TextUtil.IsAllCaps(word) || w.Length < 3) return null;
-        if (char.IsUpper(word[0]) && !atSentenceStart) return null;
+        // 7. Sigla, palavra curta, nome próprio ou palavra que as pessoas escrevem de propósito
+        if (TextUtil.IsAllCaps(word) || w.Length < MinTypoLength || char.IsUpper(word[0])) return null;
+        if (_data.Frequency.Count(w) >= AttestedCount) return null;
 
         // 8. Erro de digitação
         var typo = _typos.Best(w);

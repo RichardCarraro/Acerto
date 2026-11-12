@@ -15,12 +15,16 @@ public readonly record struct EngineAction(bool Swallow, int Backspaces, string 
 /// Acompanha o que a pessoa digita, caractere a caractere, e decide as correções.
 /// Só corrige o que viu nascer: depois de um Reset, espera o próximo espaço/Enter/Tab.
 /// </summary>
-public sealed class TextEngine(Corrector corrector, PersonalDictionary personal)
+/// <param name="learn">Chamado com a palavra que o usuário ensinou desfazendo uma correção.
+/// O host decide quando gravar (o hook do Windows não pode fazer I/O).</param>
+public sealed class TextEngine(Corrector corrector, Action<string> learn)
 {
     private const string Prefixes = "(\"“['";
     private const string ClosingEnds = ".,;:!?)]}\"”»";
+    private const string DeferredEnds = ".:"; // podem ser meio de e-mail, domínio ou arquivo
 
     private readonly record struct Undo(int Backspaces, string Insert, string? Learn);
+    private readonly record struct Deferred(string Word, string Result, char End, string? Learn);
 
     private readonly StringBuilder _word = new();
     private bool _tokenKnown;      // vimos o começo deste token?
@@ -30,9 +34,12 @@ public sealed class TextEngine(Corrector corrector, PersonalDictionary personal)
     private bool _lastWasDoubleSpace;
     private char _prev1, _prev2;   // dois últimos caracteres do texto ('\0' = desconhecido)
     private Undo? _undo;
+    private Deferred? _deferred;   // correção esperando ver o que vem depois de "." ou ":"
+    private string? _pendingLearn; // desfeita, mas só aprende se a próxima tecla não for outro Backspace
 
     public void Reset()
     {
+        CommitLearn();
         _word.Clear();
         _tokenKnown = false;
         _tokenPure = true;
@@ -41,12 +48,26 @@ public sealed class TextEngine(Corrector corrector, PersonalDictionary personal)
         _lastWasDoubleSpace = false;
         _prev1 = _prev2 = '\0';
         _undo = null;
+        _deferred = null;
     }
 
     public EngineAction OnChar(char c)
     {
         _undo = null;
+        CommitLearn();
         bool whitespace = c is ' ' or '\n' or '\t';
+
+        if (_deferred is { } d)
+        {
+            _deferred = null;
+            if (c is ' ' or '\n')
+            {
+                var insert = d.Result + d.End + c;
+                OnWordEnd(c, whitespace: true); // atualiza estado; a palavra já foi consumida
+                if (c != '\n') _undo = new Undo(insert.Length, d.Word + d.End + c, d.Learn);
+                return new EngineAction(true, d.Word.Length + 1, insert);
+            }
+        }
 
         if (whitespace || (ClosingEnds.Contains(c) && !(c is '"' && _word.Length == 0 && !_tokenHadEnd)))
             return OnWordEnd(c, whitespace);
@@ -68,10 +89,12 @@ public sealed class TextEngine(Corrector corrector, PersonalDictionary personal)
 
     public EngineAction OnBackspace()
     {
+        _pendingLearn = null; // Backspace seguido de Backspace: está apagando, não ensinando
+        _deferred = null;
         if (_undo is { } u)
         {
             _undo = null;
-            if (u.Learn is not null) personal.Add(u.Learn);
+            _pendingLearn = u.Learn;
             _prev1 = u.Insert[^1];
             _prev2 = u.Insert.Length > 1 ? u.Insert[^2] : '\0';
             _lastWasDoubleSpace = true; // não refazer espaço duplo em cima do que foi desfeito
@@ -104,24 +127,30 @@ public sealed class TextEngine(Corrector corrector, PersonalDictionary personal)
             return action;
         }
 
-        if (_tokenKnown && _tokenPure && _word.Length > 0)
+        // Tab não corrige: em muitos apps ele aceita uma sugestão do próprio app
+        if (_tokenKnown && _tokenPure && _word.Length > 0 && c != '\t')
         {
             var word = _word.ToString();
-            var corr = corrector.Correct(word, _capNext);
+            var corr = corrector.Correct(word);
             var result = corr?.Replacement ?? word;
             if (_capNext && char.IsLower(word[0]) && result.Length > 0)
                 result = char.ToUpper(result[0], TextUtil.PtBr) + result[1..];
 
             if (result != word)
             {
-                var insert = result + c;
-                action = new EngineAction(true, word.Length, insert);
-                if (c is not ('\n' or '\t')) // Enter/Tab podem ter enviado a mensagem: desfazer não é seguro
+                bool learns = corr?.Kind is CorrectionKind.Fixed or CorrectionKind.Accent or CorrectionKind.Typo;
+                if (DeferredEnds.Contains(c))
                 {
-                    bool learns = corr?.Kind is CorrectionKind.Fixed or CorrectionKind.Accent or CorrectionKind.Typo;
-                    _undo = new Undo(insert.Length, word + c, learns ? word : null);
+                    _deferred = new Deferred(word, result, c, learns ? word : null);
                 }
-                _prev1 = result[^1];
+                else
+                {
+                    var insert = result + c;
+                    action = new EngineAction(true, word.Length, insert);
+                    if (c != '\n') // Enter pode ter enviado a mensagem: desfazer não é seguro
+                        _undo = new Undo(insert.Length, word + c, learns ? word : null);
+                    _prev1 = result[^1];
+                }
             }
             _capNext = false;
         }
@@ -139,6 +168,12 @@ public sealed class TextEngine(Corrector corrector, PersonalDictionary personal)
             _tokenHadEnd = true;
         }
         return action;
+    }
+
+    private void CommitLearn()
+    {
+        if (_pendingLearn is { } w) learn(w);
+        _pendingLearn = null;
     }
 
     private void EndToken()

@@ -23,7 +23,7 @@ public sealed class SharedCorrector
 
 public class CorrectorTests(SharedCorrector s) : IClassFixture<SharedCorrector>
 {
-    private string? C(string w, bool start = false) => s.Corrector.Correct(w, start)?.Replacement;
+    private string? C(string w) => s.Corrector.Correct(w)?.Replacement;
 
     public static IEnumerable<object[]> DeveCorrigir() => SharedCorrector.DeveCorrigir();
     public static IEnumerable<object[]> NaoMexer() => SharedCorrector.NaoMexer();
@@ -32,7 +32,7 @@ public class CorrectorTests(SharedCorrector s) : IClassFixture<SharedCorrector>
     public void Corrige(string errado, string certo) => Assert.Equal(certo, C(errado));
 
     [Theory, MemberData(nameof(NaoMexer))]
-    public void NaoMexe(string palavra) => Assert.Null(s.Corrector.Correct(palavra, false));
+    public void NaoMexe(string palavra) => Assert.Null(s.Corrector.Correct(palavra));
 
     [Fact]
     public void Maiusculas()
@@ -45,9 +45,9 @@ public class CorrectorTests(SharedCorrector s) : IClassFixture<SharedCorrector>
     [Fact]
     public void TipoDaCorrecao()
     {
-        Assert.Equal(CorrectionKind.Fixed, s.Corrector.Correct("oque", false)!.Kind);
-        Assert.Equal(CorrectionKind.Accent, s.Corrector.Correct("aviao", false)!.Kind);
-        Assert.Equal(CorrectionKind.Shortcut, s.Corrector.Correct("vlw", false)!.Kind);
+        Assert.Equal(CorrectionKind.Fixed, s.Corrector.Correct("oque")!.Kind);
+        Assert.Equal(CorrectionKind.Accent, s.Corrector.Correct("aviao")!.Kind);
+        Assert.Equal(CorrectionKind.Shortcut, s.Corrector.Correct("vlw")!.Kind);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class CorrectorTests(SharedCorrector s) : IClassFixture<SharedCorrector>
     {
         var data = CoreData.Load(SharedData.DataDir, SharedData.NewUserDir());
         data.Personal.Add("oque");
-        Assert.Null(new Corrector(data).Correct("oque", false));
+        Assert.Null(new Corrector(data).Correct("oque"));
     }
 
     [Fact]
@@ -63,9 +63,41 @@ public class CorrectorTests(SharedCorrector s) : IClassFixture<SharedCorrector>
     {
         var data = CoreData.Load(SharedData.DataDir, SharedData.NewUserDir());
         data.Shortcuts.Save(new Dictionary<string, string> { ["casa"] = "Casa Branca" });
-        Assert.Equal("Casa Branca", new Corrector(data).Correct("casa", false)?.Replacement);
+        Assert.Equal("Casa Branca", new Corrector(data).Correct("casa")?.Replacement);
     }
 
     [Fact]
     public void Atalho_PrimeiraMaiuscula() => Assert.Equal("Valeu", C("Vlw"));
+}
+
+public class CorrectorCorpusTests(SharedCorrector s) : IClassFixture<SharedCorrector>
+{
+    /// <summary>Palavra que as pessoas de fato escrevem não é erro de digitação (C1 da revisão final).</summary>
+    [Fact]
+    public void PalavrasFrequentes_NuncaViramTypo()
+    {
+        var wrong = s.Data.Frequency.Entries
+            .Where(e => e.Word.All(char.IsLetter))
+            .OrderByDescending(e => e.Count).Take(30000)
+            .Select(e => (e.Word, C: s.Corrector.Correct(e.Word)))
+            .Where(x => x.C?.Kind == CorrectionKind.Typo)
+            .Select(x => $"{x.Word}→{x.C!.Replacement}")
+            .ToList();
+        Assert.True(wrong.Count == 0, $"{wrong.Count} trocadas: {string.Join(", ", wrong.Take(30))}");
+    }
+
+    /// <summary>A regra de acento nunca troca uma palavra que o dicionário aceita (C3 da revisão final).</summary>
+    [Fact]
+    public void PalavrasValidas_NuncaGanhamAcento()
+    {
+        var wrong = s.Data.Frequency.Entries
+            .Where(e => e.Word.All(char.IsLetter))
+            .OrderByDescending(e => e.Count).Take(30000)
+            .Where(e => s.Data.Lexicon.IsValid(e.Word))
+            .Select(e => (e.Word, C: s.Corrector.Correct(e.Word)))
+            .Where(x => x.C?.Kind == CorrectionKind.Accent)
+            .Select(x => $"{x.Word}→{x.C!.Replacement}")
+            .ToList();
+        Assert.True(wrong.Count == 0, $"{wrong.Count} trocadas: {string.Join(", ", wrong.Take(30))}");
+    }
 }

@@ -112,8 +112,6 @@ historico	histórico
 juridico	jurídico
 contabil	contábil
 sabado	sábado
-duvida	dúvida
-duvidas	dúvidas
 saude	saúde
 conteudo	conteúdo
 agua	água
@@ -169,3 +167,21 @@ asteristico	asterisco
 bicabornato	bicarbonato
 encima	em cima
 musica	música
+idéia	ideia
+idéias	ideias
+européia	europeia
+européias	europeias
+agüentar	aguentar
+freqüente	frequente
+conseqüência	consequência
+tranqüilo	tranquilo
+vôo	voo
+enjôo	enjoo
+vêem	veem
+lêem	leem
+crêem	creem
+dêem	deem
+heróico	heroico
+assembléia	assembleia
+platéia	plateia
+jóia	joia
