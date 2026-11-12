@@ -5,7 +5,7 @@
         WindowStyle="None" ResizeMode="NoResize" ShowInTaskbar="False" Topmost="True"
         UseLayoutRounding="True">
     <!-- Menu da bandeja: painel translúcido (acrílico) como os menus do Windows 11 -->
-    <Border Padding="8">
+    <Border x:Name="Root" Padding="8">
         <StackPanel>
             <Grid Margin="8,6,8,10">
                 <Grid.ColumnDefinitions>

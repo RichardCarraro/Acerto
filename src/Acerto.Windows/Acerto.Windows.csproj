@@ -11,6 +11,8 @@
     <AssemblyName>Acerto</AssemblyName>
     <RootNamespace>Acerto.Windows</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- ícone do exe: também vale para a barra de tarefas e as janelas -->
+    <ApplicationIcon>Assets/acerto.ico</ApplicationIcon>
     <!-- WPF0001: ThemeMode (tema Fluent) ainda é marcado como experimental -->
     <NoWarn>$(NoWarn);SYSLIB1054;WPF0001;WFO0003</NoWarn>
   </PropertyGroup>

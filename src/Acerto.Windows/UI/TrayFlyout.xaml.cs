@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 
 namespace Acerto.Windows.UI;
 
@@ -38,13 +39,25 @@ internal partial class TrayFlyout : Window
         ActiveSwitch.IsChecked = active;
     }
 
-    /// <summary>Canto inferior direito da área de trabalho do monitor onde está o mouse (onde fica a bandeja).</summary>
+    /// <summary>
+    /// Abre logo acima da barra de tarefas, centralizado no ícone clicado (sem sair da tela),
+    /// subindo e aparecendo como os painéis do Windows 11.
+    /// </summary>
     private void PlaceNearTray()
     {
-        var area = System.Windows.Forms.Screen.FromPoint(System.Windows.Forms.Cursor.Position).WorkingArea; // pixels
+        var cursor = System.Windows.Forms.Cursor.Position;                       // pixels
+        var area = System.Windows.Forms.Screen.FromPoint(cursor).WorkingArea;    // pixels, sem a barra de tarefas
         var dpi = VisualTreeHelper.GetDpi(this);
-        Left = area.Right / dpi.DpiScaleX - ActualWidth - 12;
-        Top = area.Bottom / dpi.DpiScaleY - ActualHeight - 12;
+        const double margin = 12;
+        double left = cursor.X / dpi.DpiScaleX - ActualWidth / 2;
+        double minLeft = area.Left / dpi.DpiScaleX + margin, maxLeft = area.Right / dpi.DpiScaleX - ActualWidth - margin;
+        Left = Math.Max(minLeft, Math.Min(left, maxLeft));
+        double top = area.Bottom / dpi.DpiScaleY - ActualHeight - margin;
+        Top = top;
+
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        BeginAnimation(TopProperty, new DoubleAnimation(top + 28, top, TimeSpan.FromMilliseconds(220)) { EasingFunction = ease });
+        Root.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(160)));
     }
 
     private void CloseOnce()
