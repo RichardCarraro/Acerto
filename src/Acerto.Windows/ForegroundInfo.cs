@@ -8,22 +8,27 @@ namespace Acerto.Windows;
 /// <summary>Quem está em foreground: nome do processo, se roda como admin e se o foco é campo de senha.</summary>
 internal sealed class ForegroundInfo
 {
+    // Estado do foco publicado de uma vez só: a checagem em segundo plano só grava se ainda for a versão atual.
+    private sealed record FocusState(int Version, bool Resolved, bool IsPassword);
+
     private uint _pid;
     private int _version;
+    private FocusState _focus = new(0, false, true);
 
+    public nint Hwnd { get; private set; }
     public string ProcessName { get; private set; } = "";
     public bool IsElevated { get; private set; }
     public bool IsOwnProcess { get; private set; }
+    public bool IsFullScreenApp { get; private set; }
 
-    private volatile bool _focusIsPassword = true;
-    private volatile bool _focusResolved;
-    public bool FocusIsPassword => _focusIsPassword;
-    public bool FocusResolved => _focusResolved;
+    public bool FocusIsPassword => Volatile.Read(ref _focus).IsPassword;
+    public bool FocusResolved => Volatile.Read(ref _focus).Resolved;
 
     /// <summary>Chamado na thread da UI quando o foreground ou o foco mudam.</summary>
     public void Refresh()
     {
         var hwnd = GetForegroundWindow();
+        Hwnd = hwnd;
         var thread = GetWindowThreadProcessId(hwnd, out var pid);
         if (pid != _pid)
         {
@@ -32,16 +37,17 @@ internal sealed class ForegroundInfo
             ProcessName = NameOf(pid);
             IsElevated = Elevated(pid);
         }
+        // jogo em tela cheia / apresentação: espaço é pulo, WASD não é texto
+        IsFullScreenApp = SHQueryUserNotificationState(out int state) == 0
+            && state is QUNS_BUSY or QUNS_RUNNING_D3D_FULL_SCREEN or QUNS_PRESENTATION_MODE;
 
-        _focusResolved = false;
-        _focusIsPassword = true;
         int version = Interlocked.Increment(ref _version);
+        var pending = new FocusState(version, false, true);
+        Volatile.Write(ref _focus, pending);
         Task.Run(() =>
         {
             bool pwd = IsPasswordFocus(thread);
-            if (version != Volatile.Read(ref _version)) return; // o foco já mudou de novo
-            _focusIsPassword = pwd;
-            _focusResolved = true;
+            Interlocked.CompareExchange(ref _focus, new FocusState(version, true, pwd), pending); // perde se o foco mudou
         });
     }
 

@@ -18,6 +18,10 @@ int delay = args.Length > 1 ? int.Parse(args[1]) : 40;
     (" nao{ENTER}", " não\r\n", false),
     (" www.site.com joao@crc.org.br abc123 ", " www.site.com joao@crc.org.br abc123 ", false),
     (" esta pais secretaria casa ", " esta pais secretaria casa ", false),
+    (" joao.silva@crc.org.br relatorio.pdf ", " joao.silva@crc.org.br relatorio.pdf ", false),
+    (" nao. voce: ", " não. Você: ", false),
+    (" curitiba apps obs office ficara duvida ", " curitiba apps obs office ficara duvida ", false),
+    (" nao\t", " nao\t", false),
     (" nao ", " nao ", true),
 ];
 

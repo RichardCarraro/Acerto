@@ -107,5 +107,13 @@ internal static class Native
     [DllImport("advapi32.dll", SetLastError = true)] public static extern bool GetTokenInformation(nint token, int cls, out int info, int len, out int retLen);
     [DllImport("kernel32.dll")] public static extern bool CloseHandle(nint h);
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LASTINPUTINFO { public uint cbSize, dwTime; }
+
+    [DllImport("user32.dll")] public static extern bool GetLastInputInfo(ref LASTINPUTINFO info);
+
+    public const int QUNS_BUSY = 2, QUNS_RUNNING_D3D_FULL_SCREEN = 3, QUNS_PRESENTATION_MODE = 4;
+    [DllImport("shell32.dll")] public static extern int SHQueryUserNotificationState(out int state);
+
     public static bool IsDown(int vk) => (GetAsyncKeyState(vk) & 0x8000) != 0;
 }

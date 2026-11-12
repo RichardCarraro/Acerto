@@ -59,7 +59,15 @@ internal sealed class TrayApp : ApplicationContext
             return;
         }
         _data = load.Result;
-        var engine = new TextEngine(new Corrector(_data), _data.Personal);
+        // Aprender grava arquivo: nunca dentro do hook. Vai para a fila da UI e roda depois que o callback volta.
+        var ui = SynchronizationContext.Current!;
+        var personal = _data.Personal;
+        var engine = new TextEngine(new Corrector(_data), word => ui.Post(_ =>
+        {
+            try { personal.Add(word); }
+            catch (IOException) { /* sem gravar desta vez; a palavra volta a ser corrigida */ }
+            catch (UnauthorizedAccessException) { }
+        }, null));
         _hooks = new InputHooks(engine, _settings, new ForegroundInfo());
         _hooks.PauseToggled += UpdateState;
         _hooks.Install();

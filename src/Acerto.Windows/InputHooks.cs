@@ -23,6 +23,8 @@ internal sealed class InputHooks : IDisposable
     private nint _keyboardHook, _mouseHook, _foregroundHook, _focusHook;
     private HotkeyWindow? _hotkeyWindow;
     private char? _pendingDead;
+    private System.Windows.Forms.Timer? _watchdog;
+    private uint _lastHookTick; // mesmo relógio do GetLastInputInfo
 
     public event Action? PauseToggled;
 
@@ -38,11 +40,22 @@ internal sealed class InputHooks : IDisposable
 
     public void Install()
     {
-        var module = GetModuleHandleW(null);
-        _keyboardHook = SetWindowsHookExW(WH_KEYBOARD_LL, _keyboardProc, module, 0);
-        _mouseHook = SetWindowsHookExW(WH_MOUSE_LL, _mouseProc, module, 0);
-        if (_keyboardHook == 0 || _mouseHook == 0)
-            throw new InvalidOperationException($"Não foi possível instalar o hook de teclado/mouse (erro {Marshal.GetLastWin32Error()}).");
+        InstallLowLevelHooks();
+
+        // O Windows remove hook lento sem avisar. Se houve entrada que o hook não viu, reinstala.
+        _watchdog = new System.Windows.Forms.Timer { Interval = 5000 };
+        _watchdog.Tick += (_, _) =>
+        {
+            var info = new LASTINPUTINFO { cbSize = (uint)Marshal.SizeOf<LASTINPUTINFO>() };
+            if (GetLastInputInfo(ref info) && unchecked((int)(info.dwTime - _lastHookTick)) > 2000)
+            {
+                UnhookWindowsHookEx(_keyboardHook);
+                UnhookWindowsHookEx(_mouseHook);
+                InstallLowLevelHooks();
+                ResetAll();
+            }
+        };
+        _watchdog.Start();
 
         _foregroundHook = SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, 0, _winEventProc, 0, 0, WINEVENT_OUTOFCONTEXT);
         _focusHook = SetWinEventHook(EVENT_OBJECT_FOCUS, EVENT_OBJECT_FOCUS, 0, _winEventProc, 0, 0, WINEVENT_OUTOFCONTEXT);
@@ -51,6 +64,16 @@ internal sealed class InputHooks : IDisposable
         RegisterHotKey(_hotkeyWindow.Handle, PauseHotkeyId, MOD_CONTROL | MOD_SHIFT | MOD_NOREPEAT, VK_F12);
 
         _fg.Refresh();
+    }
+
+    private void InstallLowLevelHooks()
+    {
+        var module = GetModuleHandleW(null);
+        _keyboardHook = SetWindowsHookExW(WH_KEYBOARD_LL, _keyboardProc, module, 0);
+        _mouseHook = SetWindowsHookExW(WH_MOUSE_LL, _mouseProc, module, 0);
+        if (_keyboardHook == 0 || _mouseHook == 0)
+            throw new InvalidOperationException($"Não foi possível instalar o hook de teclado/mouse (erro {Marshal.GetLastWin32Error()}).");
+        _lastHookTick = (uint)Environment.TickCount;
     }
 
     public void TogglePause()
@@ -62,33 +85,42 @@ internal sealed class InputHooks : IDisposable
     }
 
     private bool Active =>
-        !_settings.Paused && !_fg.IsOwnProcess && !_fg.IsElevated && _fg.FocusResolved && !_fg.FocusIsPassword
-        && !_settings.IsExcluded(_fg.ProcessName);
+        !_settings.Paused && !_fg.IsOwnProcess && !_fg.IsElevated && !_fg.IsFullScreenApp
+        && _fg.FocusResolved && !_fg.FocusIsPassword && !_settings.IsExcluded(_fg.ProcessName);
 
     private nint KeyboardProc(int nCode, nint wParam, nint lParam)
     {
+        _lastHookTick = (uint)Environment.TickCount;
         if (nCode < 0 || (wParam != WM_KEYDOWN && wParam != WM_SYSKEYDOWN))
             return CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
-
-        var k = Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam);
-        if ((k.flags & LLKHF_INJECTED) != 0 && k.dwExtraInfo == InputSender.Marker)
-            return CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
-
-        if (!Active)
+        try
         {
-            _engine.Reset();
-            _pendingDead = null;
-            return CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
+            var k = Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam);
+            if ((k.flags & LLKHF_INJECTED) != 0 && k.dwExtraInfo == InputSender.Marker)
+                return CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
+
+            if (!Active)
+            {
+                ResetAll();
+                return CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
+            }
+
+            var action = Handle(k);
+            if (action.Swallow)
+            {
+                // Com Ctrl/Alt/Win apertado, um Backspace injetado vira atalho (Ctrl+Backspace apaga palavra).
+                bool modifiers = IsDown(VK_CONTROL) || IsDown(VK_MENU) || IsDown(VK_LWIN) || IsDown(VK_RWIN);
+                // Janela trocou e o evento de foco ainda não chegou: os Backspaces iriam para texto que não vimos.
+                bool sameWindow = GetForegroundWindow() == _fg.Hwnd;
+                if (!modifiers && sameWindow && InputSender.Send(action.Backspaces, action.Insert))
+                    return 1;
+                ResetAll(); // não deu para corrigir: deixa a tecla original passar
+            }
         }
-
-        var action = Handle(k);
-        if (action.Swallow)
+        catch (Exception)
         {
-            // Com Ctrl/Alt/Win apertado, um Backspace injetado vira atalho (Ctrl+Backspace apaga palavra).
-            bool modifiers = IsDown(VK_CONTROL) || IsDown(VK_MENU) || IsDown(VK_LWIN) || IsDown(VK_RWIN);
-            if (!modifiers && InputSender.Send(action.Backspaces, action.Insert))
-                return 1;
-            _engine.Reset(); // não deu para corrigir: deixa a tecla original passar
+            // exceção saindo de callback nativo derruba o processo; na dúvida, deixa a tecla passar
+            ResetAll();
         }
         return CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
     }
@@ -106,13 +138,15 @@ internal sealed class InputHooks : IDisposable
         if (IsDown(VK_LWIN) || IsDown(VK_RWIN) || ((ctrl || alt) && !altGr))
             return ResetAll(); // atalhos: Ctrl+C, Alt+Tab, Ctrl+Backspace...
 
+        // Tecla morta pendente no app + Backspace/Enter/Tab: o app vai combinar a morta com o que injetarmos.
+        if (_pendingDead is not null && vk is VK_BACK or VK_RETURN or VK_TAB)
+            return ResetAll();
+
         switch (vk)
         {
-            case VK_BACK: _pendingDead = null; return _engine.OnBackspace();
-            case VK_RETURN: _pendingDead = null; return _engine.OnChar('\n');
-            case VK_TAB:
-                _pendingDead = null;
-                return IsDown(VK_SHIFT) ? ResetAll() : _engine.OnChar('\t');
+            case VK_BACK: return _engine.OnBackspace();
+            case VK_RETURN: return _engine.OnChar('\n');
+            case VK_TAB: return IsDown(VK_SHIFT) ? ResetAll() : _engine.OnChar('\t');
             case VK_ESCAPE or VK_INSERT or VK_DELETE or VK_APPS or (>= VK_PRIOR and <= VK_DOWN):
                 return ResetAll();
             case VK_PACKET:
@@ -154,19 +188,29 @@ internal sealed class InputHooks : IDisposable
 
     private nint MouseProc(int nCode, nint wParam, nint lParam)
     {
-        if (nCode >= 0 && wParam is WM_LBUTTONDOWN or WM_RBUTTONDOWN or WM_MBUTTONDOWN or WM_XBUTTONDOWN)
-            ResetAll();
+        _lastHookTick = (uint)Environment.TickCount;
+        try
+        {
+            if (nCode >= 0 && wParam is WM_LBUTTONDOWN or WM_RBUTTONDOWN or WM_MBUTTONDOWN or WM_XBUTTONDOWN)
+                ResetAll();
+        }
+        catch (Exception) { /* nunca deixar exceção sair de callback nativo */ }
         return CallNextHookEx(_mouseHook, nCode, wParam, lParam);
     }
 
     private void WinEventProc(nint hook, uint ev, nint hwnd, int idObject, int idChild, uint thread, uint time)
     {
-        ResetAll();
-        _fg.Refresh();
+        try
+        {
+            ResetAll();
+            _fg.Refresh();
+        }
+        catch (Exception) { /* nunca deixar exceção sair de callback nativo */ }
     }
 
     public void Dispose()
     {
+        _watchdog?.Dispose();
         if (_hotkeyWindow is not null)
         {
             UnregisterHotKey(_hotkeyWindow.Handle, PauseHotkeyId);
