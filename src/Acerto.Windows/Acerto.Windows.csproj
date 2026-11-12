@@ -18,6 +18,8 @@
     <ProjectReference Include="..\Acerto.Core\Acerto.Core.csproj" />
     <!-- com UseWPF o SDK tira System.IO dos usings implícitos -->
     <Using Include="System.IO" />
+    <!-- créditos de terceiros vão junto com o programa -->
+    <None Include="..\..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
