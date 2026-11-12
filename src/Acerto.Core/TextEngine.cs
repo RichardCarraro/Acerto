@@ -36,6 +36,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     private bool _lastWasDoubleSpace;
     private char _prev1, _prev2;   // dois últimos caracteres do texto ('\0' = desconhecido)
     private Deferred? _deferred;   // correção esperando ver o que vem depois de "." ou ":"
+    private string? _prev;         // palavra anterior (minúsculas), início de frase, ou null se não se sabe
     private readonly StringBuilder _sinceReset = new(); // digitado desde o Reset, enquanto o contexto é desconhecido
 
     // Última palavra corrigida, como foi digitada. Se o usuário apagar e digitar a mesma de novo, é de propósito.
@@ -70,6 +71,9 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
         _tokenKnown = true;
         var trimmed = context.TrimEnd(' ', '\t');
         _capNext = trimmed.Length == 0 || trimmed[^1] is '.' or '!' or '?' or '\n' or '\r';
+        _prev = _capNext ? BigramModel.SentenceStart
+            : trimmed.Length < context.Length ? LastWord(trimmed)   // há espaço antes do cursor: a palavra anterior é conhecida
+            : null;
         if (typed.Length == 0)
         {
             _prev1 = prev;
@@ -97,6 +101,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
         _lastWasDoubleSpace = false;
         _prev1 = _prev2 = '\0';
         _deferred = null;
+        _prev = null;
     }
 
     public EngineAction OnChar(char c)
@@ -159,15 +164,19 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
             _prev2 = '.';
             _prev1 = ' ';
             _lastWasDoubleSpace = true;
+            _prev = BigramModel.SentenceStart;
             EndToken();
             return new EngineAction(true, 1, ". ");
         }
 
+        bool hadWord = _word.Length > 0;
+        string? completed = _tokenKnown && _tokenPure && hadWord ? _word.ToString() : null; // palavra que acabou de fechar
+
         // Tab não corrige: em muitos apps ele aceita uma sugestão do próprio app
-        if (_tokenKnown && _tokenPure && _word.Length > 0 && c != '\t')
+        if (completed is not null && c != '\t')
         {
-            var word = _word.ToString();
-            var corr = corrector.Correct(word, atSentenceStart: _capNext);
+            var word = completed;
+            var corr = corrector.Correct(word, atSentenceStart: _capNext, prev: _prev);
 
             if (corr is not null && _backspacedSinceCorrection
                 && string.Equals(word, _lastCorrectedWord, StringComparison.OrdinalIgnoreCase))
@@ -205,8 +214,17 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
                     _prev1 = result[^1];
                 }
             }
+            completed = result;
             _capNext = false;
         }
+
+        // palavra anterior para a próxima correção: muda de frase em . ! ? e Enter; outra pontuação quebra o contexto
+        _prev = c switch
+        {
+            '\n' or '.' or '!' or '?' => BigramModel.SentenceStart,
+            ' ' or '\t' => completed is not null ? LastWord(completed) : hadWord ? null : _prev,
+            _ => null,
+        };
 
         bool sentenceEnd = _prev1 is '.' or '!' or '?';
         Push(c);
@@ -221,6 +239,15 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
             _tokenHadEnd = true;
         }
         return action;
+    }
+
+    /// <summary>Última palavra de um texto, em minúsculas; null se o final não for uma palavra só de letras.</summary>
+    private static string? LastWord(string text)
+    {
+        int start = text.Length;
+        while (start > 0 && (char.IsLetter(text[start - 1]) || text[start - 1] is '-' or '\'')) start--;
+        if (start == text.Length || (start > 0 && !char.IsWhiteSpace(text[start - 1]))) return null;
+        return text[start..].ToLower(TextUtil.PtBr);
     }
 
     private void EndToken()

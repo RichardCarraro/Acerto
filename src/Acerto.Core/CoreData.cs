@@ -15,6 +15,9 @@ public sealed class CoreData
     /// </summary>
     public IReadOnlySet<string> Protected { get; init; } = new HashSet<string>();
 
+    /// <summary>Pares de palavras vizinhas para a correção por contexto. Vazio se data/bigramas.txt não existir.</summary>
+    public BigramModel Bigrams { get; init; } = BigramModel.Empty;
+
     public static CoreData Load(string dataDir, string userDir) => new()
     {
         Lexicon = new Lexicon(Path.Combine(dataDir, "pt_BR.aff"), Path.Combine(dataDir, "pt_BR.dic")),
@@ -25,5 +28,6 @@ public sealed class CoreData
         Protected = File.Exists(Path.Combine(dataDir, "protegidas.txt"))
             ? File.ReadLines(Path.Combine(dataDir, "protegidas.txt")).Select(l => l.Trim()).Where(l => l.Length > 0).ToHashSet(StringComparer.Ordinal)
             : new HashSet<string>(),
+        Bigrams = File.Exists(Path.Combine(dataDir, "bigramas.txt")) ? new BigramModel(Path.Combine(dataDir, "bigramas.txt")) : BigramModel.Empty,
     };
 }

@@ -154,6 +154,39 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
     [InlineData("Carraro")] [InlineData("CRCPR")] [InlineData("iPhone")] [InlineData("cpf")] [InlineData("pdf")]
     public void Nomes_Siglas_Ficam(string palavra) => Assert.Null(_c.Correct(palavra));
 
+    // ---- contexto: a palavra anterior decide ----
+
+    [Theory]
+    [InlineData("minha", "cas", "casa")]
+    [InlineData("esse", "cas", "caso")]
+    [InlineData("vou", "corrig", "corrigir")]   // completar pela palavra anterior
+    [InlineData("ele", "esta", "está")]          // duas palavras que existem: só o contexto decide
+    public void Contexto_Decide(string anterior, string digitada, string certa) =>
+        Assert.Equal(certa, _c.Correct(digitada, false, anterior)?.Replacement);
+
+    [Theory]
+    [InlineData("que", "esta")]   // "que esta casa" e "que está aqui" são comuns: não mexe
+    [InlineData("a", "casa")]
+    [InlineData("o", "caso")]
+    public void Contexto_NaoEstragaPalavraCerta(string anterior, string digitada) =>
+        Assert.Null(_c.Correct(digitada, false, anterior));
+
+    [Fact]
+    public void SemContexto_EstaFica() => Assert.Null(_c.Correct("esta"));
+
+    [Fact]
+    public void Motor_UsaAPalavraAnterior()
+    {
+        var engine = new TextEngine(_c, _ => { });
+        var doc = new System.Text.StringBuilder();
+        foreach (var k in " ele esta feliz com minha cas e esse cas ")
+        {
+            var a = engine.OnChar(k);
+            if (a.Swallow) { doc.Length -= a.Backspaces; doc.Append(a.Insert); } else doc.Append(k);
+        }
+        Assert.Equal(" ele está feliz com minha casa e esse caso ", doc.ToString());
+    }
+
     [Fact]
     public void PalavrasValidasFrequentes_NuncaMudam()
     {
@@ -174,5 +207,29 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
             .OrderByDescending(e => e.Count).Take(60000)
             .Count(e => _c.Correct(e.Word) is { Kind: CorrectionKind.Typo });
         Assert.True(changed <= 2000, $"{changed} palavras frequentes trocadas (medido em 2026-11-12: 1636)");
+    }
+}
+
+public class BigramModelTests
+{
+    [Fact]
+    public void Carrega_E_Consulta()
+    {
+        var path = Path.Combine(SharedData.NewUserDir(), "bigramas.txt");
+        File.WriteAllText(path, "=minha 100\ncasa 40\nvida 30\n=<s> 50\no 20\n");
+        var m = new BigramModel(path);
+        Assert.Equal(100, m.ContextTotal("minha"));
+        Assert.Equal(40, m.Count("minha", "casa"));
+        Assert.Equal(0, m.Count("minha", "caso"));
+        Assert.Equal(0, m.ContextTotal("desconhecida"));
+        Assert.Equal(20, m.Count(BigramModel.SentenceStart, "o"));
+        Assert.Equal(["casa", "vida"], m.Successors("minha", 10));
+    }
+
+    [Fact]
+    public void Tokenize_QuebraEmPontuacao()
+    {
+        var tokens = BigramModel.Tokenize("12\tOlá, mundo. Tudo bem?").ToList();
+        Assert.Equal(["olá", null, "mundo", BigramModel.SentenceStart, "tudo", "bem", BigramModel.SentenceStart], tokens);
     }
 }

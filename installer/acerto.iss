@@ -5,12 +5,13 @@
 ; do programa e são mantidos na desinstalação.
 
 #define AppName "Acertô"
-#define AppVersion "1.0.0"
 #define AppExe "Acerto.exe"
 ; pasta com o resultado do dotnet publish; dá para trocar: ISCC /DPublishDir=..\outra-pasta
 #ifndef PublishDir
   #define PublishDir "..\publish"
 #endif
+; a versão vem do próprio executável (definida em src/Acerto.Windows/Acerto.Windows.csproj)
+#define AppVersion GetStringFileInfo(AddBackslash(SourcePath) + PublishDir + "\" + AppExe, "ProductVersion")
 
 [Setup]
 AppId={{6F0B2B7E-3C55-4E0B-9C0A-ACE27D0A0001}

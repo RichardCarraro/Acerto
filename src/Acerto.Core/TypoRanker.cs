@@ -41,6 +41,11 @@ public sealed record TypoOptions
     public double FirstLetterPenalty { get; init; } = 0.4;
     /// <summary>Faltou uma letra qualquer.</summary>
     public double MissingLetter { get; init; } = 0.7;
+    /// <summary>
+    /// O digitado é o começo exato da candidata (corrig → corrigir): cada letra que falta no fim custa só isto.
+    /// É o "completar palavra" do celular; bem mais provável do que dois erros no meio.
+    /// </summary>
+    public double PrefixCompletion { get; init; } = 0.4;
     /// <summary>Sobrou uma letra que não é dobrada nem tecla vizinha (raro ao digitar).</summary>
     public double ExtraLetter { get; init; } = 1.3;
 
@@ -68,6 +73,22 @@ public sealed record TypoOptions
     /// com palavras estrangeiras. 0 = nunca.</summary>
     public long AttestedOtherRatio { get; init; }
 
+    /// <summary>
+    /// Peso do contexto (0 a 1) na frequência de cada candidata: contagem efetiva =
+    /// (1 − peso) × frequência geral + peso × N × P(palavra | palavra anterior). Par nunca visto perde um pouco,
+    /// par comum ganha muito ("minha cas" → casa; "esse cas" → caso).
+    /// </summary>
+    public double ContextWeight { get; init; } = 0.75;
+
+    /// <summary>
+    /// Com contexto, troca só de acento entre duas palavras que existem ("ele esta" → "ele está") quando a forma
+    /// acentuada é pelo menos isso vezes mais provável depois da palavra anterior. 0 = nunca.
+    /// </summary>
+    public double ContextAccentRatio { get; init; }
+
+    /// <summary>O par (anterior, acentuada) tem que aparecer pelo menos isso no corpus para valer como evidência.</summary>
+    public int ContextMinPairCount { get; init; } = 5;
+
     /// <summary>Palavras de 3 letras também são corrigidas quando há inversão (cmo → com).</summary>
     public bool ShortWordTransposition { get; init; }
 
@@ -90,6 +111,7 @@ public sealed record TypoOptions
         ShortWordTransposition = true,
         RareValidMinCandidate = 5000,
         AccentYield = 3.0,
+        ContextAccentRatio = 10,
     };
 
     /// <summary>Perfil cuidadoso: na dúvida, não troca. É o que os testes de corpus exigem com zero trocas indevidas.</summary>
@@ -127,9 +149,14 @@ public sealed class TypoRanker
     // (1ª letra, tamanho) → formas sem acento; usado na busca de distância 2
     private readonly Dictionary<(char, int), List<string>> _buckets = [];
 
-    public TypoRanker(Lexicon lex, FrequencyTable freq, TypoOptions? options = null)
+    private readonly BigramModel _bigrams;
+    private readonly long _corpusSize;
+
+    public TypoRanker(Lexicon lex, FrequencyTable freq, TypoOptions? options = null, BigramModel? bigrams = null)
     {
         _o = options ?? new TypoOptions();
+        _bigrams = bigrams ?? BigramModel.Empty;
+        _corpusSize = Math.Max(freq.Total, 1);
         foreach (var (word, count) in freq.Entries)
         {
             if (count < MinIndexCount || !word.All(char.IsLetter) || !lex.IsValid(word)) continue;
@@ -145,9 +172,23 @@ public sealed class TypoRanker
         }
     }
 
-    public TypoMatch? Best(string lowerWord)
+    /// <summary>
+    /// Frequência da palavra levando em conta a palavra anterior. Sem contexto (ou contexto desconhecido) é a
+    /// contagem geral.
+    /// </summary>
+    public double EffectiveCount(string word, long count, string? prev)
     {
-        var ranked = Candidates(lowerWord);
+        if (prev is null) return count;
+        long total = _bigrams.ContextTotal(prev);
+        if (total == 0) return count;
+        double afterPrev = (double)_bigrams.Count(prev, word) / total;
+        return (1 - _o.ContextWeight) * count + _o.ContextWeight * _corpusSize * afterPrev;
+    }
+
+    /// <param name="prev">Palavra anterior em minúsculas, <see cref="BigramModel.SentenceStart"/> ou null se desconhecida.</param>
+    public TypoMatch? Best(string lowerWord, string? prev = null)
+    {
+        var ranked = Candidates(lowerWord, prev);
         if (ranked.Count == 0) return null;
         var best = ranked[0];
         if (best.Count < _o.MinBestCount) return null;
@@ -156,7 +197,7 @@ public sealed class TypoRanker
     }
 
     /// <summary>Todas as candidatas, da melhor para a pior. Público para diagnóstico (tests/Acerto.Eval).</summary>
-    public IReadOnlyList<(string Word, long Count, double Cost, double Score)> Candidates(string lowerWord)
+    public IReadOnlyList<(string Word, long Count, double Cost, double Score)> Candidates(string lowerWord, string? prev = null)
     {
         var typed = TextUtil.StripAccents(lowerWord);
         if (typed.Length == 0 || !typed.All(c => c is >= 'a' and <= 'z')) return [];
@@ -177,10 +218,16 @@ public sealed class TypoRanker
                     }
         }
 
+        // "Completar palavra" do celular usado como correção: o digitado é o começo exato de uma palavra duas letras
+        // maior (corrig → corrigir). Com uma letra a mais ela já entrou acima como "letra faltando".
+        if (typed.Length >= 4 && _buckets.TryGetValue((typed[0], typed.Length + 2), out var longer))
+            foreach (var s in longer)
+                if (s.StartsWith(typed, StringComparison.Ordinal)) cands.TryAdd(s, Cost(typed, s));
+
         var ranked = new List<(string Word, long Count, double Cost, double Score)>();
         foreach (var (stripped, cost) in cands)
             foreach (var (word, count) in _byStripped[stripped])
-                ranked.Add((word, count, cost, Math.Log(count) - _o.CostWeight * cost));
+                ranked.Add((word, count, cost, Math.Log(Math.Max(EffectiveCount(word, count, prev), 0.01)) - _o.CostWeight * cost));
         ranked.Sort((x, y) => y.Score.CompareTo(x.Score));
         return ranked;
     }
@@ -234,6 +281,7 @@ public sealed class TypoRanker
     private double Cost(string a, string b)
     {
         if (Math.Abs(a.Length - b.Length) > 2) return double.MaxValue;
+        if (b.Length > a.Length && b.StartsWith(a, StringComparison.Ordinal)) return (b.Length - a.Length) * _o.PrefixCompletion;
         var d = new double[a.Length + 1, b.Length + 1];
         for (int i = 1; i <= a.Length; i++) d[i, 0] = d[i - 1, 0] + ExtraCost(a, i - 1);
         for (int j = 1; j <= b.Length; j++) d[0, j] = d[0, j - 1] + MissingCost(b, j - 1);

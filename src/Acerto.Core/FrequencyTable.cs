@@ -17,10 +17,14 @@ public sealed class FrequencyTable
             if (n < MinCount) break; // arquivo em ordem decrescente: daqui para baixo é tudo raro
             var word = line[..sp].ToLowerInvariant();
             _counts[word] = _counts.GetValueOrDefault(word) + n;
+            Total += n;
         }
     }
 
     public long Count(string lowerWord) => _counts.GetValueOrDefault(lowerWord);
+
+    /// <summary>Soma de todas as contagens: o "tamanho" do corpus, para transformar contagem em probabilidade.</summary>
+    public long Total { get; private set; }
 
     public IEnumerable<(string Word, long Count)> Entries => _counts.Select(kv => (kv.Key, kv.Value));
 }

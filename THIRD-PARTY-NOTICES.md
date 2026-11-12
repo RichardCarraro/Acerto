@@ -15,3 +15,13 @@ Licença do código do projeto: MIT (`data/LICENSE_FrequencyWords_MIT.txt`).
 
 ## WeCantSpell.Hunspell
 https://github.com/aarondandy/WeCantSpell.Hunspell — Licença MPL 1.1 / GPL 2.0 / LGPL 2.1 (herdada do Hunspell). Usado sem modificação.
+
+## Pares de palavras para correção por contexto (`data/bigramas.txt`)
+Tabela derivada (contagens de palavras vizinhas) do corpus `por-br_newscrawl_2011_1M` da Leipzig Corpora Collection,
+Universidade de Leipzig (https://wortschatz.uni-leipzig.de). Os corpus para download são CC BY; os termos de uso do
+projeto restringem o uso comercial a autorização por escrito.
+**Pendência antes de vender o Acertô:** obter a autorização ou gerar a tabela de outro corpus com
+`AcertoEval data bigramas <frases.txt> data/bigramas.txt` (o gerador aceita qualquer arquivo com uma frase por linha).
+
+## Palavras protegidas (`data/protegidas.txt`)
+Lista de palavras do corpus de frequência acima que o corretor ortográfico pt-BR do Windows aceita.
