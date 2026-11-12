@@ -27,7 +27,7 @@ int delay = args.Length > 1 ? int.Parse(args[1]) : 40;
 
 ApplicationConfiguration.Initialize();
 var form = new Form { Text = "Acertô — teste automático", Width = 700, Height = 300, TopMost = true, StartPosition = FormStartPosition.CenterScreen };
-var text = new TextBox { Multiline = true, Dock = DockStyle.Fill, Font = new Font("Segoe UI", 12) };
+var text = new TextBox { Multiline = true, AcceptsTab = true, Dock = DockStyle.Fill, Font = new Font("Segoe UI", 12) };
 var pwd = new TextBox { UseSystemPasswordChar = true, Dock = DockStyle.Bottom };
 form.Controls.Add(text);
 form.Controls.Add(pwd);
