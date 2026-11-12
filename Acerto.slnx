@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Acerto.Core/Acerto.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Acerto.Core.Tests/Acerto.Core.Tests.csproj" />
+  </Folder>
+</Solution>
