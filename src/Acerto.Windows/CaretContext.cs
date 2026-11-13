@@ -42,6 +42,37 @@ internal static class CaretContext
     }
 
     /// <summary>
+    /// Onde ancorar a barra de sugestões: o retângulo (pixels) da palavra em andamento, ou do cursor quando ainda não
+    /// há palavra (<paramref name="wordLength"/> = 0). null se o app não informa a posição.
+    /// </summary>
+    public static System.Windows.Rect? CaretAnchor(int wordLength)
+    {
+        try
+        {
+            var el = AutomationElement.FocusedElement;
+            if (el is null || el.Current.IsPassword) return null;
+            if (!el.TryGetCurrentPattern(TextPattern.Pattern, out var pattern)) return null;
+
+            var selection = ((TextPattern)pattern).GetSelection();
+            if (selection.Length != 1) return null;
+            var range = selection[0].Clone();
+            if (range.GetText(1).Length != 0) return null;
+
+            int back = Math.Max(wordLength, 1); // sem palavra: usa o caractere antes do cursor (o espaço)
+            if (range.MoveEndpointByUnit(TextPatternRangeEndpoint.Start, TextUnit.Character, -back) != -back) return null;
+            var rects = range.GetBoundingRectangles();
+            if (rects.Length == 0) return null;
+            var r = rects[^1];
+            if (r.Height < 4 || r.Height > 120) return null;
+            return wordLength > 0 ? r : new System.Windows.Rect(r.Right, r.Top, 1, r.Height);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Retângulo na tela (pixels) da palavra corrigida, que termina <paramref name="trailing"/> caracteres antes do
     /// cursor. Só devolve se o texto nessa posição for exatamente <paramref name="word"/>: se o app ainda não recebeu
     /// a correção ou o cursor já está em outro lugar, é melhor não animar do que animar no lugar errado.

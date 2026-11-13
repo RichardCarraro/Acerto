@@ -86,3 +86,14 @@ Saída sem esse preço: lista de palavras em inglês/espanhol em `data/protegida
 - [ ] Primeira palavra no app do Claude, Chrome e Teams: clicar na caixa vazia e digitar `testi ` → `Teste `.
       (A consulta do texto antes do cursor atravessava a caixa e lia o resto da página; agora é limitada ao campo.)
 - [ ] `corrie`, `escrevu`, `corrigndo` são corrigidas (pode não ser para a palavra que você queria).
+
+## Correção por contexto e sugestões (versão 1.1.0)
+
+- [ ] Contexto: `minha cas ` → `minha casa `; `esse cas ` → `esse caso `; `ele esta ` → `ele está `; `vou corrig ` → `vou corrigir `.
+- [ ] Sugestões: ao digitar `obrig` aparece uma barrinha perto do cursor com `obrigado`; **Tab** troca pelo texto
+      completo e põe um espaço. Depois de `bom ` deve sugerir `dia`.
+- [ ] Sem barra na tela, o Tab continua sendo Tab (mudar de campo, indentar).
+- [ ] Início → "Sugestões ao digitar" desliga a barra.
+
+Limites conhecidos: a barra só aparece em programas que informam a posição do texto (Claude, Chrome, Teams, Word,
+Bloco de Notas). Com a barra visível, o Tab aceita a sugestão em vez de mudar de campo.

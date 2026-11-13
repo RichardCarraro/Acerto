@@ -32,7 +32,11 @@ public sealed class Corrector
         _data = data;
         _accents = new AccentIndex(data.Frequency, data.Lexicon);
         _typos = new TypoRanker(data.Lexicon, data.Frequency, typoOptions, data.Bigrams);
+        Suggester = new Suggester(_typos, data.Bigrams, data.Lexicon);
     }
+
+    /// <summary>Sugestões de completar palavra e de próxima palavra.</summary>
+    public Suggester Suggester { get; }
 
     /// <summary>Candidatas do ranqueador de digitação, para diagnóstico (tests/Acerto.Eval).</summary>
     public TypoRanker Typos => _typos;

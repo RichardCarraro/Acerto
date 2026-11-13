@@ -172,6 +172,10 @@ public sealed class TypoRanker
         }
     }
 
+    /// <summary>Todas as palavras válidas conhecidas, com a forma sem acento e a contagem (para as sugestões).</summary>
+    public IEnumerable<(string Stripped, string Word, long Count)> IndexedWords =>
+        _byStripped.SelectMany(kv => kv.Value.Select(w => (kv.Key, w.Word, w.Count)));
+
     /// <summary>
     /// Frequência da palavra levando em conta a palavra anterior. Sem contexto (ou contexto desconhecido) é a
     /// contagem geral.

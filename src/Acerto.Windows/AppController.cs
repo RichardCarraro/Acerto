@@ -32,6 +32,8 @@ internal sealed class AppController
     private MainWindow? _window;
     private TrayFlyout? _flyout;
     private HighlightOverlay? _overlay;
+    private SuggestionBar? _bar;
+    private int _suggestionSequence;
     private bool _settingsDirty;
     private readonly bool _preview;
 
@@ -91,6 +93,7 @@ internal sealed class AppController
         hooks.PauseToggled += OnStateChanged;
         hooks.Corrected += OnCorrected;
         hooks.ContextLost += () => _overlay?.Cancel();
+        hooks.SuggestionsChanged += OnSuggestions;
         try
         {
             hooks.Install();
@@ -219,6 +222,43 @@ internal sealed class AppController
                     (_overlay ??= new HighlightOverlay()).Flash(r);
                     return;
                 }
+            }
+        });
+    }
+
+    /// <summary>Mostra (ou esconde) a barra de sugestões perto do cursor.</summary>
+    private void OnSuggestions(IReadOnlyList<string> suggestions, int wordLength)
+    {
+        int sequence = ++_suggestionSequence;
+        var hooks = _hooks;
+        if (hooks is null) return;
+        if (suggestions.Count == 0)
+        {
+            _bar?.Conceal();
+            return;
+        }
+        if (_bar is { IsShowing: true })
+        {
+            // mesma palavra, mais uma letra: troca o conteúdo já, e reposiciona quando a posição chegar
+            _bar.SetItems(suggestions);
+            hooks.VisibleSuggestions = suggestions;
+        }
+        _ui.BeginInvoke(async () =>
+        {
+            await Task.Delay(30); // o app precisa receber a tecla antes de informar onde o texto está
+            if (sequence != _suggestionSequence) return;
+            var anchor = await Task.Run(() => CaretContext.CaretAnchor(wordLength));
+            if (sequence != _suggestionSequence) return;
+            if (anchor is { } a)
+            {
+                (_bar ??= new SuggestionBar()).ShowAt(a, suggestions);
+                hooks.VisibleSuggestions = suggestions;
+            }
+            else
+            {
+                // o app não informa a posição: sem barra na tela, o Tab continua sendo Tab
+                _bar?.Conceal();
+                hooks.VisibleSuggestions = [];
             }
         });
     }

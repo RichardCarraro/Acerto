@@ -82,6 +82,41 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
         return true;
     }
 
+    /// <summary>Tamanho da palavra em andamento (o host usa para achar onde ela está na tela).</summary>
+    public int CurrentWordLength => _word.Length;
+
+    /// <summary>
+    /// Sugestões para o ponto atual: completar a palavra em andamento ou, logo depois de um espaço, a próxima palavra.
+    /// Vazio quando o contexto não é conhecido ou a palavra já está completa e é comum.
+    /// </summary>
+    public IReadOnlyList<string> Suggestions(int max = 3)
+    {
+        if (!_tokenKnown || !_tokenPure || _tokenHadEnd || _deferred is not null) return [];
+        var typed = _word.ToString();
+        if (typed.Length == 0 && _prev1 != ' ') return [];              // próxima palavra só logo depois de um espaço
+        var list = corrector.Suggester.Suggest(_prev, typed, max);
+        bool upper = typed.Length > 0 ? char.IsUpper(typed[0]) : AutoCapitalize && _capNext;
+        return upper ? list.Select(s => char.ToUpper(s[0], TextUtil.PtBr) + s[1..]).ToList() : list;
+    }
+
+    /// <summary>
+    /// A pessoa aceitou uma sugestão: troca o que foi digitado da palavra pela sugestão seguida de espaço,
+    /// e o motor segue como se ela tivesse sido digitada inteira.
+    /// </summary>
+    public EngineAction AcceptSuggestion(string suggestion)
+    {
+        int typed = _word.Length;
+        _prev = LastWord(suggestion);
+        _capNext = false;
+        _prev2 = suggestion[^1];
+        _prev1 = ' ';
+        _lastWasDoubleSpace = false;
+        _deferred = null;
+        _lastCorrectedWord = null;
+        EndToken();
+        return new EngineAction(true, typed, suggestion + " ");
+    }
+
     /// <summary>O host perdeu o fio (clique, troca de janela, seta, atalho): esquece tudo.</summary>
     public void Reset()
     {

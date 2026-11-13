@@ -187,6 +187,64 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
         Assert.Equal(" ele está feliz com minha casa e esse caso ", doc.ToString());
     }
 
+    // ---- sugestões (barra do celular) ----
+
+    [Fact]
+    public void Sugere_CompletarPalavra() => Assert.Equal("obrigado", _c.Suggester.Suggest(null, "obrig")[0]);
+
+    [Fact]
+    public void Sugere_ComContexto() => Assert.Contains("corrigir", _c.Suggester.Suggest("vou", "corrig"));
+
+    [Fact]
+    public void Sugere_ProximaPalavra() => Assert.Contains("dia", _c.Suggester.Suggest("bom", ""));
+
+    [Fact]
+    public void Sugere_NadaComUmaLetraOuNoComecoDaFrase()
+    {
+        Assert.Empty(_c.Suggester.Suggest(null, "o"));
+        Assert.Empty(_c.Suggester.Suggest(BigramModel.SentenceStart, ""));
+        Assert.Empty(_c.Suggester.Suggest(null, ""));
+    }
+
+    [Fact]
+    public void Motor_AceitaSugestao()
+    {
+        var engine = new TextEngine(_c, _ => { });
+        var doc = new System.Text.StringBuilder();
+        void Type(string keys)
+        {
+            foreach (var k in keys)
+            {
+                var a = engine.OnChar(k);
+                if (a.Swallow) { doc.Length -= a.Backspaces; doc.Append(a.Insert); } else doc.Append(k);
+            }
+        }
+        Type(" muito obrig");
+        Assert.Equal("obrigado", engine.Suggestions()[0]);
+        var accept = engine.AcceptSuggestion(engine.Suggestions()[0]);
+        doc.Length -= accept.Backspaces;
+        doc.Append(accept.Insert);
+        Assert.Equal(" muito obrigado ", doc.ToString());
+        Type("pela ajuda ");
+        Assert.Equal(" muito obrigado pela ajuda ", doc.ToString());
+    }
+
+    [Fact]
+    public void Motor_SugestaoComMaiuscula()
+    {
+        var engine = new TextEngine(_c, _ => { });
+        foreach (var k in " Ok. Obrig") engine.OnChar(k);
+        Assert.Equal("Obrigado", engine.Suggestions()[0]);
+    }
+
+    [Fact]
+    public void Motor_SemContexto_NaoSugere()
+    {
+        var engine = new TextEngine(_c, _ => { });
+        foreach (var k in "obrig") engine.OnChar(k); // começo desconhecido (sem espaço antes)
+        Assert.Empty(engine.Suggestions());
+    }
+
     [Fact]
     public void PalavrasValidasFrequentes_NuncaMudam()
     {

@@ -49,6 +49,16 @@ internal sealed class InputHooks : IDisposable
     /// <summary>O fio da digitação foi perdido (clique, troca de janela, seta, Enter): animações em curso não valem mais.</summary>
     public event Action? ContextLost;
 
+    /// <summary>As sugestões para o ponto atual mudaram (lista vazia = esconder). O número é o tamanho da palavra em andamento.</summary>
+    public event Action<IReadOnlyList<string>, int>? SuggestionsChanged;
+
+    /// <summary>
+    /// O que a barra de sugestões está mostrando agora. Quem mostra a barra preenche; o Tab só aceita a primeira
+    /// sugestão quando a pessoa de fato está vendo a barra.
+    /// </summary>
+    public IReadOnlyList<string> VisibleSuggestions { get; set; } = [];
+    private bool _suggestionsShown; // já avisamos alguém de uma lista não vazia
+
     private SynchronizationContext _ui = null!; // capturado no Install, na thread da UI
 
     public InputHooks(TextEngine engine, AppSettings settings, ForegroundInfo fg)
@@ -165,6 +175,7 @@ internal sealed class InputHooks : IDisposable
             long generation = _engine.Generation;
             _fedChars = 0;
             var action = Handle(k);
+            _ui.Post(_ => PublishSuggestions(), null); // depois que o callback voltar: aqui dentro tem que ser rápido
             if (generation != _engine.Generation) // o motor resetou por conta própria (ex.: Backspace)
             {
                 if (Diag.On) Diag.Log("RESET motor (backspace em contexto vazio)");
@@ -231,7 +242,15 @@ internal sealed class InputHooks : IDisposable
         {
             case VK_BACK: return _engine.OnBackspace();
             case VK_RETURN: return _engine.OnChar('\n');
-            case VK_TAB: return IsDown(VK_SHIFT) ? ResetAll("shift+tab") : _engine.OnChar('\t');
+            case VK_TAB:
+                if (IsDown(VK_SHIFT)) return ResetAll("shift+tab");
+                if (VisibleSuggestions.Count > 0) // Tab aceita a primeira sugestão que está na tela
+                {
+                    var first = VisibleSuggestions[0];
+                    HideSuggestions();
+                    return _engine.AcceptSuggestion(first);
+                }
+                return _engine.OnChar('\t');
             case VK_ESCAPE or VK_INSERT or VK_DELETE or VK_APPS or (>= VK_PRIOR and <= VK_DOWN):
                 return ResetAll("navegacao");
             case VK_PACKET:
@@ -273,9 +292,31 @@ internal sealed class InputHooks : IDisposable
     }
 
     /// <param name="why">Motivo, só para o diagnóstico (nunca inclui o que foi digitado).</param>
+    /// <summary>Calcula as sugestões para o ponto atual e avisa quem desenha a barra.</summary>
+    private void PublishSuggestions()
+    {
+        IReadOnlyList<string> list = _settings.ShowSuggestions && Active ? _engine.Suggestions() : [];
+        if (list.Count == 0)
+        {
+            HideSuggestions();
+            return;
+        }
+        _suggestionsShown = true;
+        SuggestionsChanged?.Invoke(list, _engine.CurrentWordLength);
+    }
+
+    private void HideSuggestions()
+    {
+        VisibleSuggestions = [];
+        if (!_suggestionsShown) return;
+        _suggestionsShown = false;
+        SuggestionsChanged?.Invoke([], 0);
+    }
+
     private EngineAction ResetAll(string why)
     {
         if (Diag.On && why != "inativo") Diag.Log("RESET " + why);
+        HideSuggestions();
         _engine.Reset();
         _pendingDead = null;
         LoseContext();
