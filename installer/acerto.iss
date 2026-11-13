@@ -1,5 +1,5 @@
 ; Instalador do Acertô (Inno Setup 6).
-; Gerar: 1) dotnet publish src/Acerto.Windows -c Release -r win-x64 --self-contained -o publish
+; Gerar: 1) dotnet publish src/Acerto.Windows -c Release -r win-x64 --self-contained -o publish-novo
 ;        2) ISCC.exe installer\acerto.iss   → dist\Acerto-Setup-<versão>.exe
 ; Instala por usuário, sem pedir administrador. Os dados do usuário (%APPDATA%\Acerto) ficam fora da pasta
 ; do programa e são mantidos na desinstalação.
@@ -8,7 +8,7 @@
 #define AppExe "Acerto.exe"
 ; pasta com o resultado do dotnet publish; dá para trocar: ISCC /DPublishDir=..\outra-pasta
 #ifndef PublishDir
-  #define PublishDir "..\publish"
+  #define PublishDir "..\publish-novo"
 #endif
 ; a versão vem do próprio executável (definida em src/Acerto.Windows/Acerto.Windows.csproj)
 #define AppVersion GetStringFileInfo(AddBackslash(SourcePath) + PublishDir + "\" + AppExe, "ProductVersion")
