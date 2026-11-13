@@ -5,6 +5,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Acerto.Core.Tests/Acerto.Core.Tests.csproj" />
+    <Project Path="tests/Acerto.Bancada/Acerto.Bancada.csproj" />
     <Project Path="tests/Acerto.Eval/Acerto.Eval.csproj" />
     <Project Path="tests/Acerto.SmokePad/Acerto.SmokePad.csproj" />
     <Project Path="tests/Acerto.UiShots/Acerto.UiShots.csproj" />

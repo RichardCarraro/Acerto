@@ -269,7 +269,10 @@ internal sealed class InputHooks : IDisposable
         if (_pendingDead is { } d)
         {
             _pendingDead = null;
+            var translated = text;
             text = DeadKeys.Compose(d, text[0]) + text[1..];
+            if (Diag.On && text.Length != 1)
+                Diag.Log($"MORTA morta=U+{(int)d:X4} traduzido={translated.Length} 1o={(char.IsLetter(translated[0]) ? "letra" : $"U+{(int)translated[0]:X4}")}");
             if (text.Length != 1) return ResetAll("morta-composta"); // "~x": o app compõe sozinho; não arriscar engolir
         }
         return Feed(text);

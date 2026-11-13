@@ -89,9 +89,12 @@ src/Acerto.Windows     app de bandeja: hooks, injeção de teclas, interface
 tests/Acerto.Core.Tests  testes (incluem as 60 mil palavras mais usadas que não podem ser alteradas)
 tests/Acerto.Eval      medição de acerto, mineração de erros comuns, geração dos bigramas
 tests/Acerto.SmokePad  teste ponta a ponta que digita numa janela
+tests/Acerto.Bancada   digita frases variadas com erros sorteados (caixa, Chrome ou Edge) e compara com o motor
 data/                  dicionário, frequências, correções, bigramas
 installer/             roteiro do instalador (Inno Setup)
 ```
+
+Com o Acertô aberto, `AcertoBancada.exe frases=20 alvo=chrome saida=bancada.txt` (também `alvo=caixa|edge`, `semente=N`, `rapido=1`) digita como uma pessoa e diz se o app ficou diferente do motor (parada, tecla perdida) e quanto corrigiu certo. Não mexa no mouse e no teclado enquanto ele roda.
 
 Para depurar sem registrar texto, defina `ACERTO_DIAG=<arquivo>` antes de abrir: ele grava só estados (ativo, foco, motivo de cada reset).
 

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Bancada: digita frases variadas com erros sorteados, como uma pessoa, com o Acertô rodando, e compara o
+       resultado com o motor rodando aqui dentro (gabarito) e com a frase original. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>AcertoBancada</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Acerto.Core\Acerto.Core.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -89,6 +89,17 @@ public sealed record TypoOptions
     /// <summary>O par (anterior, acentuada) tem que aparecer pelo menos isso no corpus para valer como evidência.</summary>
     public int ContextMinPairCount { get; init; } = 5;
 
+    /// <summary>
+    /// Outra porta para a troca de acento por contexto, olhando só os pares: depois da palavra anterior, a acentuada
+    /// aparece pelo menos isso vezes mais que a digitada ("essa é": 515 × "essa e": 27). A regra acima mistura a
+    /// frequência geral, e palavras comuníssimas como "e" escondem o contexto. 0 = desligada.
+    /// Simulado nos 758 pares de acento do corpus: +21,8 mil acertos e +500 trocas indevidas (15×, mínimo 20).
+    /// </summary>
+    public int ContextPairRatio { get; init; }
+
+    /// <summary>O par (anterior, acentuada) tem que aparecer pelo menos isso para a porta acima valer.</summary>
+    public int ContextPairMinCount { get; init; } = 20;
+
     /// <summary>Palavras de 3 letras também são corrigidas quando há inversão (cmo → com).</summary>
     public bool ShortWordTransposition { get; init; }
 
@@ -112,6 +123,7 @@ public sealed record TypoOptions
         RareValidMinCandidate = 5000,
         AccentYield = 3.0,
         ContextAccentRatio = 10,
+        ContextPairRatio = 15,
     };
 
     /// <summary>Perfil cuidadoso: na dúvida, não troca. É o que os testes de corpus exigem com zero trocas indevidas.</summary>

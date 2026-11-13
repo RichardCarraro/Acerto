@@ -42,5 +42,9 @@ public class DeadKeysTests
     [InlineData('´', 'C', "Ć")]
     [InlineData('´', ' ', "´")]
     [InlineData('~', 'x', "~x")]
+    // O app (Chrome) já aplicou a tecla morta antes de o hook traduzir a letra: vem pronta, não compor de novo.
+    [InlineData('~', 'ã', "ã")]
+    [InlineData('´', 'É', "É")]
+    [InlineData('^', 'ô', "ô")]
     public void Compose(char d, char b, string o) => Assert.Equal(o, DeadKeys.Compose(d, b));
 }

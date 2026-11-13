@@ -103,8 +103,10 @@ public sealed class Corrector
             {
                 var best = accented[0];
                 double typedEffective = _typos.EffectiveCount(w, _data.Frequency.Count(w), prev);
-                if (_data.Bigrams.Count(prev, best.Word) >= o.ContextMinPairCount
-                    && best.Effective >= o.ContextAccentRatio * Math.Max(typedEffective, 1))
+                int pair = _data.Bigrams.Count(prev, best.Word);
+                if ((pair >= o.ContextMinPairCount && best.Effective >= o.ContextAccentRatio * Math.Max(typedEffective, 1))
+                    || (o.ContextPairRatio > 0 && pair >= o.ContextPairMinCount
+                        && pair >= o.ContextPairRatio * Math.Max(_data.Bigrams.Count(prev, w), 1)))
                     return new Correction(TextUtil.ApplyCase(word, best.Word), CorrectionKind.Accent);
             }
 

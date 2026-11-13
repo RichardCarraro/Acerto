@@ -162,6 +162,7 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
     [InlineData("esse", "cas", "caso")]
     [InlineData("vou", "corrig", "corrigir")]   // completar pela palavra anterior
     [InlineData("ele", "esta", "está")]          // duas palavras que existem: só o contexto decide
+    [InlineData("essa", "e", "é")]               // "e" é tão comum que a frequência geral escondia o contexto
     public void Contexto_Decide(string anterior, string digitada, string certa) =>
         Assert.Equal(certa, _c.Correct(digitada, false, anterior)?.Replacement);
 
@@ -169,6 +170,8 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
     [InlineData("que", "esta")]   // "que esta casa" e "que está aqui" são comuns: não mexe
     [InlineData("a", "casa")]
     [InlineData("o", "caso")]
+    [InlineData("eu", "e")]
+    [InlineData("pai", "e")]
     public void Contexto_NaoEstragaPalavraCerta(string anterior, string digitada) =>
         Assert.Null(_c.Correct(digitada, false, anterior));
 
