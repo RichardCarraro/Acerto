@@ -76,7 +76,8 @@ internal sealed class ForegroundInfo
         finally { CloseHandle(h); }
     }
 
-    /// <summary>UI Automation primeiro; o estilo ES_PASSWORD do Win32 como reserva. Erro conta como senha.</summary>
+    /// <summary>Campo onde não se corrige: senha ou barra de endereço do navegador. UI Automation primeiro; o estilo
+    /// ES_PASSWORD do Win32 como reserva. Erro conta como "não corrigir".</summary>
     private static bool IsPasswordFocus(uint thread)
     {
         try
@@ -90,7 +91,14 @@ internal sealed class ForegroundInfo
                     && (GetWindowLongW(info.hwndFocus, GWL_STYLE) & ES_PASSWORD) != 0)
                     return true;
             }
-            return AutomationElement.FocusedElement?.Current.IsPassword ?? false;
+            var el = AutomationElement.FocusedElement;
+            if (el is null) return false;
+            var c = el.Current;
+            // Barra de endereço do navegador: ela completa o que você digita deixando o resto selecionado
+            // ("chat" + "gpt.com"); o primeiro Backspace da correção apagaria a seleção e estragaria o texto ("cChat").
+            // Endereço também não é texto em português. Tratada como campo onde não se corrige.
+            if (c.ClassName is "OmniboxViewViews" || c.AutomationId is "urlbar-input" or "urlbar") return true;
+            return c.IsPassword;
         }
         catch (Exception)
         {
