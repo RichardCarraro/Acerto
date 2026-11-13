@@ -38,6 +38,43 @@ public class TextEngineTests : IClassFixture<SharedCorrector>
 
     // Backspace depois de uma correção só apaga, como em qualquer texto (pedido do usuário: sem "desfazer").
     [Fact] public void Backspace_Depois_De_Correcao_So_Apaga() => Assert.Equal(" não", Type(" nao \b"));
+
+    private string Accept(string suggestion)
+    {
+        var a = _engine.AcceptSuggestion(suggestion);
+        _doc.Length -= a.Backspaces;
+        _doc.Append(a.Insert);
+        return _doc.ToString();
+    }
+
+    [Fact]
+    public void Depois_Da_Correcao_Oferece_O_Digitado_E_Aprende()
+    {
+        Type(" nao ");
+        Assert.Equal("nao", _engine.Suggestions()[0]);
+        Assert.Equal(" nao ", Accept("nao"));
+        Assert.Contains("nao", _learned);
+        Assert.Equal(" nao casa ", Type("casa "));
+    }
+
+    [Fact]
+    public void Depois_Da_Correcao_Troca_Por_Alternativa()
+    {
+        Assert.Equal(" Ok. Não ", Type(" Ok. nao "));
+        var alts = _engine.Suggestions();
+        Assert.True(alts.Count > 1, string.Join(",", alts));
+        Assert.Equal("nao", alts[0]);
+        Assert.True(char.IsUpper(alts[1][0]), alts[1]); // começo de frase, como a correção
+        Assert.Equal(" Ok. " + alts[1] + " ", Accept(alts[1]));
+        Assert.Empty(_learned);
+    }
+
+    [Fact]
+    public void Alternativas_Somem_Ao_Digitar()
+    {
+        Type(" nao c");
+        Assert.DoesNotContain("nao", _engine.Suggestions());
+    }
     [Fact] public void Backspace_Depois_De_Atalho_So_Apaga() => Assert.Equal(" valeu", Type(" vlw \b"));
     [Fact] public void Backspace_Depois_De_Enter_So_Apaga() => Assert.Equal(" não", Type(" nao\n\b"));
 

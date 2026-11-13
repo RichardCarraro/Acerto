@@ -11,7 +11,8 @@ Você digita `nao`, aperta espaço e ele já virou `não`. Sem sublinhado vermel
   - erros de digitação — `mutio` → `muito`, `paara` → `para`, `probelma` → `problema`, `hje` → `hoje`
   - erros comuns de escrita — `concerteza` → `com certeza`, `excessao` → `exceção`, `idéia` → `ideia`
 - **Usa o contexto** para escolher a correção certa, como o celular: `minha cas` → `casa`, `esse cas` → `caso`, `ele esta` → `ele está`.
-- **Sugestões ao digitar**: uma barrinha perto do cursor mostra até três palavras para completar a atual ou adiantar a próxima. **Tab** aceita a primeira.
+- **Sugestões ao digitar**: uma barrinha perto do cursor mostra até três palavras para completar a atual (mesmo com erro: `obrgi` → `obrigado`) ou adiantar a próxima. **Tab** aceita a primeira. Logo depois de uma correção, a barrinha mostra o que você digitou e outras opções: **Tab** desfaz a correção.
+- **Aprende o seu jeito**: as palavras e sequências que você mais usa passam na frente nas sugestões e nas correções.
 - **Maiúscula automática** no começo da frase.
 - **Dois espaços viram ponto final.**
 - **Atalhos de texto** personalizáveis: `vlw` → `valeu`, `att` → `Atenciosamente,`.
@@ -21,7 +22,7 @@ Você digita `nao`, aperta espaço e ele já virou `não`. Sem sublinhado vermel
 
 ## Privacidade
 
-Tudo roda no seu computador. O Acertô **não se conecta à internet** e **nunca grava o que você digita** — só o número de palavras corrigidas, as palavras que você ensinou e os seus atalhos, em `%APPDATA%\Acerto`.
+Tudo roda no seu computador. O Acertô **não se conecta à internet** e **não grava o seu texto**. Em `%APPDATA%\Acerto` ficam só o número de palavras corrigidas, as palavras que você ensinou, os seus atalhos e, com "Aprender com o que eu escrevo" ligado, a contagem das palavras do dicionário que você usa e de quais vêm uma depois da outra (`historico.txt`). Senhas, números e e-mails nunca entram nessa contagem; dá para desligar ou apagar tudo nas configurações.
 
 ## Instalação
 
@@ -34,7 +35,8 @@ Baixe e rode o `Acerto-Setup-<versão>.exe`. Não precisa de administrador. O í
 | Opção | O que faz |
 |---|---|
 | Corrigir mais | Tenta corrigir sempre, como o celular, mesmo com dúvida. Desligado, só corrige quando tem certeza. |
-| Sugestões ao digitar | Mostra a barrinha de sugestões; Tab aceita a primeira. |
+| Sugestões ao digitar | Mostra a barrinha de sugestões; Tab aceita a primeira (logo depois de uma correção, Tab desfaz). |
+| Aprender com o que eu escrevo | Conta as palavras que você usa para sugerir e corrigir do seu jeito. Botão "Apagar o que aprendi". |
 | Maiúscula automática | Começa as frases com maiúscula. |
 | Dois espaços viram ponto | Espaço duplo termina a frase. |
 | Destacar a palavra corrigida | Liga ou desliga a animação. |

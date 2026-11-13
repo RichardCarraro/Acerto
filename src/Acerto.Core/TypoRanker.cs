@@ -150,12 +150,27 @@ public sealed class TypoRanker
     private readonly Dictionary<(char, int), List<string>> _buckets = [];
 
     private readonly BigramModel _bigrams;
+    private readonly UserHistory _history;
     private readonly long _corpusSize;
 
-    public TypoRanker(Lexicon lex, FrequencyTable freq, TypoOptions? options = null, BigramModel? bigrams = null)
+    /// <summary>
+    /// Peso do jeito do usuário na mistura com o corpus: a probabilidade da palavra no que ele escreve, vezes isto,
+    /// soma-se à do corpus. Uma palavra que ele usa (em proporção) 5× mais que o corpus ganha dele o mesmo tanto
+    /// que já tinha do corpus.
+    /// shortcut: valores escolhidos sem medição; medir com histórico simulado se incomodar.
+    /// </summary>
+    public const double UserWeight = 0.2;
+    /// <summary>Palavras "imaginárias" somadas ao total do usuário: nos primeiros dias poucas palavras não mandam em tudo.</summary>
+    public const double UserSmoothing = 500;
+    /// <summary>O mesmo para os pares: um único uso depois de uma palavra não vira certeza.</summary>
+    public const double UserPairSmoothing = 5;
+
+    public TypoRanker(Lexicon lex, FrequencyTable freq, TypoOptions? options = null, BigramModel? bigrams = null,
+        UserHistory? history = null)
     {
         _o = options ?? new TypoOptions();
         _bigrams = bigrams ?? BigramModel.Empty;
+        _history = history ?? UserHistory.Empty;
         _corpusSize = Math.Max(freq.Total, 1);
         foreach (var (word, count) in freq.Entries)
         {
@@ -177,17 +192,34 @@ public sealed class TypoRanker
         _byStripped.SelectMany(kv => kv.Value.Select(w => (kv.Key, w.Word, w.Count)));
 
     /// <summary>
-    /// Frequência da palavra levando em conta a palavra anterior. Sem contexto (ou contexto desconhecido) é a
-    /// contagem geral.
+    /// Frequência da palavra levando em conta a palavra anterior e o que o usuário costuma escrever. Sem contexto
+    /// (ou contexto desconhecido) e sem histórico é a contagem geral.
     /// </summary>
     public double EffectiveCount(string word, long count, string? prev)
     {
-        if (prev is null) return count;
+        double user = 0;
+        if (!_history.IsEmpty)
+        {
+            double alone = _history.Count(word) / (_history.Total + UserSmoothing);
+            int context = prev is null ? 0 : _history.ContextTotal(prev);
+            double p = context == 0 ? alone
+                : (1 - _o.ContextWeight) * alone + _o.ContextWeight * _history.PairCount(prev!, word) / (context + UserPairSmoothing);
+            user = UserWeight * _corpusSize * p;
+        }
+        if (prev is null) return count + user;
         long total = _bigrams.ContextTotal(prev);
-        if (total == 0) return count;
+        if (total == 0) return count + user;
         double afterPrev = (double)_bigrams.Count(prev, word) / total;
-        return (1 - _o.ContextWeight) * count + _o.ContextWeight * _corpusSize * afterPrev;
+        return (1 - _o.ContextWeight) * count + _o.ContextWeight * _corpusSize * afterPrev + user;
     }
+
+    /// <summary>
+    /// Começos de palavra a um erro de <paramref name="stripped"/> (sem acento), com o custo do erro: para sugerir
+    /// "obrigado" quando já se digitou "obrgi".
+    /// </summary>
+    public IEnumerable<(string Prefix, double Cost)> NearPrefixes(string stripped) =>
+        stripped.Length == 0 || !stripped.All(c => c is >= 'a' and <= 'z') ? []
+            : Edits1(stripped).Where(e => e.Length > 0 && e != stripped).Distinct().Select(e => (e, Cost(stripped, e)));
 
     /// <param name="prev">Palavra anterior em minúsculas, <see cref="BigramModel.SentenceStart"/> ou null se desconhecida.</param>
     public TypoMatch? Best(string lowerWord, string? prev = null)

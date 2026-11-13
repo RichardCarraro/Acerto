@@ -18,8 +18,12 @@ public sealed class CoreData
     /// <summary>Pares de palavras vizinhas para a correção por contexto. Vazio se data/bigramas.txt não existir.</summary>
     public BigramModel Bigrams { get; init; } = BigramModel.Empty;
 
+    /// <summary>Palavras e pares que o usuário escreve, para as sugestões e correções ficarem com o jeito dele.</summary>
+    public UserHistory History { get; init; } = UserHistory.Empty;
+
     public static CoreData Load(string dataDir, string userDir) => new()
     {
+        History = new UserHistory(Path.Combine(userDir, "historico.txt")),
         Lexicon = new Lexicon(Path.Combine(dataDir, "pt_BR.aff"), Path.Combine(dataDir, "pt_BR.dic")),
         Frequency = new FrequencyTable(Path.Combine(dataDir, "frequencia.txt")),
         Fixed = new FixedCorrections(Path.Combine(dataDir, "correcoes.txt")),

@@ -31,8 +31,24 @@ public sealed class Corrector
     {
         _data = data;
         _accents = new AccentIndex(data.Frequency, data.Lexicon);
-        _typos = new TypoRanker(data.Lexicon, data.Frequency, typoOptions, data.Bigrams);
-        Suggester = new Suggester(_typos, data.Bigrams, data.Lexicon);
+        _typos = new TypoRanker(data.Lexicon, data.Frequency, typoOptions, data.Bigrams, data.History);
+        Suggester = new Suggester(_typos, data);
+    }
+
+    /// <summary>Contar no histórico o que o usuário escreve (desligado nas configurações = não conta nada).</summary>
+    public bool LearnFromTyping { get; set; } = true;
+
+    /// <summary>
+    /// A palavra ficou no texto (digitada, corrigida ou sugestão aceita): conta no histórico. Só palavras do dicionário
+    /// ou das "Minhas palavras", para não guardar senha, código, e-mail ou número de documento.
+    /// </summary>
+    /// <param name="prev">Palavra anterior em minúsculas, <see cref="BigramModel.SentenceStart"/> ou null.</param>
+    public void Record(string? prev, string word)
+    {
+        if (!LearnFromTyping || word.Length == 0) return;
+        var w = word.ToLower(TextUtil.PtBr);
+        if (!_data.Personal.Contains(w) && !(_data.Lexicon.IsValid(w) && w.All(c => char.IsLetter(c) || c == '-'))) return;
+        _data.History.Record(prev, w);
     }
 
     /// <summary>Sugestões de completar palavra e de próxima palavra.</summary>

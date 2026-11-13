@@ -5,7 +5,8 @@ public sealed class SharedCorrector
 {
     public CoreData Data { get; } = CoreData.Load(SharedData.DataDir, SharedData.NewUserDir());
     public Corrector Corrector { get; }
-    public SharedCorrector() => Corrector = new Corrector(Data);
+    // sem histórico: os testes não podem depender da ordem em que rodam
+    public SharedCorrector() => Corrector = new Corrector(Data) { LearnFromTyping = false };
 
     public static IEnumerable<string[]> ReadPairs(string path) =>
         File.ReadLines(path).Select(l => l.Split('\t')).Where(p => p.Length == 2).Select(p => new[] { p[0], p[1] });
@@ -197,6 +198,9 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
 
     [Fact]
     public void Sugere_ProximaPalavra() => Assert.Contains("dia", _c.Suggester.Suggest("bom", ""));
+
+    [Fact]
+    public void Sugere_ComErroNoComeco() => Assert.Contains("obrigado", _c.Suggester.Suggest(null, "obrgi"));
 
     [Fact]
     public void Sugere_NadaComUmaLetraOuNoComecoDaFrase()

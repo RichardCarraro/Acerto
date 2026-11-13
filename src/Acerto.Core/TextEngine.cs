@@ -27,6 +27,8 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     private const string DeferredEnds = ".:"; // podem ser meio de e-mail, domínio ou arquivo
 
     private readonly record struct Deferred(string Word, string Result, char End);
+    /// <summary>Correção que acabou de entrar (palavra + espaço), enquanto nada mais foi digitado.</summary>
+    private readonly record struct Undo(string Typed, string Result, string? Prev);
 
     private readonly StringBuilder _word = new();
     private bool _tokenKnown;      // vimos o começo deste token?
@@ -37,6 +39,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     private char _prev1, _prev2;   // dois últimos caracteres do texto ('\0' = desconhecido)
     private Deferred? _deferred;   // correção esperando ver o que vem depois de "." ou ":"
     private string? _prev;         // palavra anterior (minúsculas), início de frase, ou null se não se sabe
+    private Undo? _undo;           // logo depois de uma correção, a barra oferece o que foi digitado e alternativas
     private readonly StringBuilder _sinceReset = new(); // digitado desde o Reset, enquanto o contexto é desconhecido
 
     // Última palavra corrigida, como foi digitada. Se o usuário apagar e digitar a mesma de novo, é de propósito.
@@ -91,6 +94,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     /// </summary>
     public IReadOnlyList<string> Suggestions(int max = 3)
     {
+        if (_undo is { } u) return Alternatives(u, max);
         if (!_tokenKnown || !_tokenPure || _tokenHadEnd || _deferred is not null) return [];
         var typed = _word.ToString();
         if (typed.Length == 0 && _prev1 != ' ') return [];              // próxima palavra só logo depois de um espaço
@@ -100,12 +104,35 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     }
 
     /// <summary>
+    /// Logo depois de uma correção: primeiro o que a pessoa digitou (Tab desfaz), depois outras palavras que o
+    /// digitado poderia ser. Com a maiúscula que a correção usou.
+    /// </summary>
+    private IReadOnlyList<string> Alternatives(Undo u, int max)
+    {
+        var typed = u.Typed.ToLower(TextUtil.PtBr);
+        var result = u.Result.ToLower(TextUtil.PtBr);
+        var list = new List<string> { typed };
+        foreach (var c in corrector.Typos.Candidates(typed, u.Prev))
+            if (list.Count < max && c.Word != result && !list.Contains(c.Word)) list.Add(c.Word);
+        bool upper = char.IsUpper(u.Result[0]);
+        return list.Select(w => w == typed ? u.Typed : upper ? char.ToUpper(w[0], TextUtil.PtBr) + w[1..] : w).ToList();
+    }
+
+    /// <summary>
     /// A pessoa aceitou uma sugestão: troca o que foi digitado da palavra pela sugestão seguida de espaço,
-    /// e o motor segue como se ela tivesse sido digitada inteira.
+    /// e o motor segue como se ela tivesse sido digitada inteira. Logo depois de uma correção, troca a palavra
+    /// corrigida; se a escolhida for a que foi digitada, aprende (como apagar e digitar de novo).
     /// </summary>
     public EngineAction AcceptSuggestion(string suggestion)
     {
         int typed = _word.Length;
+        if (_undo is { } u)
+        {
+            typed = u.Result.Length + 1; // a palavra corrigida e o espaço
+            if (string.Equals(suggestion, u.Typed, StringComparison.OrdinalIgnoreCase)) learn(u.Typed);
+            _undo = null;
+        }
+        else corrector.Record(_prev, suggestion);
         _prev = LastWord(suggestion);
         _capNext = false;
         _prev2 = suggestion[^1];
@@ -127,6 +154,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     private void ResetState()
     {
         Generation++;
+        _undo = null;
         _sinceReset.Clear();
         _word.Clear();
         _tokenKnown = false;
@@ -141,6 +169,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
 
     public EngineAction OnChar(char c)
     {
+        _undo = null;
         if (!_tokenKnown) _sinceReset.Append(c);
         bool whitespace = c is ' ' or '\n' or '\t';
 
@@ -176,6 +205,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     public EngineAction OnBackspace()
     {
         _deferred = null;
+        _undo = null;
         if (_lastCorrectedWord is not null) _backspacedSinceCorrection = true;
         if (_word.Length == 0)
         {
@@ -247,8 +277,11 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
                 {
                     action = new EngineAction(true, word.Length, result + c, animated);
                     _prev1 = result[^1];
+                    if (corr is not null && c == ' ' && _lastCorrectionLearns) _undo = new Undo(word, result, _prev); // atalho não tem alternativa
                 }
             }
+            // conta no histórico o que ficou no texto; "." e ":" ainda podem virar e-mail ou domínio, então não
+            if (_deferred is null) corrector.Record(_prev, result);
             completed = result;
             _capNext = false;
         }

@@ -160,6 +160,12 @@ internal sealed class AppController
 
     public void RemoveWord(string word) => TryIo(() => Data?.Personal.Remove(word));
 
+    public void ClearHistory()
+    {
+        Data?.History.Clear();
+        TryIo(() => Data?.History.Save());
+    }
+
     public void OpenMainWindow(string page = "home")
     {
         if (_window is null)
@@ -277,7 +283,10 @@ internal sealed class AppController
         _engine.AutoCapitalize = Settings.AutoCapitalize;
         _engine.DoubleSpacePeriod = Settings.DoubleSpacePeriod;
         if (_corrector is not null)
+        {
             _corrector.Typos.Options = Settings.CorrectMore ? TypoOptions.Aggressive : TypoOptions.Careful;
+            _corrector.LearnFromTyping = Settings.LearnFromTyping;
+        }
     }
 
     private void TryIo(Action action)
@@ -300,6 +309,12 @@ internal sealed class AppController
     private void SaveIfDirty()
     {
         if (_settingsDirty) Save();
+        // o histórico muda a cada palavra; vai junto com o contador, no timer (fora do hook) e ao sair
+        if (Data?.History is { Dirty: true } history)
+        {
+            try { history.Save(); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        }
     }
 
     /// <summary>Círculo colorido com um "ô" branco, desenhado em tempo de execução.</summary>

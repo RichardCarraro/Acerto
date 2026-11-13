@@ -34,6 +34,9 @@ internal sealed class AppSettings
     /// <summary>Barrinha de sugestões perto do cursor (completar a palavra, próxima palavra); Tab aceita a primeira.</summary>
     public bool ShowSuggestions { get; set; } = true;
 
+    /// <summary>Conta as palavras e pares que o usuário escreve (historico.txt) para sugerir e corrigir do jeito dele.</summary>
+    public bool LearnFromTyping { get; set; } = true;
+
     /// <summary>Quantas palavras o Acertô já corrigiu (só o número, nunca o texto).</summary>
     public long CorrectionCount { get; set; }
 

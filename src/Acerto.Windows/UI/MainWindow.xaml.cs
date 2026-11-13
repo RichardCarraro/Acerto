@@ -73,6 +73,7 @@ internal partial class MainWindow : Window
 
         MoreSwitch.IsChecked = s.CorrectMore;
         SuggestSwitch.IsChecked = s.ShowSuggestions;
+        LearnSwitch.IsChecked = s.LearnFromTyping;
         CapSwitch.IsChecked = s.AutoCapitalize;
         PeriodSwitch.IsChecked = s.DoubleSpacePeriod;
         AnimationSwitch.IsChecked = s.CorrectionAnimation;
@@ -81,7 +82,7 @@ internal partial class MainWindow : Window
         AppList.ItemsSource = s.ExcludedApps.OrderBy(a => a, StringComparer.CurrentCultureIgnoreCase).ToList();
 
         bool hasData = _app.Data is not null;
-        ShortcutTrigger.IsEnabled = ShortcutText.IsEnabled = WordBox.IsEnabled = hasData;
+        ShortcutTrigger.IsEnabled = ShortcutText.IsEnabled = WordBox.IsEnabled = ClearHistoryButton.IsEnabled = hasData;
         if (_app.Data is { } data)
         {
             ShortcutList.ItemsSource = data.Shortcuts.All.OrderBy(kv => kv.Key, StringComparer.CurrentCultureIgnoreCase).ToList();
@@ -100,10 +101,18 @@ internal partial class MainWindow : Window
         var s = _app.Settings;
         s.CorrectMore = MoreSwitch.IsChecked == true;
         s.ShowSuggestions = SuggestSwitch.IsChecked == true;
+        s.LearnFromTyping = LearnSwitch.IsChecked == true;
         s.AutoCapitalize = CapSwitch.IsChecked == true;
         s.DoubleSpacePeriod = PeriodSwitch.IsChecked == true;
         s.CorrectionAnimation = AnimationSwitch.IsChecked == true;
         _app.ApplyOptions();
+    }
+
+    private void ClearHistory_Click(object sender, RoutedEventArgs e)
+    {
+        if (MessageBox.Show(this, "Apagar tudo o que o Acertô aprendeu com o que você escreve? As suas palavras e atalhos continuam.",
+                "Acertô", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            _app.ClearHistory();
     }
 
     private void Startup_Click(object sender, RoutedEventArgs e) => _app.StartWithWindows = StartupSwitch.IsChecked == true;

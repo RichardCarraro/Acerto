@@ -121,7 +121,20 @@
                                 <StackPanel Margin="0,0,12,0">
                                     <TextBlock Text="Sugestões ao digitar" Style="{StaticResource RowTitle}" />
                                     <TextBlock Style="{StaticResource RowHint}"
-                                               Text="Mostra até três palavras perto do cursor para completar a que você está digitando ou adiantar a próxima. Tab aceita a primeira." />
+                                               Text="Mostra até três palavras perto do cursor para completar a que você está digitando ou adiantar a próxima. Tab aceita a primeira. Logo depois de uma correção, mostra o que você digitou e Tab desfaz." />
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}">
+                            <DockPanel>
+                                <CheckBox x:Name="LearnSwitch" DockPanel.Dock="Right" Style="{StaticResource Switch}" Click="Option_Click" />
+                                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Glyph}" Text="&#xE82D;" Margin="0,0,16,0" />
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Aprender com o que eu escrevo" Style="{StaticResource RowTitle}" />
+                                    <TextBlock Style="{StaticResource RowHint}"
+                                               Text="Conta as palavras que você mais usa para sugerir e corrigir do seu jeito. Fica só neste computador e só guarda palavras do dicionário ou das suas palavras: nunca senhas, números ou e-mails." />
+                                    <Button x:Name="ClearHistoryButton" Content="Apagar o que aprendi" HorizontalAlignment="Left"
+                                            Margin="0,10,0,0" Click="ClearHistory_Click" />
                                 </StackPanel>
                             </DockPanel>
                         </Border>
