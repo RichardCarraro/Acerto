@@ -50,6 +50,13 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     /// <summary>Maiúscula automática no começo da frase.</summary>
     public bool AutoCapitalize { get; set; } = true;
 
+    /// <summary>O campo em foco pede o perfil cuidadoso (barra de endereço). Ver <see cref="Corrector.CarefulField"/>.</summary>
+    public bool CarefulField
+    {
+        get => corrector.CarefulField;
+        set => corrector.CarefulField = value;
+    }
+
     /// <summary>Dois espaços seguidos viram ". ".</summary>
     public bool DoubleSpacePeriod { get; set; } = true;
 
@@ -84,6 +91,9 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
         }
         return true;
     }
+
+    /// <summary>O motor sabe onde está (começo de campo, depois de espaço...). Falso depois de um Reset, até confirmar.</summary>
+    public bool ContextKnown => _tokenKnown;
 
     /// <summary>Tamanho da palavra em andamento (o host usa para achar onde ela está na tela).</summary>
     public int CurrentWordLength => _word.Length;

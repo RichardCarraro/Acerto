@@ -8,10 +8,13 @@ internal static class InputSender
 {
     public const nuint Marker = 0x41435254; // "ACRT"
 
+    /// <param name="clearSelection">Manda Delete antes: apaga o que o campo completou sozinho e deixou selecionado.
+    /// Só para campos assim (barra de endereço), onde o cursor fica no fim; no meio de um texto apagaria uma letra.</param>
     /// <returns>true se o Windows aceitou todos os eventos.</returns>
-    public static bool Send(int backspaces, string text)
+    public static bool Send(int backspaces, string text, bool clearSelection = false)
     {
-        var inputs = new List<INPUT>(backspaces * 2 + text.Length * 2);
+        var inputs = new List<INPUT>(backspaces * 2 + text.Length * 2 + 2);
+        if (clearSelection && backspaces > 0) AddVk(inputs, VK_DELETE);
         for (int i = 0; i < backspaces; i++) AddVk(inputs, VK_BACK);
         foreach (var ch in text)
         {

@@ -35,6 +35,12 @@ public sealed class Corrector
         Suggester = new Suggester(_typos, data);
     }
 
+    /// <summary>
+    /// Campo onde se digita nome de site e busca (barra de endereço): usa o perfil cuidadoso mesmo com "corrigir mais",
+    /// para "reddit", "docs" e "shopee" não virarem "redor", "dos" e "shop".
+    /// </summary>
+    public bool CarefulField { get; set; }
+
     /// <summary>Contar no histórico o que o usuário escreve (desligado nas configurações = não conta nada).</summary>
     public bool LearnFromTyping { get; set; } = true;
 
@@ -67,7 +73,7 @@ public sealed class Corrector
         if (word.Length == 0) return null;
         bool looksLikeName = char.IsUpper(word[0]) && !atSentenceStart;
         var w = word.ToLowerInvariant();
-        var o = _typos.Options;
+        var o = CarefulField ? TypoOptions.Careful : _typos.Options;
 
         // 1. Atalho do usuário
         if (_data.Shortcuts.TryGet(w, out var expansion))
@@ -112,14 +118,14 @@ public sealed class Corrector
 
             // 5b. Ela quase nunca aparece no corpus e está a um erro de uma palavra muito usada (erado → errado).
             if (_data.Frequency.Count(w) >= AttestedCount || w.Length < MinTypoLength) return null;
-            return _typos.Best(w, prev) is { } rare && rare.Count >= o.RareValidMinCandidate
+            return _typos.Best(w, prev, o) is { } rare && rare.Count >= o.RareValidMinCandidate
                 ? new Correction(TextUtil.ApplyCase(word, rare.Word), CorrectionKind.Typo)
                 : null;
         }
 
         // 6. Erro de digitação: só minúsculas (maiúscula no meio da frase é nome; sigla fica como está)
         TypoMatch? typo = null;
-        if (!TextUtil.IsAllCaps(word) && !looksLikeName && w.Length >= 3 && _typos.Best(w, prev) is { } t)
+        if (!TextUtil.IsAllCaps(word) && !looksLikeName && w.Length >= 3 && _typos.Best(w, prev, o) is { } t)
         {
             long typedCount = _data.Frequency.Count(w);
             bool shortOk = w.Length >= MinTypoLength

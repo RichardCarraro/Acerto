@@ -176,6 +176,21 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
         Assert.Null(_c.Correct(digitada, false, anterior));
 
     [Fact]
+    public void BarraDeEndereco_NaoTrocaNomeDeSite()
+    {
+        try
+        {
+            _c.CarefulField = true;
+            Assert.Null(_c.Correct("reddit"));
+            Assert.Null(_c.Correct("docs"));
+            Assert.Equal("errado", _c.Correct("errido")?.Replacement);
+            Assert.Equal("não", _c.Correct("nao")?.Replacement);
+        }
+        finally { _c.CarefulField = false; }
+        Assert.Equal("redor", _c.Correct("reddit")?.Replacement); // fora dela, o "corrigir mais" tenta
+    }
+
+    [Fact]
     public void SemContexto_EstaFica() => Assert.Null(_c.Correct("esta"));
 
     [Fact]

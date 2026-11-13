@@ -221,7 +221,8 @@ internal sealed class AppController
                 int extra = hooks!.CharsSinceCorrection;                        // o que a pessoa digitou depois da correção
                 if (hooks.CorrectionSequence != sequence || extra < 0) return;  // já houve outra correção, ou perdeu o fio
                 int back = trailing + extra;
-                var rect = await Task.Run(() => CaretContext.WordRect(word, back));
+                bool preferCaret = hooks.FocusInlineAutocomplete;
+                var rect = await Task.Run(() => CaretContext.WordRect(word, back, preferCaret));
                 if (hooks.CorrectionSequence != sequence || hooks.CharsSinceCorrection < 0) return;
                 if (rect is { } r)
                 {
@@ -253,8 +254,10 @@ internal sealed class AppController
         {
             await Task.Delay(30); // o app precisa receber a tecla antes de informar onde o texto está
             if (sequence != _suggestionSequence) return;
-            var anchor = await Task.Run(() => CaretContext.CaretAnchor(wordLength));
+            bool preferCaret = hooks.FocusInlineAutocomplete;
+            var anchor = await Task.Run(() => CaretContext.CaretAnchor(wordLength, preferCaret));
             if (sequence != _suggestionSequence) return;
+            if (Diag.On) Diag.Log($"BARRA posicao={(anchor is { } p ? $"{(int)p.Left},{(int)p.Top}" : "nenhuma")}");
             if (anchor is { } a)
             {
                 (_bar ??= new SuggestionBar()).ShowAt(a, suggestions);

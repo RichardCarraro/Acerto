@@ -234,13 +234,15 @@ public sealed class TypoRanker
             : Edits1(stripped).Where(e => e.Length > 0 && e != stripped).Distinct().Select(e => (e, Cost(stripped, e)));
 
     /// <param name="prev">Palavra anterior em minúsculas, <see cref="BigramModel.SentenceStart"/> ou null se desconhecida.</param>
-    public TypoMatch? Best(string lowerWord, string? prev = null)
+    /// <param name="options">Limiares desta consulta; null = <see cref="Options"/>.</param>
+    public TypoMatch? Best(string lowerWord, string? prev = null, TypoOptions? options = null)
     {
+        var o = options ?? _o;
         var ranked = Candidates(lowerWord, prev);
         if (ranked.Count == 0) return null;
         var best = ranked[0];
-        if (best.Count < _o.MinBestCount) return null;
-        if (ranked.Count > 1 && best.Score - ranked[1].Score < _o.Margin) return null;
+        if (best.Count < o.MinBestCount) return null;
+        if (ranked.Count > 1 && best.Score - ranked[1].Score < o.Margin) return null;
         return new TypoMatch(best.Word, best.Count, Classify(TextUtil.StripAccents(lowerWord), TextUtil.StripAccents(best.Word)), best.Score);
     }
 

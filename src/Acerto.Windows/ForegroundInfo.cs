@@ -9,7 +9,7 @@ namespace Acerto.Windows;
 internal sealed class ForegroundInfo
 {
     // Estado do foco publicado de uma vez só: a checagem em segundo plano só grava se ainda for a versão atual.
-    private sealed record FocusState(int Version, bool Resolved, bool IsPassword);
+    private sealed record FocusState(int Version, bool Resolved, bool IsPassword, bool InlineAutocomplete = false);
 
     private uint _pid;
     private int _version;
@@ -23,6 +23,12 @@ internal sealed class ForegroundInfo
 
     public bool FocusIsPassword => Volatile.Read(ref _focus).IsPassword;
     public bool FocusResolved => Volatile.Read(ref _focus).Resolved;
+
+    /// <summary>
+    /// Campo que completa o que você digita deixando o resto selecionado (barra de endereço do navegador): antes de
+    /// corrigir é preciso apagar a seleção, senão o primeiro Backspace só apaga a seleção e estraga o texto ("cChat").
+    /// </summary>
+    public bool FocusInlineAutocomplete => Volatile.Read(ref _focus).InlineAutocomplete;
 
     /// <summary>Chamado na thread da UI quando o foreground ou o foco mudam.</summary>
     public void Refresh()
@@ -46,8 +52,8 @@ internal sealed class ForegroundInfo
         Volatile.Write(ref _focus, pending);
         Task.Run(() =>
         {
-            bool pwd = IsPasswordFocus(thread);
-            Interlocked.CompareExchange(ref _focus, new FocusState(version, true, pwd), pending); // perde se o foco mudou
+            var (pwd, inline) = InspectFocus(thread);
+            Interlocked.CompareExchange(ref _focus, new FocusState(version, true, pwd, inline), pending); // perde se o foco mudou
         });
     }
 
@@ -76,9 +82,9 @@ internal sealed class ForegroundInfo
         finally { CloseHandle(h); }
     }
 
-    /// <summary>Campo onde não se corrige: senha ou barra de endereço do navegador. UI Automation primeiro; o estilo
-    /// ES_PASSWORD do Win32 como reserva. Erro conta como "não corrigir".</summary>
-    private static bool IsPasswordFocus(uint thread)
+    /// <summary>Senha (não se corrige) e barra de endereço do navegador (completa sozinho). UI Automation primeiro; o
+    /// estilo ES_PASSWORD do Win32 como reserva. Erro conta como senha.</summary>
+    private static (bool Password, bool InlineAutocomplete) InspectFocus(uint thread)
     {
         try
         {
@@ -89,20 +95,18 @@ internal sealed class ForegroundInfo
                 GetClassNameW(info.hwndFocus, cls, cls.Capacity);
                 if (cls.ToString().Contains("Edit", StringComparison.OrdinalIgnoreCase)
                     && (GetWindowLongW(info.hwndFocus, GWL_STYLE) & ES_PASSWORD) != 0)
-                    return true;
+                    return (true, false);
             }
             var el = AutomationElement.FocusedElement;
-            if (el is null) return false;
+            if (el is null) return (false, false);
             var c = el.Current;
-            // Barra de endereço do navegador: ela completa o que você digita deixando o resto selecionado
-            // ("chat" + "gpt.com"); o primeiro Backspace da correção apagaria a seleção e estragaria o texto ("cChat").
-            // Endereço também não é texto em português. Tratada como campo onde não se corrige.
-            if (c.ClassName is "OmniboxViewViews" || c.AutomationId is "urlbar-input" or "urlbar") return true;
-            return c.IsPassword;
+            if (c.IsPassword) return (true, false);
+            // Barra de endereço do Chrome/Edge (OmniboxViewViews) e do Firefox (urlbar)
+            return (false, c.ClassName is "OmniboxViewViews" || c.AutomationId is "urlbar-input" or "urlbar");
         }
         catch (Exception)
         {
-            return true; // UIA falha de vários jeitos em apps diferentes; na dúvida, não corrige
+            return (true, false); // UIA falha de vários jeitos em apps diferentes; na dúvida, não corrige
         }
     }
 }

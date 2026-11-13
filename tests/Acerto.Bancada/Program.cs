@@ -1,4 +1,6 @@
-// Uso: AcertoBancada.exe [frases=12] [semente=N] [alvo=caixa|chrome|edge] [saida=bancada.txt] [rapido=1]
+// Uso: AcertoBancada.exe [frases=12] [semente=N] [alvo=caixa|chrome|edge|endereco] [saida=bancada.txt] [rapido=1] [foto=tela.png]
+// alvo=endereco: barra de endereço do Chrome (uma frase só, sem Enter, que navegaria). foto: tira uma foto da tela
+// antes de ler o resultado, para ver a barra de sugestões.
 // Com o Acertô rodando: sorteia frases, estraga palavras (acento esquecido, letra trocada, faltando, invertida...),
 // digita tecla por tecla como uma pessoa (teclas mortas para acento, ritmo variável) e compara:
 //  - o texto que ficou no app com o motor do Acertô rodando aqui dentro (gabarito): diferença = problema no app
@@ -18,6 +20,8 @@ int seed = opt.TryGetValue("semente", out var s) ? int.Parse(s) : Environment.Ti
 string target = opt.GetValueOrDefault("alvo", "caixa");
 string output = opt.GetValueOrDefault("saida", "bancada.txt");
 bool fast = opt.GetValueOrDefault("rapido") == "1";
+string? photo = opt.GetValueOrDefault("foto");
+if (target == "endereco") count = 1;
 var rng = new Random(seed);
 
 // ---- gabarito: o mesmo motor, com as mesmas opções e palavras do usuário ----
@@ -33,6 +37,7 @@ var oracle = new TextEngine(corrector, _ => { })
 {
     AutoCapitalize = Cfg("AutoCapitalize", true),
     DoubleSpacePeriod = Cfg("DoubleSpacePeriod", true),
+    CarefulField = target == "endereco", // o Acertô usa o perfil cuidadoso na barra de endereço
 };
 
 // ---- frases e erros ----
@@ -66,9 +71,11 @@ form.Shown += async (_, _) =>
         form.WindowState = FormWindowState.Minimized;
         var exe = target == "edge" ? @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
             : @"C:\Program Files\Google\Chrome\Application\chrome.exe";
-        var page = "data:text/html;charset=utf-8,<title>Acerto bancada</title><textarea autofocus style='width:95vw;height:90vh;font-size:18px'></textarea>";
+        var page = target == "endereco" ? "about:blank"
+            : "data:text/html;charset=utf-8,<title>Acerto bancada</title><textarea autofocus style='width:95vw;height:90vh;font-size:18px'></textarea>";
         browser = Process.Start(exe, $"--new-window \"{page}\"");
         await Task.Delay(4000);
+        if (target == "endereco") Chord(VK_CONTROL, 'L');
     }
     await Task.Delay(1200); // o Acertô confere o campo (senha? texto antes do cursor?) em segundo plano
 
@@ -97,6 +104,7 @@ form.Shown += async (_, _) =>
         }
         Thread.Sleep(600);
     });
+    if (photo is not null) TakePhoto(photo);
 
     try
     {
@@ -111,6 +119,7 @@ form.Shown += async (_, _) =>
             sta.SetApartmentState(ApartmentState.STA);
             sta.Start();
             sta.Join();
+            if (target == "endereco") Tap(0x1B, false, GetKeyboardLayout(0)); // Esc: fecha a lista de sugestões do Chrome
             Chord(VK_CONTROL, 'W');
         }
         Report();
@@ -166,6 +175,14 @@ void Report()
     sb.AppendLine();
     sb.Append(detail);
     File.WriteAllText(output, sb.ToString());
+}
+
+static void TakePhoto(string path)
+{
+    var b = SystemInformation.VirtualScreen; // todos os monitores
+    using var bmp = new Bitmap(b.Width, b.Height);
+    using (var g = Graphics.FromImage(bmp)) g.CopyFromScreen(b.Location, Point.Empty, b.Size);
+    bmp.Save(path, System.Drawing.Imaging.ImageFormat.Png);
 }
 
 string Kind(int line, string original) => injected[line].FirstOrDefault(e => e.Original == original).Kind ?? "?";

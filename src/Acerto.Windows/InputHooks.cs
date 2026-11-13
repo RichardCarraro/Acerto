@@ -39,6 +39,7 @@ internal sealed class InputHooks : IDisposable
     // Espera um pouco para o app terminar de mover o cursor.
     private readonly System.Windows.Forms.Timer _probeTimer = new() { Interval = 150 };
     private int _probeAttempts;
+    private bool _probedAfterTyping; // depois do reset, já consultou de novo após a primeira tecla
     private const int MaxProbeAttempts = 3;
 
     public event Action? PauseToggled;
@@ -57,6 +58,9 @@ internal sealed class InputHooks : IDisposable
     /// sugestão quando a pessoa de fato está vendo a barra.
     /// </summary>
     public IReadOnlyList<string> VisibleSuggestions { get; set; } = [];
+
+    /// <summary>O foco é uma barra de endereço: lá a UI Automation informa a posição errada (o começo do campo).</summary>
+    public bool FocusInlineAutocomplete => _fg.FocusInlineAutocomplete;
     private bool _suggestionsShown; // já avisamos alguém de uma lista não vazia
 
     private SynchronizationContext _ui = null!; // capturado no Install, na thread da UI
@@ -167,15 +171,23 @@ internal sealed class InputHooks : IDisposable
 
             if (!Active)
             {
-                if (Diag.On) Diag.Log($"KEY inativo paused={_settings.Paused} own={_fg.IsOwnProcess} elev={_fg.IsElevated} full={_fg.IsFullScreenApp} resolved={_fg.FocusResolved} pwd={_fg.FocusIsPassword} excl={_settings.IsExcluded(_fg.ProcessName)} proc={_fg.ProcessName}");
+                if (Diag.On) Diag.Log($"KEY inativo paused={_settings.Paused} own={_fg.IsOwnProcess} elev={_fg.IsElevated} full={_fg.IsFullScreenApp} resolved={_fg.FocusResolved} pwd={_fg.FocusIsPassword} auto={_fg.FocusInlineAutocomplete} excl={_settings.IsExcluded(_fg.ProcessName)} proc={_fg.ProcessName}");
                 ResetAll("inativo");
                 return CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
             }
 
             long generation = _engine.Generation;
             _fedChars = 0;
+            _engine.CarefulField = _fg.FocusInlineAutocomplete;
             var action = Handle(k);
             _ui.Post(_ => PublishSuggestions(), null); // depois que o callback voltar: aqui dentro tem que ser rápido
+            // Clicou num campo com o texto todo selecionado (barra de endereço, busca): a consulta logo depois do clique
+            // vê a seleção e desiste. Depois da primeira tecla a seleção já foi trocada pelo que se digitou.
+            if (!_engine.ContextKnown && !_probedAfterTyping && !_probeTimer.Enabled)
+            {
+                _probedAfterTyping = true;
+                ScheduleProbe();
+            }
             if (generation != _engine.Generation) // o motor resetou por conta própria (ex.: Backspace)
             {
                 if (Diag.On) Diag.Log("RESET motor (backspace em contexto vazio)");
@@ -189,7 +201,7 @@ internal sealed class InputHooks : IDisposable
                 // Janela trocou e o evento de foco ainda não chegou: os Backspaces iriam para texto que não vimos.
                 bool sameWindow = GetForegroundWindow() == _fg.Hwnd;
                 if (Diag.On && (modifiers || !sameWindow)) Diag.Log($"SWALLOW cancelado modifiers={modifiers} sameWindow={sameWindow}");
-                if (!modifiers && sameWindow && InputSender.Send(action.Backspaces, action.Insert))
+                if (!modifiers && sameWindow && InputSender.Send(action.Backspaces, action.Insert, _fg.FocusInlineAutocomplete))
                 {
                     if (action.WordLength > 0)
                     {
@@ -318,6 +330,7 @@ internal sealed class InputHooks : IDisposable
 
     private EngineAction ResetAll(string why)
     {
+        _probedAfterTyping = false;
         if (Diag.On && why != "inativo") Diag.Log("RESET " + why);
         HideSuggestions();
         _engine.Reset();

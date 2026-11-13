@@ -102,8 +102,9 @@ Para depurar sem registrar texto, defina `ACERTO_DIAG=<arquivo>` antes de abrir:
 
 - No modo "Corrigir mais", palavras em inglês digitadas em minúsculo às vezes são trocadas (`list` → `lista`). Apague e digite de novo que ele aprende, ou desligue o modo.
 - Não funciona em programas abertos como administrador (limitação do Windows), a não ser que o Acertô também seja aberto como administrador.
-- A barra de sugestões e a animação só aparecem em programas que informam a posição do texto.
-- Campos com autocompletar que seleciona texto (barra de endereço, Excel) podem confundir a correção; adicione-os em "Apps excluídos" se acontecer.
+- A barra de sugestões e a animação só aparecem em programas que informam a posição do cursor. Em apps como o Evernote, que informam só o cursor, a animação é posicionada por estimativa e pode ficar um pouco deslocada.
+- Na pesquisa do Windows a correção funciona, mas a barra de sugestões e a animação ficam atrás dela: o Windows só deixa desenhar por cima da pesquisa programas assinados e instalados em Arquivos de Programas.
+- Na barra de endereço do Chrome, Edge e Firefox a correção usa o perfil cuidadoso (para não trocar nomes de site) e apaga antes o trecho que o navegador completa sozinho. Outros campos com autocompletar que seleciona texto (Excel) podem confundir a correção; adicione-os em "Apps excluídos" se acontecer.
 
 ## Créditos
 
