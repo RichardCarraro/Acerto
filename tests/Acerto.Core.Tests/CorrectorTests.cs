@@ -160,6 +160,14 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
     public void Nome_Em_Minuscula_Ganha_Maiuscula(string typed, string want) => Assert.Equal(want, _c.Correct(typed)?.Replacement);
     [Fact] public void Palavra_Comum_Nao_Ganha_Maiuscula() => Assert.Null(_c.Correct("casa"));
 
+    // Forma válida rara cuja acentuada é muito mais usada ganha o acento; as comuns (esta, sabia, pais) ficam
+    [Theory]
+    [InlineData("chegara", "chegará")] [InlineData("tera", "terá")] [InlineData("fara", "fará")] [InlineData("podera", "poderá")]
+    public void Valida_Rara_Ganha_Acento(string typed, string want) => Assert.Equal(want, _c.Correct(typed)?.Replacement);
+    [Theory]
+    [InlineData("esta")] [InlineData("sabia")] [InlineData("pais")] [InlineData("critica")] [InlineData("secretaria")]
+    public void Valida_Comum_Fica(string typed) => Assert.Null(_c.Correct(typed));
+
     // data/nomes.txt: antes das outras regras, senão "parana" vira "parada" e "maringa" vira "marinha"
     [Theory]
     [InlineData("parana", "Paraná")] [InlineData("maringa", "Maringá")] [InlineData("joao", "João")] [InlineData("Joao", "João")]
@@ -370,7 +378,8 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
         var wrong = _data.Frequency.Entries
             .Where(e => e.Word.All(char.IsLetter) && _data.Lexicon.IsValid(e.Word))
             .OrderByDescending(e => e.Count).Take(30000)
-            .Where(e => _c.Correct(e.Word) is { Kind: not (CorrectionKind.Fixed or CorrectionKind.Case) }) // maiúscula de nome é de propósito
+            // maiúscula de nome é de propósito; forma válida rara ganhar acento (chegara → chegará) também, abaixo do piso da regra
+            .Where(e => _c.Correct(e.Word) is { Kind: not (CorrectionKind.Fixed or CorrectionKind.Case) } and not { Kind: CorrectionKind.Accent } || (_c.Correct(e.Word) is { Kind: CorrectionKind.Accent } && e.Count > TypoOptions.Aggressive.RareAccentMaxCount))
             .Select(e => e.Word).ToList();
         Assert.True(wrong.Count == 0, string.Join(", ", wrong.Take(40)));
     }

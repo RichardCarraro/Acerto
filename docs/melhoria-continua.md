@@ -90,6 +90,7 @@ Onde mexer, do mais barato ao mais caro:
 
 | Data | Versão | Mudança | Antes → depois |
 |---|---|---|---|
+| 2026-11-16 | 1.3.6 | Forma válida rara ganha acento sem contexto quando a acentuada é ≥ 30× mais usada (`chegara` → chegará, `veiculo` → veículo, `duvidas` → dúvidas), só até 360 de uso no corpus (abaixo das 30 mil mais usadas: `esta`, `sabia`, `pais`, `critica` ficam) e com 4 letras ou mais (`pê`, `fá`, `dã` ficam); `RareAccentRatio`/`RareAccentMaxCount`, só no agressivo. Guarda das 30 mil válidas passa a aceitar acento abaixo do piso da regra. Eval `contexto` ignora maiúscula de nome em C (o corpus é minúsculo) | frases reais 93,3% → 93,6%; contexto B 81,7% → 82,5%, C 509 → 556 (+47, mais-que-perfeito real: `entendera`) |
 | 2026-11-16 | 1.3.5 | `data/nomes.txt`: nomes e lugares brasileiros (chave minúscula sem acento → forma certa), consultado antes das outras regras — `parana` virava **parada** e `maringa` virava **marinha** pela regra de palavra válida rara; `joao`/`belem`/`iguacu` só ganhavam acento. Só nomes que não são palavra comum (`marcos`, `santos`, `natal`, `foz` ficam de fora). `#` comenta nos arquivos de dados | frases reais 92,3% → 93,3% (313); perfil cuidadoso intacto |
 | 2026-11-16 | 1.3.4 | Nome próprio em minúscula ganha maiúscula quando o dicionário só o tem assim (`curitiba` → Curitiba, `londres`), com 4 letras ou mais (`big`, `man`, `down` também são "nomes" no VERO); `CorrectionKind.Case`; modo `caixa` no Eval; locuções com `lá` (`de la`, `por la`, `até la`); lote 4 de 40 frases | frases reais 93,8% (273) → 92,3% (313; o lote 4 trouxe `joão`/`maria`/`brasil`, que o VERO aceita em minúscula, e verbos no futuro); `caixa`: 1184 das 60 mil frequentes ganhariam maiúscula, quase todas nomes (john, europa, alemanha) |
 | 2026-11-16 | 1.3.3 | `data/locucoes.txt`: locuções de duas palavras feitas à mão, consultadas pela anterior (`isso ai` → aí, `a viajem` → viagem, `não mecha` → mexa) e pela seguinte (`as vezes` → às, `a toa` → à); chave de três palavras quando a de duas é ambígua (`fica a vontade` → à; `a vontade` sozinha é substantivo 495 × 261 no corpus) e como exceção (`todas as vezes` fica). Contagens decidiram o que entrou: `as claras` ficou de fora (claras de ovo) | frases reais 92,3% → 93,8% (273, 0 estragos); acento pela seguinte volta 33,6% → 34,1% (`as`→`às` 34 → 80), estragos 195 → 200; contexto A e B iguais, C 502 → 509 |
@@ -118,9 +119,8 @@ Onde mexer, do mais barato ao mais caro:
   tão ou mais comuns; precisaria de análise do verbo (ir/chegar + lugar), fora do alcance de pares.
 - **`data/nomes.txt`** cresce com uso. Antes de pôr um nome, confira se não é palavra comum (`marcos`, `santos`,
   `natal`): `AcertoEval data explicar <nome>` mostra `válida=` e a contagem no corpus.
-- **Verbo no futuro sem acento** (`chegara amanhã`, `fara o possível`): a forma sem acento é o mais-que-perfeito,
-  válida e rara; `fara`/`tera` já vão pela regra do contexto, `chegara` não tem par. Candidata a regra: forma
-  válida muito mais rara que a acentuada (razão de frequência) quando a anterior é sujeito.
+- **Formas válidas raras entre 360 e ~1200 de uso** (`ficara` 532, `dara` 453, `sera` 1181 → será): acima do piso
+  da regra de acento; subir o piso exige rever o guarda das 30 mil válidas e medir C de novo.
 - **Locuções**: `data/locucoes.txt` cresce com uso; antes de pôr uma de duas palavras, conte os dois lados no
   `bigramas.txt` (`=a` → `vontade` contra `=à` → `vontade`) e use três palavras ou exceções quando empatar.
 - **Fonético gerado, ainda errado**: `pessa` → pessoa (peça), `pesso` → pessoa (peço): letra faltando e dígrafo

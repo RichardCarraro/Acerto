@@ -263,7 +263,8 @@ if (positional.Length > 1 && positional[1] == "contexto")
                     // C) palavra certa sem acento: não pode mudar
                     plain++;
                     var r = corrector.Correct(tok, false, prev);
-                    if (r is not null) { spoiled++; if (spoiledSamples.Count < 24) spoiledSamples.Add($"{prev} {tok}→{r.Replacement}"); }
+                    // maiúscula de nome (Kind Case) não conta: o corpus é todo minúsculo
+                    if (r is { Kind: not CorrectionKind.Case }) { spoiled++; if (spoiledSamples.Count < 24) spoiledSamples.Add($"{prev} {tok}→{r.Replacement}"); }
                 }
             }
             prev = tok;

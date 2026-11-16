@@ -126,6 +126,15 @@ public sealed record TypoOptions
     /// </summary>
     public int FixedContextMinPair { get; init; }
 
+    /// <summary>
+    /// Forma válida mas rara cuja acentuada é pelo menos isso vezes mais usada ganha o acento sem precisar de
+    /// contexto: "chegara" (mais-que-perfeito, 253 no corpus) → "chegará" (8666). 0 = desligada.
+    /// </summary>
+    public long RareAccentRatio { get; init; }
+
+    /// <summary>Só para formas com até isso de uso no corpus: abaixo das 30 mil mais usadas (esta, sabia, pais ficam).</summary>
+    public long RareAccentMaxCount { get; init; } = 360;
+
     /// <summary>Nome próprio em minúscula que o dicionário só tem com maiúscula ganha a maiúscula (curitiba → Curitiba).</summary>
     public bool CapitalizeNames { get; init; }
 
@@ -166,6 +175,7 @@ public sealed record TypoOptions
         SpellingSubstitution = 0.4,
         // 1184 das 60 mil palavras frequentes do corpus ganhariam maiúscula, quase todas nomes (john, europa, alemanha)
         CapitalizeNames = true,
+        RareAccentRatio = 30,
     };
 
     /// <summary>Perfil cuidadoso: na dúvida, não troca. É o que os testes de corpus exigem com zero trocas indevidas.</summary>

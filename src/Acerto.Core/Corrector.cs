@@ -147,10 +147,18 @@ public sealed class Corrector
                     return new Correction(TextUtil.ApplyCase(word, best.Word), CorrectionKind.Accent);
             }
 
+            // 5c. Forma válida rara cuja acentuada é muito mais usada: "chegara amanhã" → chegará (o mais-que-perfeito
+            //     quase não se escreve). Só abaixo da frequência das 30 mil mais usadas (esta, sabia, pais ficam).
+            long validCount = _data.Frequency.Count(w);
+            if (o.RareAccentRatio > 0 && accented.Count > 0 && validCount <= o.RareAccentMaxCount && w.Length >= MinTypoLength // pê, fá, dã ficam
+                && accented[0].Count >= o.AccentMinCount && accented[0].Count >= o.RareAccentRatio * Math.Max(validCount, 1)
+                && (accented.Count == 1 || accented[0].Effective >= AccentDominance * accented[1].Effective))
+                return new Correction(TextUtil.ApplyCase(word, accented[0].Word), CorrectionKind.Accent);
+
             // 5b. Ela quase nunca aparece no corpus e está a um erro de uma palavra muito usada (erado → errado).
             //     Tentado em 2026-11-16 e reprovado: trocar palavra rara pela vizinha que a anterior pede ("tudo cetro"
             //     → certo) estragou +75 em 416 mil palavras certas (de menus → menos, moradoras → moradores).
-            if (_data.Frequency.Count(w) >= AttestedCount || w.Length < MinTypoLength || _data.Protected.Contains(w)) return null;
+            if (validCount >= AttestedCount || w.Length < MinTypoLength || _data.Protected.Contains(w)) return null;
             return _typos.Best(w, prev, o) is { } rare && rare.Count >= o.RareValidMinCandidate
                 ? new Correction(TextUtil.ApplyCase(word, rare.Word), CorrectionKind.Typo)
                 : null;
