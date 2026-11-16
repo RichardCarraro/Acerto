@@ -9,6 +9,8 @@ public enum TypoKind
     DoubledLetter,
     /// <summary>Faltou uma letra (hje → hoje).</summary>
     MissingLetter,
+    /// <summary>Letra ou dígrafo de som igual: enxente → enchente, paralização → paralisação, susseço → sucesso.</summary>
+    Phonetic,
     Other,
 }
 
@@ -37,6 +39,9 @@ public sealed record TypoOptions
     public double NeighborSubstitution { get; init; } = 0.6;
     /// <summary>Troca por letra de som parecido (s/z, g/j, m/n...).</summary>
     public double PhoneticSubstitution { get; init; } = 0.7;
+
+    /// <summary>Troca de erro de escrita (s/z, s/c, g/j, x/s, m/n, x/ch, ss/ç): o erro mais comum de quem escreve.</summary>
+    public double SpellingSubstitution { get; init; } = 0.7;
     /// <summary>A primeira letra quase nunca sai errada: mexer nela custa a mais.</summary>
     public double FirstLetterPenalty { get; init; } = 0.4;
     /// <summary>Faltou uma letra qualquer.</summary>
@@ -72,6 +77,12 @@ public sealed record TypoOptions
     /// <summary>O mesmo para os outros tipos de erro (troca de letra, letra sobrando), onde há mais coincidência
     /// com palavras estrangeiras. 0 = nunca.</summary>
     public long AttestedOtherRatio { get; init; }
+
+    /// <summary>
+    /// O mesmo para a troca fonética (<see cref="TypoKind.Phonetic"/>): "paralização" aparece no corpus porque muita
+    /// gente erra assim, não porque exista. 0 = nunca.
+    /// </summary>
+    public long AttestedPhoneticRatio { get; init; }
 
     /// <summary>
     /// Peso do contexto (0 a 1) na frequência de cada candidata: contagem efetiva =
@@ -145,6 +156,11 @@ public sealed record TypoOptions
         NextAccentRatio = 7,
         // "bom dai" → dia. Com 200 não muda nada nas 30 mil frases de notícias (com 50, B cai 0,1 ponto)
         FixedContextMinPair = 200,
+        // erro de escrita (enxente, xinelo, paralização): razão 10 troca 21 palavras frequentes a mais do corpus, metade
+        // correções boas (garçon, marron, obsecado); custo 0,4 leva os erros fonéticos gerados de 84,9% para 87,3% de
+        // acerto (errado 5,2% → 2,7%) sem mudar as trocas
+        AttestedPhoneticRatio = 10,
+        SpellingSubstitution = 0.4,
     };
 
     /// <summary>Perfil cuidadoso: na dúvida, não troca. É o que os testes de corpus exigem com zero trocas indevidas.</summary>
@@ -173,6 +189,9 @@ public sealed class TypoRanker
     private static readonly string[] Abnt2Rows = ["qwertyuiop", "asdfghjklç", "zxcvbnm"];
     private static readonly Dictionary<char, (int Row, int Col)> KeyPos = BuildKeyPos();
     private static readonly HashSet<(char, char)> Phonetic = BuildPhonetic("sz", "sc", "gj", "mn", "ei", "ou", "lu", "xs", "xz", "cq", "ck");
+    // só os pares de erro de escrita contam como TypoKind.Phonetic: k/c e vogais trocadas são mais nome estrangeiro
+    // (klara, lukas, morino) do que erro, e ficam com a razão das outras trocas
+    private static readonly HashSet<(char, char)> Spelling = BuildPhonetic("sz", "sc", "gj", "mn", "xs", "xz");
 
     private TypoOptions _o;
     /// <summary>Pode ser trocado em uso (interruptor "corrigir mais" nas configurações).</summary>
@@ -277,6 +296,11 @@ public sealed class TypoRanker
         foreach (var e in Edits1(typed))
             if (e != typed && _byStripped.ContainsKey(e)) cands.TryAdd(e, Cost(typed, e));
 
+        // dígrafos de som igual (x/ch, ss/ç): um erro de escrita, não dois de digitação (enxente → enchente)
+        foreach (var e in PhoneticRewrites(typed))
+            if (_byStripped.ContainsKey(e))
+                cands[e] = Math.Min(cands.GetValueOrDefault(e, double.MaxValue), _o.SpellingSubstitution + (e[0] != typed[0] ? _o.FirstLetterPenalty : 0));
+
         if (cands.Count == 0 && typed.Length >= 6)
         {
             // distância 2: só palavras com a mesma 1ª letra e tamanho parecido
@@ -328,7 +352,27 @@ public sealed class TypoRanker
             while (i < typed.Length && typed[i] == cand[i]) i++;
             if (typed.AsSpan(i).SequenceEqual(cand.AsSpan(i + 1))) return TypoKind.MissingLetter;
         }
+        if (typed.Length == cand.Length)
+        {
+            int diff = -1;
+            for (int i = 0; i < typed.Length; i++)
+                if (typed[i] != cand[i]) { if (diff >= 0) { diff = -2; break; } diff = i; }
+            if (diff >= 0 && Spelling.Contains((typed[diff], cand[diff]))) return TypoKind.Phonetic;
+        }
+        foreach (var r in PhoneticRewrites(typed))
+            if (r == cand) return TypoKind.Phonetic;
         return TypoKind.Other;
+    }
+
+    // em formas sem acento: ç já virou c
+    private static readonly (string From, string To)[] Digraphs = [("x", "ch"), ("ch", "x"), ("c", "ss"), ("ss", "c")];
+
+    /// <summary>A palavra com uma ocorrência de um dígrafo trocada pelo de som igual.</summary>
+    private static IEnumerable<string> PhoneticRewrites(string w)
+    {
+        foreach (var (from, to) in Digraphs)
+            for (int i = w.IndexOf(from, StringComparison.Ordinal); i >= 0; i = w.IndexOf(from, i + 1, StringComparison.Ordinal))
+                yield return string.Concat(w.AsSpan(0, i), to, w.AsSpan(i + from.Length));
     }
 
     private static IEnumerable<string> Edits1(string w)
@@ -362,7 +406,8 @@ public sealed class TypoRanker
             for (int j = 1; j <= b.Length; j++)
             {
                 char x = a[i - 1], y = b[j - 1];
-                double sub = x == y ? 0 : Adjacent(x, y) ? _o.NeighborSubstitution : Phonetic.Contains((x, y)) ? _o.PhoneticSubstitution : 1.0;
+                double sub = x == y ? 0 : Adjacent(x, y) ? _o.NeighborSubstitution
+                    : Spelling.Contains((x, y)) ? _o.SpellingSubstitution : Phonetic.Contains((x, y)) ? _o.PhoneticSubstitution : 1.0;
                 double v = Math.Min(Math.Min(d[i - 1, j] + ExtraCost(a, i - 1), d[i, j - 1] + MissingCost(b, j - 1)), d[i - 1, j - 1] + sub);
                 if (i > 1 && j > 1 && x == b[j - 2] && a[i - 2] == y && x != y)
                     v = Math.Min(v, d[i - 2, j - 2] + _o.Transposition);

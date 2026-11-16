@@ -456,6 +456,14 @@ IEnumerable<(string, string)> Typos(string w)
     }
     var stripped = TextUtil.StripAccents(w);
     if (stripped != w) yield return ("sem acento", stripped);
+    foreach (var (from, to) in ((string, string)[])[("ch", "x"), ("x", "ch"), ("ç", "ss"), ("ss", "ç"), ("z", "s"), ("ge", "je"), ("gi", "ji"), ("j", "g")])
+        if (w.Contains(from, StringComparison.Ordinal))
+        {
+            var t = w.Replace(from, to, StringComparison.Ordinal);
+            if (t != w) yield return ("fonético", t);
+        }
+    for (int i = 1; i < w.Length - 1; i++)
+        if (w[i] == 's' && "aeiou".Contains(w[i - 1]) && "aeiou".Contains(w[i + 1])) { yield return ("fonético", w[..i] + 'z' + w[(i + 1)..]); break; }
 }
 
 sealed class Stat

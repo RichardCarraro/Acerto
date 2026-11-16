@@ -178,6 +178,15 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
     [InlineData(" isso e muito\t", " isso e muito\t")]              // Tab não corrige
     public void Acento_Pela_Palavra_Seguinte(string typed, string want) => Assert.Equal(want, TypeAll(typed));
 
+    // Erro de escrita, não de digitação: x/ch e ss/ç contam como uma troca só; e a forma errada pode estar no corpus
+    [Theory]
+    [InlineData("enxente", "enchente")]
+    [InlineData("xinelo", "chinelo")]
+    [InlineData("caxorro", "cachorro")]
+    [InlineData("mecher", "mexer")]
+    [InlineData("paralização", "paralisação")] // 20 no corpus, contra 177
+    public void Troca_Fonetica(string typed, string want) => Assert.Equal(want, _c.Correct(typed)?.Replacement);
+
     // A lista embutida manda dai → daí; depois de "bom", é dia. No começo da frase a lista vale ("pao" não vira "Não").
     [Theory]
     [InlineData("bom", "dia")]

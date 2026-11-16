@@ -234,3 +234,55 @@ estou muito canssado hoje	Estou muito cansado hoje
 ela nao gosotu da ideia	Ela não gostou da ideia
 precisamos resolver isso logo	Precisamos resolver isso logo
 o computador esta muito lento	O computador está muito lento
+
+# lote 3: erros clássicos de escrita, internetês e nomes de produto (atalhos ficam desligados no Eval)
+tem menas gente hoje	Tem menos gente hoje
+a compania aerea cancelou	A companhia aérea cancelou
+isso e nescessario mesmo?	Isso é necessário mesmo?
+a analize ficou pronta	A análise ficou pronta
+houve uma paralização no metro	Houve uma paralisação no metrô
+quem sabe talves amanha	Quem sabe talvez amanhã
+ele ficou inrritado com a demora	Ele ficou irritado com a demora
+a empreza fechou	A empresa fechou
+o propietario do imovel	O proprietário do imóvel
+ninhum deles veio	Nenhum deles veio
+se eu quizesse eu ia	Se eu quisesse eu ia
+teve uma enxente na cidade	Teve uma enchente na cidade
+nao mecha nisso	Não mexa nisso
+chegamos com susseço	Chegamos com sucesso
+preciso de sossego	Preciso de sossego
+foi um sussego so	Foi um sossego só
+comprei um xinelo novo	Comprei um chinelo novo
+a bechiga do carro estourou	A bexiga do carro estourou
+vou pesquisar na internet	Vou pesquisar na internet
+mandei a foto no whatsapp	Mandei a foto no whatsapp
+postei no instagram ontem	Postei no instagram ontem
+o iphone dela quebrou	O iphone dela quebrou
+assisti no youtube	Assisti no youtube
+tem uma promocao no ifood	Tem uma promoção no ifood
+paguei com pix	Paguei com pix
+o uber demorou meia hora	O uber demorou meia hora
+a netflix lancou uma serie nova	A netflix lançou uma série nova
+fiz uma videochamada no zoom	Fiz uma videochamada no zoom
+abre o excel e confere	Abre o excel e confere
+salva no onedrive	Salva no onedrive
+naum sei de nada	Não sei de nada
+eh isso ai	Eh isso aí
+vlw mano	Vlw mano
+tbm quero	Tbm quero
+obg pela ajuda	Obg pela ajuda
+to indo pra casa	To indo pra casa
+ta tudo certo	Tá tudo certo
+ele tava la	Ele tava lá
+a gnt se fala	A gnt se fala
+flw, ate mais	Flw, até mais
+fica a vontade	Fica à vontade
+vou a praia amanha	Vou à praia amanhã
+cheguei as duas da tarde	Cheguei às duas da tarde
+ele chegou a tempo	Ele chegou a tempo
+vamos a pe	Vamos a pé
+ela foi a feira	Ela foi à feira
+estou a disposicao	Estou à disposição
+o homen chegou	O homem chegou
+a viajem foi otima	A viagem foi ótima
+vou viajar nas ferias	Vou viajar nas férias

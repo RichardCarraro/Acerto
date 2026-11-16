@@ -142,7 +142,7 @@ public sealed class Corrector
                 || ((t.Kind is TypoKind.MissingLetter || (t.Kind is TypoKind.Transposition && o.ShortWordTransposition))
                     && t.Count >= o.ShortWordMinCount);
             bool slip = t.Kind is TypoKind.Transposition or TypoKind.DoubledLetter or TypoKind.MissingLetter;
-            long ratio = slip ? o.AttestedSlipRatio : o.AttestedOtherRatio;
+            long ratio = slip ? o.AttestedSlipRatio : t.Kind is TypoKind.Phonetic ? o.AttestedPhoneticRatio : o.AttestedOtherRatio;
             bool attestedOk = typedCount < AttestedCount
                 || (ratio > 0 && t.Count >= ratio * typedCount);
             if (shortOk && attestedOk) typo = t;

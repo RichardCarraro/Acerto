@@ -977,3 +977,9 @@ exitar	hesitar
 exitou	hesitou
 exitei	hesitei
 exitando	hesitando
+paralização	paralisação
+paralizações	paralisações
+paralizado	paralisado
+paralizada	paralisada
+paralizados	paralisados
+paralizadas	paralisadas
