@@ -62,9 +62,9 @@ A parte do Windows (`Acerto.Windows`) escuta o teclado com um hook global, troca
 Medido com `tests/Acerto.Eval` (erros gerados nas palavras mais usadas e frases reais fora dos dados de treino):
 
 - acerta **~94%** dos erros de digitação no modo "Corrigir mais"
-- com contexto, em frases reais: **93,0%** de acerto contra 89,7% sem contexto; acento esquecido volta em **82,5%** dos casos
+- com contexto, em frases reais: **93,0%** de acerto contra 89,7% sem contexto; acento esquecido volta em **83,0%** dos casos
 - palavras certas estragadas em texto real: **0,12%**
-- frases do dia a dia com erros reais (`tests/Acerto.Eval/frases-reais.txt`, 313 frases): **93,6%** saem certas, nenhuma frase certa é mexida
+- frases do dia a dia com erros reais (`tests/Acerto.Eval/frases-reais.txt`, 350 frases): **92,3%** saem certas, nenhuma frase certa é mexida
 - erros de escrita por som gerados (`x`/`ch`, `ss`/`ç`, `s`/`z`, `g`/`j`): **87%** corrigidos
 - sugestões: o Tab economiza **~29%** das letras das palavras de 4 letras ou mais
 

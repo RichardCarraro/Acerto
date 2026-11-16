@@ -132,8 +132,8 @@ public sealed record TypoOptions
     /// </summary>
     public long RareAccentRatio { get; init; }
 
-    /// <summary>Só para formas com até isso de uso no corpus: abaixo das 30 mil mais usadas (esta, sabia, pais ficam).</summary>
-    public long RareAccentMaxCount { get; init; } = 360;
+    /// <summary>Só para formas com até isso de uso no corpus (esta, sabia, pais, critica, secretaria ficam longe).</summary>
+    public long RareAccentMaxCount { get; init; } = 1200;
 
     /// <summary>Nome próprio em minúscula que o dicionário só tem com maiúscula ganha a maiúscula (curitiba → Curitiba).</summary>
     public bool CapitalizeNames { get; init; }
@@ -175,6 +175,7 @@ public sealed record TypoOptions
         SpellingSubstitution = 0.4,
         // 1184 das 60 mil palavras frequentes do corpus ganhariam maiúscula, quase todas nomes (john, europa, alemanha)
         CapitalizeNames = true,
+        // piso 1200 (pega sera → será, ficara, dara): acento volta em 83,0% contra 82,5% com 360, +16 estragos em 417 mil
         RareAccentRatio = 30,
     };
 

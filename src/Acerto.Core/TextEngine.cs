@@ -344,7 +344,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
             _ => null,
         };
 
-        bool sentenceEnd = _prev1 is '.' or '!' or '?';
+        bool sentenceEnd = _prev1 is '!' or '?' || (_prev1 is '.' && _prev2 is not '.'); // reticências continuam a frase
         Push(c);
         _lastWasDoubleSpace = false;
 

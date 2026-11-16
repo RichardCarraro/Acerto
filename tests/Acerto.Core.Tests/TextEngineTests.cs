@@ -165,6 +165,7 @@ public class TextEngineEnderecoTests(SharedCorrector s) : IClassFixture<SharedCo
     [Fact] public void Ponto_Corrigido_Backspace_So_Apaga() => Assert.Equal(" não.", Type(" nao. \b"));
     [Fact] public void Ponto_Apagado_Nao_Corrige() => Assert.Equal(" nao ", Type(" nao.\b "));
     [Fact] public void Ponto_Depois_Maiuscula() => Assert.Equal(" Ok. Não. ", Type(" Ok. nao. "));
+    [Fact] public void Reticencias_Nao_Dao_Maiuscula() => Assert.Equal(" certo... não pensei ", Type(" certo... nao pensei "));
 
     // I5 da revisão final: Tab costuma aceitar sugestão do app; não corrigir
     [Fact] public void Tab_Nao_Corrige() => Assert.Equal(" nao\t", Type(" nao\t"));

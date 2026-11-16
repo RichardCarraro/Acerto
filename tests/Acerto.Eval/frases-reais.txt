@@ -328,3 +328,42 @@ eles sao de la	Eles são de lá
 a agua acabou	A água acabou
 nos vamos juntos	Nós vamos juntos
 nos ajude com isso	Nos ajude com isso
+
+# lote 5: mensagens de trabalho com pontuação no meio, parênteses, aspas, dois-pontos, números
+bom dia, tudo bem? segue o relatorio (versao final).	Bom dia, tudo bem? Segue o relatório (versão final).
+ola joao, conforme conversamos: o prazo e sexta.	Olá João, conforme conversamos: o prazo é sexta.
+atencao: a reuniao foi remarcada para as 14h	Atenção: a reunião foi remarcada para as 14h
+"nao vai dar", disse ele.	"Não vai dar", disse ele.
+ele disse "nao" e saiu	Ele disse "não" e saiu
+preciso de 3 copias ate amanha	Preciso de 3 cópias até amanhã
+o valor e R$ 1.500,00 (mil e quinhentos)	O valor é R$ 1.500,00 (mil e quinhentos)
+veja o item 2.3 do contrato	Veja o item 2.3 do contrato
+a versao 1.3.6 esta pronta	A versão 1.3.6 está pronta
+obs: nao esqueca de anexar	Obs: não esqueça de anexar
+ps: obrigado!	Ps: obrigado!
+o orcamento (anexo) foi aprovado; podemos comecar.	O orçamento (anexo) foi aprovado; podemos começar.
+sim - pode ser amanha	Sim - pode ser amanhã
+voce esta certo... nao pensei nisso	Você está certo... não pensei nisso
+e ai? conseguiu?	E aí? Conseguiu?
+nao, ainda nao	Não, ainda não
+ok. entao fica para segunda	Ok. Então fica para segunda
+perfeito! obrigada :)	Perfeito! Obrigada :)
+a senha e: abc123	A senha é: abc123
+acesse http://exemplo.com.br/relatorio	Acesse http://exemplo.com.br/relatorio
+mande para joao@empresa.com.br ate as 17h	Mande para joao@empresa.com.br até as 17h
+o arquivo relatorio.pdf esta no drive	O arquivo relatorio.pdf está no drive
+a pasta e C:\Projetos\acerto	A pasta é C:\Projetos\acerto
+use o comando git commit -m "fix"	Use o comando git commit -m "fix"
+rodei npm run build e deu erro	Rodei npm run build e deu erro
+a funcao getData() retorna null	A função getData() retorna null
+o campo "nome" e obrigatorio	O campo "nome" é obrigatório
+segue abaixo:	Segue abaixo:
+- revisar o texto	- Revisar o texto
+- enviar ao cliente	- Enviar ao cliente
+1) ler o manual	1) Ler o manual
+2) instalar o programa	2) Instalar o programa
+duvida: isso e normal?	Dúvida: isso é normal?
+reuniao as 10h30, sala 2	Reunião às 10h30, sala 2
+ate la, abracos	Até lá, abraços
+abraco, joao	Abraço, João
+att, maria	Att, Maria
