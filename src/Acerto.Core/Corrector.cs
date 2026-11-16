@@ -89,7 +89,15 @@ public sealed class Corrector
 
         // 3. Lista embutida (inclui as formas válidas-mas-raras como agua→água, escolhidas à mão)
         if (_data.Fixed.TryGet(w, out var fixedRep))
+        {
+            // ...a não ser que a anterior peça outra vizinha com muita força e nunca venha antes da forma da lista:
+            // "bom dai" → dia, não daí. Começo de frase não conta ("pao" viraria "Não").
+            if (prev is not null && prev != BigramModel.SentenceStart && o.FixedContextMinPair > 0
+                && _data.Bigrams.Count(prev, fixedRep) == 0 && _typos.Best(w, prev, o) is { } near && near.Word != fixedRep
+                && _data.Bigrams.Count(prev, near.Word) >= o.FixedContextMinPair)
+                return new Correction(TextUtil.ApplyCase(word, near.Word), CorrectionKind.Typo);
             return new Correction(TextUtil.ApplyCase(word, fixedRep), CorrectionKind.Fixed);
+        }
 
         // 4. Caixa mista ("iPhone") e hífen só passam pelas regras acima
         if (TextUtil.IsMixedCase(word) || w.Contains('-')) return null;

@@ -109,6 +109,12 @@ public sealed record TypoOptions
     /// <summary>O par (acentuada, seguinte) tem que aparecer pelo menos isso no corpus para a regra acima valer.</summary>
     public int NextMinPairCount { get; init; } = 5;
 
+    /// <summary>
+    /// A lista embutida perde para a vizinha que a palavra anterior pede ("bom dai" → dia, não daí) quando o par
+    /// (anterior, vizinha) aparece pelo menos isso no corpus e (anterior, da lista) nunca. 0 = a lista sempre ganha.
+    /// </summary>
+    public int FixedContextMinPair { get; init; }
+
     /// <summary>Palavras de 3 letras também são corrigidas quando há inversão (cmo → com).</summary>
     public bool ShortWordTransposition { get; init; }
 
@@ -133,9 +139,12 @@ public sealed record TypoOptions
         AccentYield = 3.0,
         ContextAccentRatio = 10,
         ContextPairRatio = 15,
-        // medido em 30 mil frases de notícias fora da amostra (AcertoEval direita): volta 30% dos acentos que a
-        // regra da palavra anterior deixava passar (e→é, esta→está, ha→há), estragando 0,038% das palavras certas
-        NextAccentRatio = 10,
+        // medido em 30 mil frases de notícias fora da amostra (AcertoEval direita): volta 34% dos acentos que a
+        // regra da palavra anterior deixava passar (e→é, esta→está, ha→há), estragando 0,054% das palavras certas.
+        // 10 → 7: +294 acertos, +58 estragos; 5 já troca "maior e melhor" → é
+        NextAccentRatio = 7,
+        // "bom dai" → dia. Com 200 não muda nada nas 30 mil frases de notícias (com 50, B cai 0,1 ponto)
+        FixedContextMinPair = 200,
     };
 
     /// <summary>Perfil cuidadoso: na dúvida, não troca. É o que os testes de corpus exigem com zero trocas indevidas.</summary>

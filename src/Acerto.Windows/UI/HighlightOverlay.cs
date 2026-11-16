@@ -58,6 +58,9 @@ internal sealed class HighlightOverlay : Window
     public void Flash(Rect word)
     {
         if (word.Width < 2 || word.Height < 2) return;
+        // palavra de uma letra (é, à, a): realce estreito some no texto; dá uma largura mínima, centrada
+        double minWidth = word.Height * 0.5;
+        if (word.Width < minWidth) word = new Rect(word.X - (minWidth - word.Width) / 2, word.Y, minWidth, word.Height);
         // A janela nunca é escondida (esconder e mostrar de novo faz ela piscar na posição antiga):
         // parada, ela fica 100% transparente e deixa o clique passar.
         if (!IsVisible) Show(); // ShowActivated=false: não rouba o foco de quem está digitando

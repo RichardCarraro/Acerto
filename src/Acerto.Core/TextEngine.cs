@@ -28,7 +28,9 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
 
     private readonly record struct Deferred(string Word, string Result, char End);
     /// <summary>Correção que acabou de entrar (palavra + espaço), enquanto nada mais foi digitado.</summary>
-    private readonly record struct Undo(string Typed, string Result, string? Prev);
+    /// <param name="Suffix">Correção pela palavra seguinte: o que veio depois (" muito"); o Tab desfaz as duas.</param>
+    /// <param name="Learns">Desfazer ensina a palavra ("nao" de propósito). Não para "e"/"é": as duas são normais.</param>
+    private readonly record struct Undo(string Typed, string Result, string? Prev, string Suffix = "", bool Learns = true);
     /// <summary>Palavra que ficou como estava, seguida de espaço: a próxima pode mostrar que faltou acento ("e muito").</summary>
     private readonly record struct Pending(string Word, string? Prev);
 
@@ -127,8 +129,9 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
         var typed = u.Typed.ToLower(TextUtil.PtBr);
         var result = u.Result.ToLower(TextUtil.PtBr);
         var list = new List<string> { typed };
-        foreach (var c in corrector.Typos.Candidates(typed, u.Prev))
-            if (list.Count < max && c.Word != result && !list.Contains(c.Word)) list.Add(c.Word);
+        if (u.Suffix.Length == 0) // pela seguinte só desfaz: outra palavra no lugar de "e" raramente faz sentido
+            foreach (var c in corrector.Typos.Candidates(typed, u.Prev))
+                if (list.Count < max && c.Word != result && !list.Contains(c.Word)) list.Add(c.Word);
         bool upper = char.IsUpper(u.Result[0]);
         return list.Select(w => w == typed ? u.Typed : upper ? char.ToUpper(w[0], TextUtil.PtBr) + w[1..] : w).ToList();
     }
@@ -141,23 +144,26 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     public EngineAction AcceptSuggestion(string suggestion)
     {
         int typed = _word.Length;
+        string suffix = "";
         if (_undo is { } u)
         {
-            typed = u.Result.Length + 1; // a palavra corrigida e o espaço
-            if (string.Equals(suggestion, u.Typed, StringComparison.OrdinalIgnoreCase)) learn(u.Typed);
+            suffix = u.Suffix;
+            typed = u.Result.Length + suffix.Length + 1; // a palavra corrigida (e a seguinte, se foi por ela) e o espaço
+            if (u.Learns && string.Equals(suggestion, u.Typed, StringComparison.OrdinalIgnoreCase)) learn(u.Typed);
             _undo = null;
         }
         else corrector.Record(_prev, suggestion);
-        _prev = LastWord(suggestion);
+        var text = suggestion + suffix;
+        _prev = LastWord(text);
         _capNext = false;
-        _prev2 = suggestion[^1];
+        _prev2 = text[^1];
         _prev1 = ' ';
         _lastWasDoubleSpace = false;
         _deferred = null;
         _pending = null;
         _lastCorrectedWord = null;
         EndToken();
-        return new EngineAction(true, typed, suggestion + " ");
+        return new EngineAction(true, typed, text + " ");
     }
 
     /// <summary>O host perdeu o fio (clique, troca de janela, seta, atalho): esquece tudo.</summary>
@@ -313,7 +319,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
                 {
                     var rest = " " + result + c;
                     action = new EngineAction(true, pw.Word.Length + 1 + word.Length, byNext.Replacement + rest, byNext.Replacement.Length);
-                    _undo = null;
+                    _undo = c == ' ' ? new Undo(pw.Word, byNext.Replacement, pw.Prev, " " + result, Learns: false) : null;
                     _lastByNext = pw.Word;
                     _byNextUndone = false;
                     pendingFinal = byNext.Replacement;

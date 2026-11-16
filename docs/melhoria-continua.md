@@ -33,7 +33,7 @@ de um bom teclado de celular. Trabalhe em ciclos curtos, sempre medindo antes e 
 | Contexto | `$E data contexto <corpus> 30000 perfil=agressivo` | ↑ A e B, C estragadas não sobe |
 | Acento pela seguinte | `$E data direita <corpus> 30000 perfil=agressivo` | ↑ B, C não sobe |
 | Sugestões | `$E data sugestoes <corpus> 2000 perfil=agressivo` | ↑ teclas economizadas, ↑ próxima palavra |
-| Testes | `dotnet test tests/Acerto.Core.Tests` (≈ 4 min) | todos passam |
+| Testes | `dotnet test tests/Acerto.Core.Tests -nologo --logger "console;verbosity=normal" 2>&1 \| grep -E "\[FAIL\]\|Com falha\|Total de testes\|Aprovados\|Expected\|Actual" \| tail -30` (≈ 6 min) | resumo com `Com falha: 0` (ou só `Aprovados: N`). Saída sem o resumo **não** é aprovação: o filtro errou, rode de novo |
 
 `contexto` e `direita` levam ~5 min: rode em segundo plano e em paralelo, com saída em arquivo.
 
@@ -50,8 +50,10 @@ Em ordem de valor:
    `$E data explicar <palavra> ant=<anterior> perfil=agressivo` mostra as candidatas e notas.
 4. **Sugestões**: a barra erra a próxima palavra ou demora a completar? Ajuste no `Suggester`, medindo com `sugestoes`.
 5. **Animação e barra** (`src/Acerto.Windows/UI/HighlightOverlay.cs`, `SuggestionBar.cs`): rápida (< 700 ms),
-   não rouba foco, respeita "Efeitos de animação" do Windows, tema claro/escuro. Mudança visual: tire foto com
-   `tests/Acerto.UiShots` e olhe a imagem antes de commitar.
+   não rouba foco, respeita "Efeitos de animação" do Windows, tema claro/escuro. Mudança visual: rode
+   `dotnet build tests/Acerto.UiShots -c Release` e `AcertoUiShots.exe <pasta> light` (e `dark`): sai
+   `correcao-<ms>.png` com a animação de verdade quadro a quadro (entrada, auge, saída), `barra-sugestoes.png`
+   e as telas de configuração. **Olhe as imagens** (Read) antes de commitar; compare com os quadros anteriores.
 
 Onde mexer, do mais barato ao mais caro:
 - **Dados**: `data/correcoes.txt` (erro → certo, sem contexto; pode incluir formas válidas raras como
@@ -88,6 +90,7 @@ Onde mexer, do mais barato ao mais caro:
 
 | Data | Versão | Mudança | Antes → depois |
 |---|---|---|---|
+| 2026-11-16 | 1.3.1 | Limiar do acento pela seguinte 10 → 7; Tab desfaz a correção pela seguinte (as duas palavras, sem aprender "e"); lista embutida cede ao contexto forte (`bom dai` → dia: par ≥ 200 e par da lista = 0; começo de frase não conta, senão `pao` virava `Não`); `exite` → `hesite`; animação com largura mínima para palavra de uma letra e barra surgindo em 90 ms; UiShots fotografa a animação quadro a quadro; 48 frases novas | frases reais 90,9% → 93,7% (223 frases, 0 estragos); acento pela seguinte B 30,2% → 33,6%, C 0,038% → 0,054%; contexto A 93,0% → 93,1%, B e C iguais |
 | 2026-11-16 | 1.3.0 | Acento pela palavra seguinte (`isso e muito` → `é`, limiar 10); termos de TI protegidos (`deploy`, `commit`, `teams`); acentuada exata ganha da candidata de digitação menos usada (`almocaram` → `almoçaram`); erros fonéticos na lista; animação com entrada suave | frases reais 79,4% → 90,9% (0 estragos); acento pela seguinte: +30% dos que escapavam, +0,038% estragos; contexto B 81,0% → 81,7%; sintéticos 94,2% = |
 
 ### Tentado e reprovado / pistas
@@ -97,5 +100,11 @@ Onde mexer, do mais barato ao mais caro:
   vira outra palavra válida" para ver o ganho.
 - **Peso do contexto 0,9 nas sugestões**: +0,3 ponto de teclas economizadas (28,7% → 29,0%), mas mexe também nas
   correções. Só vale com uma opção separada para o `Suggester`.
-- **Faltam no `frases-reais.txt`**: `e` → `é` com razão entre 5 e 9 (`ele e meu irmão`, `o cara e muito chato`),
-  crase (`as três`), `bom dai` (a lista embutida manda `dai` → `daí` sem olhar o contexto), `eu concerto o carro`.
+- **Acento pela seguinte abaixo de 7**: com 5 já troca `maior e melhor` → `é` (3 vezes em 30 mil frases). As que
+  ainda escapam (`ele e meu irmão`, razão ≈ 6; `o rapaz e educado`, par `é educado` = 4 < mínimo 5) precisariam de
+  outra evidência, não de limiar menor.
+- **Crase `as três` → `às três`**: no corpus `as três` (327) é mais comum que `às três` (21); sem como decidir.
+- **Homófonos válidos** (`eu concerto o carro` → conserto): não há par `eu concerto`/`eu conserto` no corpus;
+  precisaria de uma lista de pares com o contexto que decide, feita à mão.
+- **Palavra válida rara no lugar da comum** (`tudo cetro`, `combinado entoa`): ver a regra reprovada acima.
+- **`meu email e joao.silva@gmail.com`**: a seguinte não é palavra; o acento pela seguinte não tem como ver. Fica.

@@ -184,3 +184,53 @@ esta casa e minha	Esta casa é minha
 a secretaria de saude	A secretaria de saúde
 o pais dele	O país dele
 os pais dele vieram	Os pais dele vieram
+
+# --- lote 2: chat, e-mail de trabalho, rede social ---
+oi, tudo bem? to precisando de uma ajuda	Oi, tudo bem? To precisando de uma ajuda
+ja enviei o documento por email	Já enviei o documento por email
+voce consegue me mandar ate amanha?	Você consegue me mandar até amanhã?
+nao esqueca da reuniao de amanha	Não esqueça da reunião de amanhã
+a apresentacao ficou otima, parabens	A apresentação ficou ótima, parabéns
+o relatorio mensal esta atrasado	O relatório mensal está atrasado
+preciso que voce revise o contrato	Preciso que você revise o contrato
+a gente pode conversar depois do almoco?	A gente pode conversar depois do almoço?
+estou sem acesso ao sistema desde ontem	Estou sem acesso ao sistema desde ontem
+o cliente reclamou do atendimento	O cliente reclamou do atendimento
+vou tirar ferias em janeiro	Vou tirar férias em janeiro
+o orcamento foi aprovado	O orçamento foi aprovado
+segue a planilha atualizada	Segue a planilha atualizada
+qual e a senha do wifi?	Qual é a senha do wifi?
+o onibus atrasou de novo	O ônibus atrasou de novo
+minha filha esta doente	Minha filha está doente
+vou levar o cachorro no veterinario	Vou levar o cachorro no veterinário
+comprei pao e leite	Comprei pão e leite
+a conta de luz veio alta	A conta de luz veio alta
+o voo foi cancelado	O voo foi cancelado
+nao vejo a hora de viajar	Não vejo a hora de viajar
+que saudade de voces	Que saudade de vocês
+feliz aniversario, muitas felicidades	Feliz aniversário, muitas felicidades
+obrigado pela paciencia	Obrigado pela paciência
+desculpa, nao vi sua mensagem	Desculpa, não vi sua mensagem
+estou no transito, chego em dez minutos	Estou no trânsito, chego em dez minutos
+a escola mandou um comunicado	A escola mandou um comunicado
+o medico pediu exames	O médico pediu exames
+amanha e feriado?	Amanhã é feriado?
+isso nao faz sentido	Isso não faz sentido
+voce viu o jogo ontem?	Você viu o jogo ontem?
+o time jogou muito mal	O time jogou muito mal
+precisamos de mais informacoes	Precisamos de mais informações
+o prazo e sexta feira	O prazo é sexta feira
+a impressora esta sem papel	A impressora está sem papel
+eu acho que ele nao entendeu	Eu acho que ele não entendeu
+vamos almocar juntos?	Vamos almoçar juntos?
+a reuniao foi adiada para quinta	A reunião foi adiada para quinta
+recebi o pagamento, obrigado	Recebi o pagamento, obrigado
+ele mora numa cidade pequena	Ele mora numa cidade pequena
+obrigado pelo convtie	Obrigado pelo convite
+vou pnesar no assunto	Vou pensar no assunto
+a resposta esta no anexo	A resposta está no anexo
+o carro quebrou na estarda	O carro quebrou na estrada
+estou muito canssado hoje	Estou muito cansado hoje
+ela nao gosotu da ideia	Ela não gostou da ideia
+precisamos resolver isso logo	Precisamos resolver isso logo
+o computador esta muito lento	O computador está muito lento

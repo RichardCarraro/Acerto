@@ -95,13 +95,21 @@ internal sealed class SuggestionBar : Window
         int y = (int)anchor.Bottom + 6;
         if (y + height > area.Bottom) y = (int)anchor.Top - height - 6; // sem espaço embaixo: mostra em cima
         SetWindowPos(_hwnd, HWND_TOPMOST, x, y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE);
-        _root.Opacity = 1;
+        // surge em 90 ms quando aparece; trocando de sugestão a cada tecla fica parada (senão piscaria)
+        if (!IsShowing && SystemParameters.ClientAreaAnimation)
+            _root.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(90)));
+        else
+        {
+            _root.BeginAnimation(OpacityProperty, null);
+            _root.Opacity = 1;
+        }
         IsShowing = true;
     }
 
     /// <summary>Some da tela. A janela continua existindo (esconder e mostrar de novo faria ela piscar).</summary>
     public void Conceal()
     {
+        _root.BeginAnimation(OpacityProperty, null);
         _root.Opacity = 0;
         IsShowing = false;
     }

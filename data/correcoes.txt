@@ -972,3 +972,8 @@ largatixa	lagartixa
 largatixas	lagartixas
 estrupo	estupro
 estrupador	estuprador
+exite	hesite
+exitar	hesitar
+exitou	hesitou
+exitei	hesitei
+exitando	hesitando

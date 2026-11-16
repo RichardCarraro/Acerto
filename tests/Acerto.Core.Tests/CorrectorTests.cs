@@ -114,6 +114,7 @@ public class FixedListGuardTests(SharedCorrector s) : IClassFixture<SharedCorrec
         "faco", "video", "oque", "emfim", "anida", "intendi", "intender", "intendeu", "amanha", "medico", "titulo",
         "transito", "policia", "noticia", "agencia", "irma", "dai",
         "deslise", "estrupo", // raras/arcaicas no dicionário; na prática, sempre erro de deslize/estupro
+        "exite", "exitar", "exitou", "exitei", "exitando", // 77 × "exite" no corpus contra 1075 × "hesite"
     };
 
     [Fact]
@@ -176,6 +177,30 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
     [InlineData(" pão, e uma laranja ", " pão, e uma laranja ")]    // depois de vírgula não se sabe: fica
     [InlineData(" isso e muito\t", " isso e muito\t")]              // Tab não corrige
     public void Acento_Pela_Palavra_Seguinte(string typed, string want) => Assert.Equal(want, TypeAll(typed));
+
+    // A lista embutida manda dai → daí; depois de "bom", é dia. No começo da frase a lista vale ("pao" não vira "Não").
+    [Theory]
+    [InlineData("bom", "dia")]
+    [InlineData("e", "daí")]
+    [InlineData(BigramModel.SentenceStart, "daí")]
+    public void Lista_Embutida_Cede_Ao_Contexto_Forte(string prev, string want) => Assert.Equal(want, _c.Correct("dai", false, prev)?.Replacement);
+
+    [Fact] public void Lista_Embutida_No_Comeco_Da_Frase() => Assert.Equal("pão", _c.Correct("pao", false, BigramModel.SentenceStart)?.Replacement);
+
+    [Fact]
+    public void Acento_Pela_Seguinte_Tab_Desfaz_As_Duas()
+    {
+        var learned = new List<string>();
+        var engine = new TextEngine(_c, learned.Add);
+        var doc = new System.Text.StringBuilder(TypeAll(" isso e muito ", engine));
+        Assert.Equal(["e"], engine.Suggestions());        // só desfazer; "de"/"se" no lugar não fazem sentido
+        var a = engine.AcceptSuggestion("e");
+        doc.Length -= a.Backspaces;
+        doc.Append(a.Insert);
+        Assert.Equal(" isso e muito ", doc.ToString());
+        Assert.Empty(learned);                            // "e" não vira palavra pessoal: na próxima frase pode ser "é"
+        Assert.Equal("bom ", TypeAll("bom ", engine));    // segue normal, sem corrigir de novo
+    }
 
     [Fact]
     public void Acento_Pela_Seguinte_Apagado_Nao_Insiste()
