@@ -1,0 +1,186 @@
+# Erros como as pessoas cometem de verdade. "digitado<TAB>esperado"; sem TAB = não pode mudar nada.
+# Rodar: AcertoEval data frases tests/Acerto.Eval/frases-reais.txt perfil=agressivo
+# Ao achar um erro novo no uso real, acrescente aqui primeiro (vira o teste), depois corrija o motor ou os dados.
+
+# --- acento esquecido ---
+voce esta bem?	Você está bem?
+nao sei se ele vem	Não sei se ele vem
+ate amanha entao	Até amanhã então
+ja falei com ela	Já falei com ela
+tambem quero ir	Também quero ir
+ninguem respondeu ainda	Ninguém respondeu ainda
+parabens pelo seu aniversario	Parabéns pelo seu aniversário
+a reuniao foi otima	A reunião foi ótima
+o proximo onibus sai as tres	O próximo ônibus sai às três
+isso e muito importante	Isso é muito importante
+ele e meu irmao	Ele é meu irmão
+minha mae esta em casa	Minha mãe está em casa
+a historia e bem facil de entender	A história é bem fácil de entender
+e possivel resolver isso hoje?	É possível resolver isso hoje?
+o ultimo relatorio ficou otimo	O último relatório ficou ótimo
+preciso de uma informacao	Preciso de uma informação
+qual e o numero do telefone?	Qual é o número do telefone?
+a musica esta muito alta	A música está muito alta
+ola, tudo bem?	Olá, tudo bem?
+voces ja almocaram?	Vocês já almoçaram?
+o cafe acabou	O café acabou
+fiquei la ate tarde	Fiquei lá até tarde
+so mais um pouco	Só mais um pouco
+alguem viu meu celular?	Alguém viu meu celular?
+porem nao funcionou	Porém não funcionou
+ela tem experiencia em saude publica	Ela tem experiência em saúde pública
+a familia toda veio	A família toda veio
+no inicio do mes	No início do mês
+o negocio esta indo bem	O negócio está indo bem
+depois da licao de casa	Depois da lição de casa
+a situacao e dificil	A situação é difícil
+voce pode me ajudar?	Você pode me ajudar?
+nao e facil	Não é fácil
+estou com dor de cabeca	Estou com dor de cabeça
+comeca amanha	Começa amanhã
+o almoco esta pronto	O almoço está pronto
+vou ao medico	Vou ao médico
+o preco subiu	O preço subiu
+a policia chegou	A polícia chegou
+o rapaz e educado	O rapaz é educado
+ele pos o livro na mesa	Ele pôs o livro na mesa
+voce tem razao	Você tem razão
+apos a reuniao	Após a reunião
+o servico e rapido	O serviço é rápido
+o pais inteiro parou	O país inteiro parou
+o codigo nao compila	O código não compila
+vamos la	Vamos lá
+obrigado pela atencao	Obrigado pela atenção
+
+# --- erros de digitação ---
+obrigaod pela ajdua	Obrigado pela ajuda
+vamos marcra uma reuniao	Vamos marcar uma reunião
+precismaos conversar	Precisamos conversar
+o sistmea esta fora do ar	O sistema está fora do ar
+nao consigo acessra o email	Não consigo acessar o email
+por favor me envie o relatroio	Por favor me envie o relatório
+qual o horraio da reuniao?	Qual o horário da reunião?
+eu qeuro saber mais	Eu quero saber mais
+tenho uma duvdia	Tenho uma dúvida
+ele nao repsondeu	Ele não respondeu
+mutio obrigado	Muito obrigado
+estou trabalahndo agora	Estou trabalhando agora
+o porblema continua	O problema continua
+vou verificar e te retorno	Vou verificar e te retorno
+pdoe ser amanha?	Pode ser amanhã?
+quando voce puder me liga	Quando você puder me liga
+acho que nao vai dar	Acho que não vai dar
+a gente se fala depois	A gente se fala depois
+desculpa a demroa	Desculpa a demora
+estou chegnado	Estou chegando
+tudo cetro	Tudo certo
+combinado entoa	Combinado então
+pdoemos começar?	Podemos começar?
+o arqiuvo esta anexo	O arquivo está anexo
+nao recebi a mensgaem	Não recebi a mensagem
+segue em anxeo	Segue em anexo
+atenciosamnete	Atenciosamente
+bom dai a todos	Bom dia a todos
+boa tadre	Boa tarde
+boa niote	Boa noite
+fiz a atualizacao do programa	Fiz a atualização do programa
+vou precisar sair mais cedo	Vou precisar sair mais cedo
+o computadro travou	O computador travou
+a impressroa nao imprime	A impressora não imprime
+pode me mandar o link?	Pode me mandar o link?
+esqueci a senah	Esqueci a senha
+amanah eu vejo isso	Amanhã eu vejo isso
+estou de ferias	Estou de férias
+semana que vme	Semana que vem
+pessaol, bom dia	Pessoal, bom dia
+fico no aguardo	Fico no aguardo
+qualqeur coisa me avisa	Qualquer coisa me avisa
+obrigada por tuod	Obrigada por tudo
+
+# --- erros de escrita comuns (fonéticos, gramaticais) ---
+concerteza vou	Com certeza vou
+derrepente ele sumiu	De repente ele sumiu
+porisso eu disse	Por isso eu disse
+apartir de amanha	A partir de amanhã
+espero que seje rapido	Espero que seja rápido
+espero que esteje tudo bem	Espero que esteja tudo bem
+fiquei muito ancioso	Fiquei muito ansioso
+estou com anciedade	Estou com ansiedade
+e um previlegio	É um privilégio
+um mendingo pediu	Um mendigo pediu
+uma festa beneficiente	Uma festa beneficente
+fui ao cabeleleiro	Fui ao cabeleireiro
+coloque um asterístico	Coloque um asterisco
+isso e um impecilho	Isso é um empecilho
+pao com mortandela	Pão com mortadela
+cachorro quente com salchicha	Cachorro quente com salsicha
+temos um poblema	Temos um problema
+andei de bicicreta	Andei de bicicleta
+uma largatixa na parede	Uma lagartixa na parede
+a previsao da metereologia	A previsão da meteorologia
+nao quero te encomodar	Não quero te incomodar
+nao consigo enchergar	Não consigo enxergar
+vou analizar o caso	Vou analisar o caso
+preciso pesquizar mais	Preciso pesquisar mais
+atravez da janela	Através da janela
+eu fasso isso	Eu faço isso
+eu faco isso amanha	Eu faço isso amanhã
+quero adiquirir um carro	Quero adquirir um carro
+tenta advinhar	Tenta adivinhar
+um iorgute de morango	Um iogurte de morango
+e melhor previnir	É melhor prevenir
+foi so um deslise	Foi só um deslize
+uma tijela de sopa	Uma tigela de sopa
+por ezemplo	Por exemplo
+nao exite em perguntar	Não hesite em perguntar
+eles querem reinvindicar	Eles querem reivindicar
+a entrada e gratuíta	A entrada é gratuita
+toda excessão tem regra	Toda exceção tem regra
+a idéia e boa	A ideia é boa
+foi uma exelente ideia	Foi uma excelente ideia
+estou estressado com tudo	Estou estressado com tudo
+o cara e muito chato	O cara é muito chato
+ela pediu uma xicara de cha	Ela pediu uma xícara de chá
+o vídeo é muito engracado	O vídeo é muito engraçado
+nao tem nescessidade	Não tem necessidade
+preciso disso emediatamente	Preciso disso imediatamente
+foi uma discusao feia	Foi uma discussão feia
+a sessao comeca as oito	A sessão começa às oito
+mais tarde eu vejo	Mais tarde eu vejo
+eu concerto o carro	Eu conserto o carro
+vou fazer uma excurssao	Vou fazer uma excursão
+ele e muito pretencioso	Ele é muito pretensioso
+uma pesquiza rapida	Uma pesquisa rápida
+eles nao quiseram	Eles não quiseram
+ele quiz sair	Ele quis sair
+ela foi atraz dele	Ela foi atrás dele
+um prazo extenso	Um prazo extenso
+a pessoa estava hesitante	A pessoa estava hesitante
+
+# --- não pode mudar: gírias, abreviações, inglês, nomes, código, endereços ---
+vc vai hoje?	Vc vai hoje?
+pq nao?	Pq não?
+kkkkkk	Kkkkkk
+rsrs	Rsrs
+blz entao	Blz então
+ok, combinado	Ok, combinado
+manda no whatsapp	Manda no whatsapp
+abre o site www.google.com.br	Abre o site www.google.com.br
+meu email e joao.silva@gmail.com	Meu email é joao.silva@gmail.com
+custa R$ 10,50	Custa R$ 10,50
+O Joao foi para Curitiba	O João foi para Curitiba
+Falei com a Ana ontem
+Vou usar o Teams e o Outlook
+o deploy foi feito no servidor	O deploy foi feito no servidor
+fiz um commit no git	Fiz um commit no git
+o meeting foi cancelado	O meeting foi cancelado
+o feedback foi positivo	O feedback foi positivo
+abre o arquivo config.json	Abre o arquivo config.json
+roda npm install	Roda npm install
+CPF 123.456.789-00
+a casa e a mesa	A casa e a mesa
+eu e voce	Eu e você
+esta casa e minha	Esta casa é minha
+a secretaria de saude	A secretaria de saúde
+o pais dele	O país dele
+os pais dele vieram	Os pais dele vieram

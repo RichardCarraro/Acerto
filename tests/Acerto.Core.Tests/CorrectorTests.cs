@@ -113,6 +113,7 @@ public class FixedListGuardTests(SharedCorrector s) : IClassFixture<SharedCorrec
         "encima", "secretario", "musica", "tao", "acoes", "apos", "porem", "salario", "experiencia", "conferencia",
         "faco", "video", "oque", "emfim", "anida", "intendi", "intender", "intendeu", "amanha", "medico", "titulo",
         "transito", "policia", "noticia", "agencia", "irma", "dai",
+        "deslise", "estrupo", // raras/arcaicas no dicionário; na prática, sempre erro de deslize/estupro
     };
 
     [Fact]
@@ -149,7 +150,43 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
     [Theory]
     [InlineData("voice")] [InlineData("mail")] [InlineData("office")] [InlineData("apps")] [InlineData("build")]
     [InlineData("curitiba")] [InlineData("richard")]
+    [InlineData("deploy")] [InlineData("commit")] [InlineData("teams")] [InlineData("jira")] // pouco usadas, à mão
     public void Protegidas_Ficam(string palavra) => Assert.Null(_c.Correct(palavra));
+
+    private string TypeAll(string keys, TextEngine? engine = null)
+    {
+        engine ??= new TextEngine(_c, _ => { });
+        var doc = new System.Text.StringBuilder();
+        foreach (var k in keys)
+        {
+            var a = k == '\b' ? engine.OnBackspace() : engine.OnChar(k);
+            if (a.Swallow) { doc.Length -= a.Backspaces; doc.Append(a.Insert); }
+            else if (k == '\b') { if (doc.Length > 0) doc.Length--; }
+            else doc.Append(k);
+        }
+        return doc.ToString();
+    }
+
+    // A palavra seguinte mostra que faltou o acento na anterior
+    [Theory]
+    [InlineData(" isso e muito bom ", " isso é muito bom ")]
+    [InlineData(" o almoço esta pronto ", " o almoço está pronto ")]
+    [InlineData(" a situacao e dificil ", " a situação é difícil ")]
+    [InlineData(" a casa e a mesa ", " a casa e a mesa ")]          // conjunção fica
+    [InlineData(" pão, e uma laranja ", " pão, e uma laranja ")]    // depois de vírgula não se sabe: fica
+    [InlineData(" isso e muito\t", " isso e muito\t")]              // Tab não corrige
+    public void Acento_Pela_Palavra_Seguinte(string typed, string want) => Assert.Equal(want, TypeAll(typed));
+
+    [Fact]
+    public void Acento_Pela_Seguinte_Apagado_Nao_Insiste()
+    {
+        var engine = new TextEngine(_c, _ => { });
+        Assert.Equal(" isso é muito ", TypeAll(" isso e muito ", engine));
+        TypeAll(new string('\b', 8), engine);           // apaga "é muito ": o motor perde o fio
+        engine.ConfirmContext(engine.Generation, " isso "); // o host diz o que ficou antes do cursor
+        Assert.Equal("e muito ", TypeAll("e muito ", engine)); // digitou de novo sem acento: fica
+        Assert.Equal("e muito ", TypeAll("e muito ", engine)); // e não aprende "e" para sempre: só aquela vez
+    }
 
     [Theory]
     [InlineData("Carraro")] [InlineData("CRCPR")] [InlineData("iPhone")] [InlineData("cpf")] [InlineData("pdf")]

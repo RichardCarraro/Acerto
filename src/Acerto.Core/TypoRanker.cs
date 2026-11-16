@@ -100,6 +100,15 @@ public sealed record TypoOptions
     /// <summary>O par (anterior, acentuada) tem que aparecer pelo menos isso para a porta acima valer.</summary>
     public int ContextPairMinCount { get; init; } = 20;
 
+    /// <summary>
+    /// Troca de acento olhando também a palavra seguinte ("isso e muito" → "é"): a acentuada tem que ser pelo menos
+    /// isso vezes mais provável que a digitada, contando a anterior e a seguinte. 0 = desligada.
+    /// </summary>
+    public double NextAccentRatio { get; init; }
+
+    /// <summary>O par (acentuada, seguinte) tem que aparecer pelo menos isso no corpus para a regra acima valer.</summary>
+    public int NextMinPairCount { get; init; } = 5;
+
     /// <summary>Palavras de 3 letras também são corrigidas quando há inversão (cmo → com).</summary>
     public bool ShortWordTransposition { get; init; }
 
@@ -124,6 +133,9 @@ public sealed record TypoOptions
         AccentYield = 3.0,
         ContextAccentRatio = 10,
         ContextPairRatio = 15,
+        // medido em 30 mil frases de notícias fora da amostra (AcertoEval direita): volta 30% dos acentos que a
+        // regra da palavra anterior deixava passar (e→é, esta→está, ha→há), estragando 0,038% das palavras certas
+        NextAccentRatio = 10,
     };
 
     /// <summary>Perfil cuidadoso: na dúvida, não troca. É o que os testes de corpus exigem com zero trocas indevidas.</summary>

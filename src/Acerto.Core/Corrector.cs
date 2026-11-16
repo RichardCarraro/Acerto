@@ -117,7 +117,9 @@ public sealed class Corrector
             }
 
             // 5b. Ela quase nunca aparece no corpus e está a um erro de uma palavra muito usada (erado → errado).
-            if (_data.Frequency.Count(w) >= AttestedCount || w.Length < MinTypoLength) return null;
+            //     Tentado em 2026-11-16 e reprovado: trocar palavra rara pela vizinha que a anterior pede ("tudo cetro"
+            //     → certo) estragou +75 em 416 mil palavras certas (de menus → menos, moradoras → moradores).
+            if (_data.Frequency.Count(w) >= AttestedCount || w.Length < MinTypoLength || _data.Protected.Contains(w)) return null;
             return _typos.Best(w, prev, o) is { } rare && rare.Count >= o.RareValidMinCandidate
                 ? new Correction(TextUtil.ApplyCase(word, rare.Word), CorrectionKind.Typo)
                 : null;
@@ -125,7 +127,7 @@ public sealed class Corrector
 
         // 6. Erro de digitação: só minúsculas (maiúscula no meio da frase é nome; sigla fica como está)
         TypoMatch? typo = null;
-        if (!TextUtil.IsAllCaps(word) && !looksLikeName && w.Length >= 3 && _typos.Best(w, prev, o) is { } t)
+        if (!TextUtil.IsAllCaps(word) && !looksLikeName && w.Length >= 3 && !_data.Protected.Contains(w) && _typos.Best(w, prev, o) is { } t)
         {
             long typedCount = _data.Frequency.Count(w);
             bool shortOk = w.Length >= MinTypoLength
@@ -134,15 +136,17 @@ public sealed class Corrector
             bool slip = t.Kind is TypoKind.Transposition or TypoKind.DoubledLetter or TypoKind.MissingLetter;
             long ratio = slip ? o.AttestedSlipRatio : o.AttestedOtherRatio;
             bool attestedOk = typedCount < AttestedCount
-                || (ratio > 0 && t.Count >= ratio * typedCount && !_data.Protected.Contains(w));
+                || (ratio > 0 && t.Count >= ratio * typedCount);
             if (shortOk && attestedOk) typo = t;
         }
 
         // 7. Acento esquecido: a acentuada tem que ganhar com folga da segunda e da própria forma digitada
         //    ("ana", nome, é muito mais escrita que "anã"). Ganha do erro de digitação, a não ser que este seja
         //    uma explicação muito melhor (vaos → vamos, não o raro "vãos").
+        //    Abaixo do mínimo de uso, a acentuada ainda ganha se for pelo menos tão usada quanto a candidata de
+        //    digitação, que está um erro mais longe (almocaram → almoçaram, não almoçavam).
         if (accented.Count > 0
-            && accented[0].Count >= o.AccentMinCount
+            && (accented[0].Count >= o.AccentMinCount || (typo is { } weaker && accented[0].Count >= weaker.Count))
             && (accented.Count == 1 || accented[0].Effective >= AccentDominance * accented[1].Effective)
             && accented[0].Count >= AccentDominance * _data.Frequency.Count(w))
         {
@@ -154,5 +158,33 @@ public sealed class Corrector
         }
 
         return typo is { } m ? new Correction(TextUtil.ApplyCase(word, m.Word), CorrectionKind.Typo) : null;
+    }
+
+    /// <summary>
+    /// Segunda olhada numa palavra que ficou como estava, agora que a seguinte terminou: "isso e muito" → "é",
+    /// "o almoço esta pronto" → "está". Só troca de acento, só palavra sem acento e só com o par (acentuada,
+    /// seguinte) visto no corpus. Compara P(x | anterior) × P(seguinte | x) entre a digitada e a acentuada.
+    /// </summary>
+    /// <param name="word">A palavra como ficou no texto (sem pontuação).</param>
+    /// <param name="prev">Palavra antes dela, como em <see cref="Correct"/>. Sem ela (depois de vírgula) não troca:
+    /// ali "e" é quase sempre a conjunção.</param>
+    /// <param name="next">Palavra seguinte, em minúsculas, como ficou no texto.</param>
+    public Correction? CorrectByNext(string word, string? prev, string next)
+    {
+        var o = CarefulField ? TypoOptions.Careful : _typos.Options;
+        if (o.NextAccentRatio <= 0 || prev is null || word.Length == 0 || TextUtil.IsMixedCase(word) || (TextUtil.IsAllCaps(word) && word.Length > 1)) return null;
+        var w = word.ToLower(TextUtil.PtBr);
+        if (TextUtil.StripAccents(w) != w || !_data.Lexicon.IsValid(w) || _data.Personal.Contains(w)) return null;
+
+        double Score(string x) =>
+            _typos.EffectiveCount(x, _data.Frequency.Count(x), prev)
+            * (_data.Bigrams.Count(x, next) + 0.5) / Math.Max(_data.Bigrams.ContextTotal(x), 1);
+
+        var best = _accents.Lookup(w).Where(c => c.Word != w).Select(c => c.Word)
+            .Where(x => _data.Bigrams.Count(x, next) >= o.NextMinPairCount)
+            .Select(x => (Word: x, Score: Score(x))).OrderByDescending(x => x.Score).FirstOrDefault();
+        return best.Word is not null && best.Score >= o.NextAccentRatio * Score(w)
+            ? new Correction(TextUtil.ApplyCase(word, best.Word), CorrectionKind.Accent)
+            : null;
     }
 }

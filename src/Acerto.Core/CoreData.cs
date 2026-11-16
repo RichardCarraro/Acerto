@@ -11,7 +11,8 @@ public sealed class CoreData
 
     /// <summary>
     /// Estrangeirismos e nomes que o dicionário pt-BR não tem mas que são palavras de verdade (mail, voice, office).
-    /// Nunca passam pela regra de digitação. Gerada com "AcertoEval data protegidas".
+    /// Nunca passam pela regra de digitação. Gerada com "AcertoEval data protegidas"; as do fim (termos de trabalho e
+    /// tecnologia: deploy, commit, teams) foram acrescentadas à mão e precisam ser mantidas ao gerar de novo.
     /// </summary>
     public IReadOnlySet<string> Protected { get; init; } = new HashSet<string>();
 

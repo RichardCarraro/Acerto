@@ -18,10 +18,12 @@ var data = CoreData.Load(dataDir, userDir);
 // perfil=agressivo usa o perfil padrão do app; sem isso, o cuidadoso
 var opt = args.Contains("perfil=agressivo") ? TypoOptions.Aggressive : TypoOptions.Careful;
 string? prevArg = args.FirstOrDefault(a => a.StartsWith("ant="))?[4..]; // palavra anterior, para o modo explicar
-foreach (var kv in args.Where(a => a.Contains('=') && !a.StartsWith("perfil=") && !a.StartsWith("ant=")).Select(a => a.Split('=')))
+string? nextArg = args.FirstOrDefault(a => a.StartsWith("prox="))?[5..]; // e a seguinte (acento pela seguinte)
+foreach (var kv in args.Where(a => a.Contains('=') && !a.StartsWith("perfil=") && !a.StartsWith("ant=") && !a.StartsWith("prox=")).Select(a => a.Split('=')))
 {
     var prop = typeof(TypoOptions).GetProperty(kv[0]) ?? throw new ArgumentException("opção desconhecida: " + kv[0]);
     object value = prop.PropertyType == typeof(long) ? long.Parse(kv[1])
+        : prop.PropertyType == typeof(int) ? int.Parse(kv[1])
         : prop.PropertyType == typeof(bool) ? bool.Parse(kv[1])
         : (object)double.Parse(kv[1], CultureInfo.InvariantCulture);
     opt = (TypoOptions)opt.GetType().GetMethod("<Clone>$")!.Invoke(opt, null)!;
@@ -36,6 +38,8 @@ if (positional.Length > 1 && positional[1] == "explicar")
     {
         var r = corrector.Correct(w, false, prevArg);
         Console.WriteLine($"{(prevArg is null ? "" : prevArg + " ")}{w} → {(r is null ? "(não mexe)" : r.Replacement + " [" + r.Kind + "]")}   corpus={data.Frequency.Count(w)} válida={data.Lexicon.IsValid(w)}");
+        if (nextArg is not null)
+            Console.WriteLine($"   com a seguinte \"{nextArg}\": {corrector.CorrectByNext(w, prevArg, nextArg)?.Replacement ?? "(não mexe)"}");
         foreach (var c in corrector.Typos.Candidates(w, prevArg).Take(5))
             Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"     {c.Word,-14} n={c.Count,-9} custo={c.Cost:F2} nota={c.Score:F2}"));
     }
@@ -261,6 +265,128 @@ if (positional.Length > 1 && positional[1] == "contexto")
     Console.WriteLine(string.Create(c2, $"C) palavras certas sem acento: {plain}; estragadas {spoiled} ({100.0 * spoiled / plain:F2}%)"));
     Console.WriteLine("   estragadas: " + string.Join("  |  ", spoiledSamples));
     Console.WriteLine("   só o contexto acertou: " + string.Join("  |  ", fixedSamples));
+    Directory.Delete(userDir, true);
+    return;
+}
+
+// modo "direita": AcertoEval data direita <frases.txt> [quantas=30000] perfil=agressivo [NextAccentRatio=N]
+// Acento pela palavra seguinte (Corrector.CorrectByNext), só onde a correção normal não mexeu, como no app:
+//  B) acento retirado de uma palavra (é → e): quantas voltam;  C) palavra certa sem acento: quantas são estragadas.
+if (positional.Length > 1 && positional[1] == "direita")
+{
+    var sentences = File.ReadAllLines(positional[2]);
+    int take = positional.Length > 3 ? int.Parse(positional[3]) : 30000;
+    int accents = 0, back = 0, wrongBack = 0, plain = 0, spoiled = 0;
+    var spoiledBy = new Dictionary<string, int>();
+    var backBy = new Dictionary<string, int>();
+    foreach (var line in sentences.TakeLast(take))
+    {
+        var toks = BigramModel.Tokenize(line).ToList();
+        for (int i = 0; i < toks.Count - 1; i++)
+        {
+            var tok = toks[i];
+            var next = toks[i + 1];
+            if (tok is null || tok == BigramModel.SentenceStart || next is null || next == BigramModel.SentenceStart) continue;
+            if (!tok.All(char.IsLetter) || !data.Lexicon.IsValid(tok)) continue;
+            string? prev = i > 0 ? toks[i - 1] : BigramModel.SentenceStart; // começo da linha é começo de frase, como no app
+            var stripped = TextUtil.StripAccents(tok);
+            bool isAccented = stripped != tok;
+            if (corrector.Correct(stripped, false, prev) is not null) continue; // a correção normal já decidiu
+            var r = corrector.CorrectByNext(stripped, prev, next);
+            if (isAccented)
+            {
+                if (!data.Lexicon.IsValid(stripped)) continue; // "informacao": é a correção normal
+                accents++;
+                if (r?.Replacement == tok) { back++; backBy[$"{stripped}→{tok}"] = backBy.GetValueOrDefault($"{stripped}→{tok}") + 1; }
+                else if (r is not null) wrongBack++;
+            }
+            else
+            {
+                plain++;
+                if (r is not null) { spoiled++; var k = $"{prev} {tok}→{r.Replacement} {next}"; spoiledBy[k] = spoiledBy.GetValueOrDefault(k) + 1; }
+            }
+        }
+    }
+    var c3 = CultureInfo.GetCultureInfo("pt-BR");
+    Console.WriteLine(string.Create(c3, $"B) acento retirado (forma sem acento também existe, correção normal não mexeu): {accents}; voltou {back} ({100.0 * back / Math.Max(accents, 1):F1}%), outra acentuada {wrongBack}"));
+    Console.WriteLine(string.Create(c3, $"C) palavras certas sem acento: {plain}; estragadas {spoiled} ({100.0 * spoiled / Math.Max(plain, 1):F3}%)"));
+    Console.WriteLine("   voltaram: " + string.Join("  ", backBy.OrderByDescending(kv => kv.Value).Take(15).Select(kv => $"{kv.Key} {kv.Value}")));
+    Console.WriteLine("   estragadas: " + string.Join("  |  ", spoiledBy.OrderByDescending(kv => kv.Value).Take(40).Select(kv => $"{kv.Key} {kv.Value}")));
+    Directory.Delete(userDir, true);
+    return;
+}
+
+// modo "sugestoes": AcertoEval data sugestoes <frases.txt> [quantas=2000] perfil=agressivo
+// Em frases fora da amostra, como a barra se sai: (1) logo depois do espaço, a próxima palavra está entre as 3?
+// (2) digitando sem acento, com quantas letras a palavra vira a 1ª sugestão (Tab completa) e quanto isso economiza.
+if (positional.Length > 1 && positional[1] == "sugestoes")
+{
+    var sentences = File.ReadAllLines(positional[2]);
+    int take = positional.Length > 3 ? int.Parse(positional[3]) : 2000;
+    int nextTotal = 0, next1 = 0, next3 = 0, words4 = 0, completed = 0;
+    long letters = 0, saved = 0;
+    foreach (var line in sentences.TakeLast(take))
+    {
+        var toks = BigramModel.Tokenize(line).ToList();
+        for (int i = 0; i < toks.Count; i++)
+        {
+            var tok = toks[i];
+            if (tok is null || tok == BigramModel.SentenceStart || !tok.All(char.IsLetter) || !data.Lexicon.IsValid(tok)) continue;
+            string? prev = i > 0 ? toks[i - 1] : BigramModel.SentenceStart;
+            if (prev is not null && prev != BigramModel.SentenceStart)
+            {
+                nextTotal++;
+                var nx = corrector.Suggester.Suggest(prev, "");
+                if (nx.Count > 0 && nx[0] == tok) next1++;
+                if (nx.Contains(tok)) next3++;
+            }
+            if (tok.Length < 4) continue;
+            words4++;
+            letters += tok.Length;
+            var plainTok = TextUtil.StripAccents(tok);
+            for (int k = 2; k < tok.Length - 1; k++)
+                if (corrector.Suggester.Suggest(prev, plainTok[..k]) is [var first, ..] && first == tok)
+                {
+                    completed++;
+                    saved += tok.Length - k - 1; // menos o Tab
+                    break;
+                }
+        }
+    }
+    var c4 = CultureInfo.GetCultureInfo("pt-BR");
+    Console.WriteLine(string.Create(c4, $"Próxima palavra: {nextTotal} posições; 1ª sugestão certa {100.0 * next1 / nextTotal:F1}%, entre as 3 {100.0 * next3 / nextTotal:F1}%"));
+    Console.WriteLine(string.Create(c4, $"Completar (palavras de 4+ letras): {words4}; viraram 1ª sugestão antes do fim {100.0 * completed / words4:F1}%; teclas economizadas com Tab {100.0 * saved / letters:F1}% das letras"));
+    Directory.Delete(userDir, true);
+    return;
+}
+
+// modo "frases": AcertoEval data frases <arquivo> [perfil=agressivo]
+// Cada linha "digitado<TAB>esperado" (sem TAB: não pode mudar nada; # comenta) passa pelo motor inteiro, como no app
+// (contexto, maiúscula, ponto), letra por letra com espaço no fim. Lista o que saiu diferente e o placar.
+if (positional.Length > 1 && positional[1] == "frases")
+{
+    int ok = 0, total = 0, broke = 0;
+    foreach (var raw in File.ReadAllLines(positional[2]))
+    {
+        if (raw.Length == 0 || raw.StartsWith('#')) continue;
+        var parts = raw.Split('\t');
+        string typed = parts[0], want = parts.Length > 1 ? parts[1] : parts[0];
+        var engine = new TextEngine(corrector, _ => { });
+        engine.ConfirmContext(engine.Generation, "");
+        var doc = new System.Text.StringBuilder();
+        foreach (var ch in typed + " ")
+        {
+            var act = engine.OnChar(ch);
+            if (act.Swallow) { doc.Length -= act.Backspaces; doc.Append(act.Insert); }
+            else doc.Append(ch);
+        }
+        var got = doc.ToString().TrimEnd();
+        total++;
+        if (got == want) { ok++; continue; }
+        if (parts.Length == 1) broke++;
+        Console.WriteLine($"{(parts.Length == 1 ? "ESTRAGOU" : "falhou  ")}  {typed}\n          quer: {want}\n          deu:  {got}");
+    }
+    Console.WriteLine($"\n{ok}/{total} certas ({100.0 * ok / total:F1}%); {broke} frases que não deviam mudar foram mexidas");
     Directory.Delete(userDir, true);
     return;
 }

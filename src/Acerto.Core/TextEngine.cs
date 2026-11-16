@@ -29,6 +29,8 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     private readonly record struct Deferred(string Word, string Result, char End);
     /// <summary>Correção que acabou de entrar (palavra + espaço), enquanto nada mais foi digitado.</summary>
     private readonly record struct Undo(string Typed, string Result, string? Prev);
+    /// <summary>Palavra que ficou como estava, seguida de espaço: a próxima pode mostrar que faltou acento ("e muito").</summary>
+    private readonly record struct Pending(string Word, string? Prev);
 
     private readonly StringBuilder _word = new();
     private bool _tokenKnown;      // vimos o começo deste token?
@@ -40,6 +42,9 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     private Deferred? _deferred;   // correção esperando ver o que vem depois de "." ou ":"
     private string? _prev;         // palavra anterior (minúsculas), início de frase, ou null se não se sabe
     private Undo? _undo;           // logo depois de uma correção, a barra oferece o que foi digitado e alternativas
+    private Pending? _pending;     // palavra anterior, candidata a ganhar acento quando esta terminar
+    private string? _lastByNext;   // última palavra que ganhou acento pela seguinte, como foi digitada
+    private bool _byNextUndone;    // e a pessoa apagou depois: não insistir na mesma
     private readonly StringBuilder _sinceReset = new(); // digitado desde o Reset, enquanto o contexto é desconhecido
 
     // Última palavra corrigida, como foi digitada. Se o usuário apagar e digitar a mesma de novo, é de propósito.
@@ -149,6 +154,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
         _prev1 = ' ';
         _lastWasDoubleSpace = false;
         _deferred = null;
+        _pending = null;
         _lastCorrectedWord = null;
         EndToken();
         return new EngineAction(true, typed, suggestion + " ");
@@ -158,6 +164,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     public void Reset()
     {
         _lastCorrectedWord = null;
+        _lastByNext = null;
         ResetState();
     }
 
@@ -174,6 +181,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
         _lastWasDoubleSpace = false;
         _prev1 = _prev2 = '\0';
         _deferred = null;
+        _pending = null;
         _prev = null;
     }
 
@@ -216,7 +224,9 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     {
         _deferred = null;
         _undo = null;
+        _pending = null;
         if (_lastCorrectedWord is not null) _backspacedSinceCorrection = true;
+        if (_lastByNext is not null) _byNextUndone = true;
         if (_word.Length == 0)
         {
             ResetState(); // apagou para dentro de algo que não estamos vendo
@@ -245,6 +255,8 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
         }
 
         bool hadWord = _word.Length > 0;
+        var pending = _pending;
+        _pending = null;
         string? completed = _tokenKnown && _tokenPure && hadWord ? _word.ToString() : null; // palavra que acabou de fechar
 
         // Tab não corrige: em muitos apps ele aceita uma sugestão do próprio app
@@ -290,8 +302,30 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
                     if (corr is not null && c == ' ' && _lastCorrectionLearns) _undo = new Undo(word, result, _prev); // atalho não tem alternativa
                 }
             }
-            // conta no histórico o que ficou no texto; "." e ":" ainda podem virar e-mail ou domínio, então não
-            if (_deferred is null) corrector.Record(_prev, result);
+            // a palavra anterior pode ter ficado sem acento: "isso e muito" → "é" (não depois de "." ou ":", que esperam)
+            string? pendingFinal = pending?.Word;
+            if (pending is { } pw && _deferred is null
+                && corrector.CorrectByNext(pw.Word, pw.Prev, result.ToLower(TextUtil.PtBr)) is { } byNext)
+            {
+                if (_byNextUndone && string.Equals(pw.Word, _lastByNext, StringComparison.OrdinalIgnoreCase))
+                    _lastByNext = null; // apagou a troca e digitou de novo: fica como quis
+                else
+                {
+                    var rest = " " + result + c;
+                    action = new EngineAction(true, pw.Word.Length + 1 + word.Length, byNext.Replacement + rest, byNext.Replacement.Length);
+                    _undo = null;
+                    _lastByNext = pw.Word;
+                    _byNextUndone = false;
+                    pendingFinal = byNext.Replacement;
+                    _prev = LastWord(pendingFinal);
+                }
+            }
+            // Conta no histórico o que ficou no texto. A palavra que espera a seguinte só entra com a forma final:
+            // contada antes, o "esta" recém-digitado já pesaria contra "está". "." e ":" ainda podem virar e-mail.
+            // shortcut: a que espera e é abandonada (Backspace, Tab, número em seguida) não é contada; raro, aceito.
+            if (pending is { } done) corrector.Record(done.Prev, pendingFinal!);
+            if (corr is null && c == ' ') _pending = new Pending(result, _prev);
+            else if (_deferred is null) corrector.Record(_prev, result);
             completed = result;
             _capNext = false;
         }

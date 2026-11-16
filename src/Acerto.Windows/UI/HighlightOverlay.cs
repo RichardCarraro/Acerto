@@ -20,6 +20,7 @@ internal sealed class HighlightOverlay : Window
     private static readonly nint HWND_TOPMOST = -1;
 
     private readonly Border _fill, _line;
+    private readonly ScaleTransform _pop = new();
     private nint _hwnd;
 
     public HighlightOverlay()
@@ -40,6 +41,8 @@ internal sealed class HighlightOverlay : Window
         _line = new Border { Height = 2, VerticalAlignment = VerticalAlignment.Bottom, Background = new SolidColorBrush(accent), CornerRadius = new CornerRadius(1) };
         _fill.Opacity = 0;
         _line.Opacity = 0;
+        _fill.RenderTransformOrigin = new Point(0.5, 0.5);
+        _fill.RenderTransform = _pop;
         Content = new Grid { Children = { _fill, _line } };
     }
 
@@ -60,19 +63,28 @@ internal sealed class HighlightOverlay : Window
         if (!IsVisible) Show(); // ShowActivated=false: não rouba o foco de quem está digitando
         SetWindowPos(_hwnd, HWND_TOPMOST, (int)word.X - 3, (int)word.Y - 1, (int)word.Width + 6, (int)word.Height + 3, SWP_NOACTIVATE);
 
-        // fundo: aparece na hora, segura 180 ms e some em 400 ms
-        var fill = new DoubleAnimationUsingKeyFrames { FillBehavior = FillBehavior.HoldEnd };
-        fill.KeyFrames.Add(new DiscreteDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-        fill.KeyFrames.Add(new DiscreteDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(180))));
-        fill.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(580)), new QuadraticEase()));
-        _fill.BeginAnimation(OpacityProperty, fill);
+        // "Efeitos de animação" desligado no Windows: só acende e apaga, sem crescer
+        bool motion = SystemParameters.ClientAreaAnimation;
+        var fadeIn = TimeSpan.FromMilliseconds(motion ? 70 : 0);
+
+        // fundo: acende em 70 ms crescendo um pouco (como no celular), segura e some em 400 ms
+        _fill.BeginAnimation(OpacityProperty, Fade(fadeIn, 220, 620));
+        var grow = new DoubleAnimation(motion ? 0.94 : 1, 1, TimeSpan.FromMilliseconds(160)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
+        _pop.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
+        _pop.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
 
         // sublinhado: fica 900 ms e some
-        var line = new DoubleAnimationUsingKeyFrames { FillBehavior = FillBehavior.HoldEnd };
-        line.KeyFrames.Add(new DiscreteDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-        line.KeyFrames.Add(new DiscreteDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(900))));
-        line.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(1250)), new QuadraticEase()));
-        _line.BeginAnimation(OpacityProperty, line);
+        _line.BeginAnimation(OpacityProperty, Fade(fadeIn, 900, 1250));
+    }
+
+    private static DoubleAnimationUsingKeyFrames Fade(TimeSpan fadeIn, int holdUntilMs, int goneAtMs)
+    {
+        var a = new DoubleAnimationUsingKeyFrames { FillBehavior = FillBehavior.HoldEnd };
+        a.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+        a.KeyFrames.Add(new EasingDoubleKeyFrame(1, KeyTime.FromTimeSpan(fadeIn), new CubicEase { EasingMode = EasingMode.EaseOut }));
+        a.KeyFrames.Add(new DiscreteDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(holdUntilMs))));
+        a.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(goneAtMs)), new QuadraticEase()));
+        return a;
     }
 
     /// <summary>Apaga na hora (a pessoa clicou em outro lugar, mudou de linha ou de janela: o texto não está mais ali).</summary>

@@ -10,7 +10,7 @@ Você digita `nao`, aperta espaço e ele já virou `não`. Sem sublinhado vermel
   - acento e cedilha esquecidos — `informacao` → `informação`, `voce` → `você`
   - erros de digitação — `mutio` → `muito`, `paara` → `para`, `probelma` → `problema`, `hje` → `hoje`
   - erros comuns de escrita — `concerteza` → `com certeza`, `excessao` → `exceção`, `idéia` → `ideia`
-- **Usa o contexto** para escolher a correção certa, como o celular: `minha cas` → `casa`, `esse cas` → `caso`, `ele esta` → `ele está`.
+- **Usa o contexto** para escolher a correção certa, como o celular: `minha cas` → `casa`, `esse cas` → `caso`, `ele esta` → `ele está`. Olha também a palavra seguinte: em `isso e muito`, quando o `muito` termina, o `e` vira `é`.
 - **Sugestões ao digitar**: uma barrinha perto do cursor mostra até três palavras para completar a atual (mesmo com erro: `obrgi` → `obrigado`) ou adiantar a próxima. **Tab** aceita a primeira. Logo depois de uma correção, a barrinha mostra o que você digitou e outras opções: **Tab** desfaz a correção.
 - **Aprende o seu jeito**: as palavras e sequências que você mais usa passam na frente nas sugestões e nas correções.
 - **Maiúscula automática** no começo da frase.
@@ -63,6 +63,8 @@ Medido com `tests/Acerto.Eval` (erros gerados nas palavras mais usadas e frases 
 - acerta **~94%** dos erros de digitação no modo "Corrigir mais"
 - com contexto, em frases reais: **92,7%** de acerto contra 89,7% sem contexto
 - palavras certas estragadas em texto real: **0,12%**
+- frases do dia a dia com erros reais (`tests/Acerto.Eval/frases-reais.txt`): **90,9%** saem certas, nenhuma frase certa é mexida
+- sugestões: o Tab economiza **~29%** das letras das palavras de 4 letras ou mais
 
 ## Desenvolvimento
 
@@ -87,7 +89,7 @@ Estrutura:
 src/Acerto.Core        corretor, contexto, sugestões, motor de texto (sem dependência de Windows)
 src/Acerto.Windows     app de bandeja: hooks, injeção de teclas, interface
 tests/Acerto.Core.Tests  testes (incluem as 60 mil palavras mais usadas que não podem ser alteradas)
-tests/Acerto.Eval      medição de acerto, mineração de erros comuns, geração dos bigramas
+tests/Acerto.Eval      medição de acerto (frases, contexto, direita, sugestoes), mineração de erros comuns, bigramas
 tests/Acerto.SmokePad  teste ponta a ponta que digita numa janela
 tests/Acerto.Bancada   digita frases variadas com erros sorteados (caixa, Chrome ou Edge) e compara com o motor
 data/                  dicionário, frequências, correções, bigramas
@@ -98,7 +100,11 @@ Com o Acertô aberto, `AcertoBancada.exe frases=20 alvo=chrome saida=bancada.txt
 
 Para depurar sem registrar texto, defina `ACERTO_DIAG=<arquivo>` antes de abrir: ele grava só estados (ativo, foco, motivo de cada reset).
 
+Para melhorar o corretor em ciclos medidos (sozinho, com o Claude Code), veja [docs/melhoria-continua.md](docs/melhoria-continua.md).
+
 ## Limitações conhecidas
+
+- A troca de acento pela palavra seguinte não acontece quando a seguinte termina com `.` ou `:` (eles esperam para ver se é e-mail ou site).
 
 - No modo "Corrigir mais", palavras em inglês digitadas em minúsculo às vezes são trocadas (`list` → `lista`). Apague e digite de novo que ele aprende, ou desligue o modo.
 - Não funciona em programas abertos como administrador (limitação do Windows), a não ser que o Acertô também seja aberto como administrador.
