@@ -13,6 +13,7 @@ public sealed class FixedCorrections
     {
         foreach (var line in File.ReadLines(path))
         {
+            if (line.StartsWith('#')) continue;
             var parts = line.Split('\t', 2);
             if (parts.Length == 2 && parts[0].Length > 0 && parts[1].Length > 0)
                 _map[parts[0].ToLowerInvariant()] = parts[1];

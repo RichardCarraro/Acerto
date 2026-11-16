@@ -90,6 +90,7 @@ Onde mexer, do mais barato ao mais caro:
 
 | Data | Versão | Mudança | Antes → depois |
 |---|---|---|---|
+| 2026-11-16 | 1.3.5 | `data/nomes.txt`: nomes e lugares brasileiros (chave minúscula sem acento → forma certa), consultado antes das outras regras — `parana` virava **parada** e `maringa` virava **marinha** pela regra de palavra válida rara; `joao`/`belem`/`iguacu` só ganhavam acento. Só nomes que não são palavra comum (`marcos`, `santos`, `natal`, `foz` ficam de fora). `#` comenta nos arquivos de dados | frases reais 92,3% → 93,3% (313); perfil cuidadoso intacto |
 | 2026-11-16 | 1.3.4 | Nome próprio em minúscula ganha maiúscula quando o dicionário só o tem assim (`curitiba` → Curitiba, `londres`), com 4 letras ou mais (`big`, `man`, `down` também são "nomes" no VERO); `CorrectionKind.Case`; modo `caixa` no Eval; locuções com `lá` (`de la`, `por la`, `até la`); lote 4 de 40 frases | frases reais 93,8% (273) → 92,3% (313; o lote 4 trouxe `joão`/`maria`/`brasil`, que o VERO aceita em minúscula, e verbos no futuro); `caixa`: 1184 das 60 mil frequentes ganhariam maiúscula, quase todas nomes (john, europa, alemanha) |
 | 2026-11-16 | 1.3.3 | `data/locucoes.txt`: locuções de duas palavras feitas à mão, consultadas pela anterior (`isso ai` → aí, `a viajem` → viagem, `não mecha` → mexa) e pela seguinte (`as vezes` → às, `a toa` → à); chave de três palavras quando a de duas é ambígua (`fica a vontade` → à; `a vontade` sozinha é substantivo 495 × 261 no corpus) e como exceção (`todas as vezes` fica). Contagens decidiram o que entrou: `as claras` ficou de fora (claras de ovo) | frases reais 92,3% → 93,8% (273, 0 estragos); acento pela seguinte volta 33,6% → 34,1% (`as`→`às` 34 → 80), estragos 195 → 200; contexto A e B iguais, C 502 → 509 |
 | 2026-11-16 | 1.3.2 | Classe fonética: `x`↔`ch` e `c`↔`ss` como dígrafos (um erro, não dois), `TypoKind.Phonetic` só para pares de escrita (`s/z`, `s/c`, `g/j`, `x/s`, `x/z`, `m/n`; `k/c` e vogais ficam de fora, são nomes), razão própria para atestadas (10) e custo 0,4; categoria "fonético" no Eval sintético; `paralização` e família na lista (estava em `protegidas.txt` porque o corretor do Windows aceita); lote 3 de 50 frases | frases reais 93,7% (223) → 92,3% (273; o lote 3 trouxe crase e homófonos que não dá para pegar); fonético gerado 84,9% → 87,3% certo, errado 5,2% → 2,7%; trocas no corpus 1640 → 1661; sintético total 94,2% = |
@@ -115,9 +116,8 @@ Onde mexer, do mais barato ao mais caro:
   Baixar o limiar para 3 estragaria o resto. Precisaria de uma lista de pares fixos (`isso aí`, `e aí`, `aí sim`).
 - **Crase fora de locução** (`vou a praia`, `ela foi a feira`, `cheguei as duas`): `a praia`/`as duas` com artigo são
   tão ou mais comuns; precisaria de análise do verbo (ir/chegar + lugar), fora do alcance de pares.
-- **Nomes que o VERO aceita em minúscula** (`joão` é o pássaro, `maria`, `brasil`): a regra de maiúscula não os vê.
-  Uma lista de nomes e lugares brasileiros comuns (`data/nomes.txt`) com a maiúscula resolveria; contar antes
-  quantas vezes aparecem em minúscula no corpus como palavra comum.
+- **`data/nomes.txt`** cresce com uso. Antes de pôr um nome, confira se não é palavra comum (`marcos`, `santos`,
+  `natal`): `AcertoEval data explicar <nome>` mostra `válida=` e a contagem no corpus.
 - **Verbo no futuro sem acento** (`chegara amanhã`, `fara o possível`): a forma sem acento é o mais-que-perfeito,
   válida e rara; `fara`/`tera` já vão pela regra do contexto, `chegara` não tem par. Candidata a regra: forma
   válida muito mais rara que a acentuada (razão de frequência) quando a anterior é sujeito.

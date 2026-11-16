@@ -14,7 +14,7 @@ Você digita `nao`, aperta espaço e ele já virou `não`. Sem sublinhado vermel
 - **Usa o contexto** para escolher a correção certa, como o celular: `minha cas` → `casa`, `esse cas` → `caso`, `ele esta` → `ele está`. Olha também a palavra seguinte: em `isso e muito`, quando o `muito` termina, o `e` vira `é` (Tab desfaz). E o contexto ganha até da lista de erros comuns: `bom dai` → `bom dia`, não `daí`. Locuções que a estatística não decide vêm de uma lista feita à mão (`data/locucoes.txt`): `isso ai` → `isso aí`, `fica a vontade` → `à vontade`, `as vezes` → `às vezes` (mas `todas as vezes` fica), `a viajem` → `a viagem`.
 - **Sugestões ao digitar**: uma barrinha perto do cursor mostra até três palavras para completar a atual (mesmo com erro: `obrgi` → `obrigado`) ou adiantar a próxima. **Tab** aceita a primeira. Logo depois de uma correção, a barrinha mostra o que você digitou e outras opções: **Tab** desfaz a correção.
 - **Aprende o seu jeito**: as palavras e sequências que você mais usa passam na frente nas sugestões e nas correções.
-- **Maiúscula automática** no começo da frase e em nomes que o dicionário só conhece com maiúscula: `fui para curitiba` → `Curitiba`, `londres` → `Londres` (a partir de 4 letras).
+- **Maiúscula automática** no começo da frase e em nomes que o dicionário só conhece com maiúscula: `fui para curitiba` → `Curitiba`, `londres` → `Londres` (a partir de 4 letras). Nomes e lugares brasileiros comuns vêm de uma lista (`data/nomes.txt`): `joao` → `João`, `parana` → `Paraná`, `maringa` → `Maringá`.
 - **Dois espaços viram ponto final.**
 - **Atalhos de texto** personalizáveis: `vlw` → `valeu`, `att` → `Atenciosamente,`.
 - **Aprende com você**: apagou a correção e digitou a palavra de novo? Ele mantém e não corrige mais.
@@ -94,7 +94,7 @@ tests/Acerto.Core.Tests  testes (incluem as 60 mil palavras mais usadas que não
 tests/Acerto.Eval      medição de acerto (frases, contexto, direita, sugestoes), mineração de erros comuns, bigramas
 tests/Acerto.SmokePad  teste ponta a ponta que digita numa janela
 tests/Acerto.Bancada   digita frases variadas com erros sorteados (caixa, Chrome ou Edge) e compara com o motor
-data/                  dicionário, frequências, correções, locuções, bigramas
+data/                  dicionário, frequências, correções, locuções, nomes, bigramas
 installer/             roteiro do instalador (Inno Setup)
 ```
 

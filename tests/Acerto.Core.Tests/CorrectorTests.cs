@@ -159,7 +159,14 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
     [InlineData("curitiba", "Curitiba")] [InlineData("londres", "Londres")] [InlineData("alemanha", "Alemanha")] // joão, maria, brasil: o VERO aceita em minúscula
     public void Nome_Em_Minuscula_Ganha_Maiuscula(string typed, string want) => Assert.Equal(want, _c.Correct(typed)?.Replacement);
     [Fact] public void Palavra_Comum_Nao_Ganha_Maiuscula() => Assert.Null(_c.Correct("casa"));
-    [Fact] public void Nome_No_Comeco_Da_Frase_Fica_Para_A_Maiuscula_Automatica() => Assert.Null(_c.Correct("curitiba", atSentenceStart: true));
+
+    // data/nomes.txt: antes das outras regras, senão "parana" vira "parada" e "maringa" vira "marinha"
+    [Theory]
+    [InlineData("parana", "Paraná")] [InlineData("maringa", "Maringá")] [InlineData("joao", "João")] [InlineData("Joao", "João")]
+    [InlineData("maria", "Maria")] [InlineData("brasil", "Brasil")] [InlineData("belem", "Belém")]
+    public void Nome_Da_Lista(string typed, string want) => Assert.Equal(want, _c.Correct(typed)?.Replacement);
+    [Fact] public void Nome_Da_Lista_Ja_Certo_Nao_Mexe() => Assert.Null(_c.Correct("Paraná"));
+    [Fact] public void Nome_No_Comeco_Da_Frase_Fica_Para_A_Maiuscula_Automatica() => Assert.Null(_c.Correct("londres", atSentenceStart: true));
     [Fact] public void Nome_Em_Minuscula_No_Texto() => Assert.Equal(" fui para Curitiba ", TypeAll(" fui para curitiba "));
 
     private string TypeAll(string keys, TextEngine? engine = null)
@@ -363,7 +370,7 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
         var wrong = _data.Frequency.Entries
             .Where(e => e.Word.All(char.IsLetter) && _data.Lexicon.IsValid(e.Word))
             .OrderByDescending(e => e.Count).Take(30000)
-            .Where(e => _c.Correct(e.Word) is { Kind: not CorrectionKind.Fixed })
+            .Where(e => _c.Correct(e.Word) is { Kind: not (CorrectionKind.Fixed or CorrectionKind.Case) }) // maiúscula de nome é de propósito
             .Select(e => e.Word).ToList();
         Assert.True(wrong.Count == 0, string.Join(", ", wrong.Take(40)));
     }

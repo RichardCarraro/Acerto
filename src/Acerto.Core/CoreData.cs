@@ -15,6 +15,9 @@ public sealed class CoreData
     /// </summary>
     public FixedCorrections Pairs { get; init; } = FixedCorrections.Empty;
 
+    /// <summary>Nomes e lugares brasileiros, "minúscula sem acento&lt;TAB&gt;forma certa" (joao → João, parana → Paraná).</summary>
+    public FixedCorrections Names { get; init; } = FixedCorrections.Empty;
+
     /// <summary>
     /// Estrangeirismos e nomes que o dicionário pt-BR não tem mas que são palavras de verdade (mail, voice, office).
     /// Nunca passam pela regra de digitação. Gerada com "AcertoEval data protegidas"; as do fim (termos de trabalho e
@@ -35,6 +38,7 @@ public sealed class CoreData
         Frequency = new FrequencyTable(Path.Combine(dataDir, "frequencia.txt")),
         Fixed = new FixedCorrections(Path.Combine(dataDir, "correcoes.txt")),
         Pairs = File.Exists(Path.Combine(dataDir, "locucoes.txt")) ? new FixedCorrections(Path.Combine(dataDir, "locucoes.txt")) : FixedCorrections.Empty,
+        Names = File.Exists(Path.Combine(dataDir, "nomes.txt")) ? new FixedCorrections(Path.Combine(dataDir, "nomes.txt")) : FixedCorrections.Empty,
         Personal = new PersonalDictionary(Path.Combine(userDir, "palavras.txt")),
         Shortcuts = new ShortcutTable(Path.Combine(userDir, "atalhos.txt"), Path.Combine(dataDir, "atalhos-padrao.txt")),
         Protected = File.Exists(Path.Combine(dataDir, "protegidas.txt"))

@@ -102,6 +102,10 @@ public sealed class Corrector
         // 2. Palavra ensinada pelo usuário
         if (_data.Personal.Contains(w)) return null;
 
+        // 2a. Nome ou lugar brasileiro da lista (joao → João, parana → Paraná, que a regra de digitação faria "parada")
+        if (o.CapitalizeNames && _data.Names.TryGet(TextUtil.StripAccents(w), out var name))
+            return name == word ? null : new Correction(name, CorrectionKind.Case);
+
         // 2b. Locução com a anterior, da lista à mão: "isso ai" → aí, "a viajem" → viagem
         if (prev is not null && _data.Pairs.TryGet(prev + " " + w, out var pairRep) && pairRep.Split(' ') is [_, var second] && second != w)
             return new Correction(TextUtil.ApplyCase(word, second), CorrectionKind.Fixed);
