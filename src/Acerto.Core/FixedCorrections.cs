@@ -5,6 +5,10 @@ public sealed class FixedCorrections
 {
     private readonly Dictionary<string, string> _map = new(StringComparer.Ordinal);
 
+    public static FixedCorrections Empty { get; } = new();
+
+    private FixedCorrections() { }
+
     public FixedCorrections(string path)
     {
         foreach (var line in File.ReadLines(path))

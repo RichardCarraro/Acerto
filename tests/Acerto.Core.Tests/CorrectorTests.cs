@@ -187,6 +187,17 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
     [InlineData("paralização", "paralisação")] // 20 no corpus, contra 177
     public void Troca_Fonetica(string typed, string want) => Assert.Equal(want, _c.Correct(typed)?.Replacement);
 
+    // Locuções da lista à mão (data/locucoes.txt): a vizinha decide o que a estatística não decide
+    [Theory]
+    [InlineData(" isso ai ", " isso aí ")]
+    [InlineData(" e ai, tudo bem? ", " e aí, tudo bem? ")]
+    [InlineData(" fica a vontade ", " fica à vontade ")]
+    [InlineData(" vou as vezes ", " vou às vezes ")]
+    [InlineData(" todas as vezes ", " todas as vezes ")] // exceção de três palavras
+    [InlineData(" a viajem foi boa ", " a viagem foi boa ")]
+    [InlineData(" disse ai ", " disse ai ")]            // sem locução, "ai" fica
+    public void Locucoes(string typed, string want) => Assert.Equal(want, TypeAll(typed));
+
     // A lista embutida manda dai → daí; depois de "bom", é dia. No começo da frase a lista vale ("pao" não vira "Não").
     [Theory]
     [InlineData("bom", "dia")]

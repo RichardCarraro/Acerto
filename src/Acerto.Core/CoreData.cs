@@ -10,6 +10,12 @@ public sealed class CoreData
     public required ShortcutTable Shortcuts { get; init; }
 
     /// <summary>
+    /// Locuções escritas à mão, "errada&lt;TAB&gt;certa", duas palavras cada: "isso ai" → "isso aí", "a vontade" →
+    /// "à vontade", "a viajem" → "a viagem". Para o que a estatística de pares não decide (crase, homófonos válidos).
+    /// </summary>
+    public FixedCorrections Pairs { get; init; } = FixedCorrections.Empty;
+
+    /// <summary>
     /// Estrangeirismos e nomes que o dicionário pt-BR não tem mas que são palavras de verdade (mail, voice, office).
     /// Nunca passam pela regra de digitação. Gerada com "AcertoEval data protegidas"; as do fim (termos de trabalho e
     /// tecnologia: deploy, commit, teams) foram acrescentadas à mão e precisam ser mantidas ao gerar de novo.
@@ -28,6 +34,7 @@ public sealed class CoreData
         Lexicon = new Lexicon(Path.Combine(dataDir, "pt_BR.aff"), Path.Combine(dataDir, "pt_BR.dic")),
         Frequency = new FrequencyTable(Path.Combine(dataDir, "frequencia.txt")),
         Fixed = new FixedCorrections(Path.Combine(dataDir, "correcoes.txt")),
+        Pairs = File.Exists(Path.Combine(dataDir, "locucoes.txt")) ? new FixedCorrections(Path.Combine(dataDir, "locucoes.txt")) : FixedCorrections.Empty,
         Personal = new PersonalDictionary(Path.Combine(userDir, "palavras.txt")),
         Shortcuts = new ShortcutTable(Path.Combine(userDir, "atalhos.txt"), Path.Combine(dataDir, "atalhos-padrao.txt")),
         Protected = File.Exists(Path.Combine(dataDir, "protegidas.txt"))

@@ -87,6 +87,10 @@ public sealed class Corrector
         // 2. Palavra ensinada pelo usuário
         if (_data.Personal.Contains(w)) return null;
 
+        // 2b. Locução com a anterior, da lista à mão: "isso ai" → aí, "a viajem" → viagem
+        if (prev is not null && _data.Pairs.TryGet(prev + " " + w, out var pairRep) && pairRep.Split(' ') is [_, var second] && second != w)
+            return new Correction(TextUtil.ApplyCase(word, second), CorrectionKind.Fixed);
+
         // 3. Lista embutida (inclui as formas válidas-mas-raras como agua→água, escolhidas à mão)
         if (_data.Fixed.TryGet(w, out var fixedRep))
         {
@@ -179,6 +183,17 @@ public sealed class Corrector
     /// <param name="next">Palavra seguinte, em minúsculas, como ficou no texto.</param>
     public Correction? CorrectByNext(string word, string? prev, string next)
     {
+        // locução da lista à mão: "a vontade" → à vontade, "as vezes" → às vezes. Com a anterior na chave ("fica a
+        // vontade") a entrada vale só nesse caso, e "todas as vezes" → "todas as vezes" serve de exceção à de duas.
+        var lower = word.ToLower(TextUtil.PtBr);
+        if (!TextUtil.IsMixedCase(word) && !_data.Personal.Contains(lower))
+        {
+            string? rep = null;
+            if (prev is not null && _data.Pairs.TryGet(prev + " " + lower + " " + next, out var three)) rep = three.Split(' ')[1];
+            else if (_data.Pairs.TryGet(lower + " " + next, out var two)) rep = two.Split(' ')[0];
+            if (rep is not null) return rep == lower ? null : new Correction(TextUtil.ApplyCase(word, rep), CorrectionKind.Fixed);
+        }
+
         var o = CarefulField ? TypoOptions.Careful : _typos.Options;
         if (o.NextAccentRatio <= 0 || prev is null || word.Length == 0 || TextUtil.IsMixedCase(word) || (TextUtil.IsAllCaps(word) && word.Length > 1)) return null;
         var w = word.ToLower(TextUtil.PtBr);

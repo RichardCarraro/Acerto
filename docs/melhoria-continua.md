@@ -90,6 +90,7 @@ Onde mexer, do mais barato ao mais caro:
 
 | Data | Versão | Mudança | Antes → depois |
 |---|---|---|---|
+| 2026-11-16 | 1.3.3 | `data/locucoes.txt`: locuções de duas palavras feitas à mão, consultadas pela anterior (`isso ai` → aí, `a viajem` → viagem, `não mecha` → mexa) e pela seguinte (`as vezes` → às, `a toa` → à); chave de três palavras quando a de duas é ambígua (`fica a vontade` → à; `a vontade` sozinha é substantivo 495 × 261 no corpus) e como exceção (`todas as vezes` fica). Contagens decidiram o que entrou: `as claras` ficou de fora (claras de ovo) | frases reais 92,3% → 93,8% (273, 0 estragos); acento pela seguinte volta 33,6% → 34,1% (`as`→`às` 34 → 80), estragos 195 → 200; contexto A e B iguais, C 502 → 509 |
 | 2026-11-16 | 1.3.2 | Classe fonética: `x`↔`ch` e `c`↔`ss` como dígrafos (um erro, não dois), `TypoKind.Phonetic` só para pares de escrita (`s/z`, `s/c`, `g/j`, `x/s`, `x/z`, `m/n`; `k/c` e vogais ficam de fora, são nomes), razão própria para atestadas (10) e custo 0,4; categoria "fonético" no Eval sintético; `paralização` e família na lista (estava em `protegidas.txt` porque o corretor do Windows aceita); lote 3 de 50 frases | frases reais 93,7% (223) → 92,3% (273; o lote 3 trouxe crase e homófonos que não dá para pegar); fonético gerado 84,9% → 87,3% certo, errado 5,2% → 2,7%; trocas no corpus 1640 → 1661; sintético total 94,2% = |
 | 2026-11-16 | 1.3.1 | Limiar do acento pela seguinte 10 → 7; Tab desfaz a correção pela seguinte (as duas palavras, sem aprender "e"); lista embutida cede ao contexto forte (`bom dai` → dia: par ≥ 200 e par da lista = 0; começo de frase não conta, senão `pao` virava `Não`); `exite` → `hesite`; animação com largura mínima para palavra de uma letra e barra surgindo em 90 ms; UiShots fotografa a animação quadro a quadro; 48 frases novas | frases reais 90,9% → 93,7% (223 frases, 0 estragos); acento pela seguinte B 30,2% → 33,6%, C 0,038% → 0,054%; contexto A 93,0% → 93,1%, B e C iguais |
 | 2026-11-16 | 1.3.0 | Acento pela palavra seguinte (`isso e muito` → `é`, limiar 10); termos de TI protegidos (`deploy`, `commit`, `teams`); acentuada exata ganha da candidata de digitação menos usada (`almocaram` → `almoçaram`); erros fonéticos na lista; animação com entrada suave | frases reais 79,4% → 90,9% (0 estragos); acento pela seguinte: +30% dos que escapavam, +0,038% estragos; contexto B 81,0% → 81,7%; sintéticos 94,2% = |
@@ -111,9 +112,9 @@ Onde mexer, do mais barato ao mais caro:
 - **`meu email e joao.silva@gmail.com`**: a seguinte não é palavra; o acento pela seguinte não tem como ver. Fica.
 - **`isso ai` → `aí`**: no corpus `isso ai` sem acento tem 49 contra 146 com acento (razão 3; a regra pede 10).
   Baixar o limiar para 3 estragaria o resto. Precisaria de uma lista de pares fixos (`isso aí`, `e aí`, `aí sim`).
-- **Crase** (`vou a praia`, `fica a vontade`, `cheguei as duas`): `a praia`/`a vontade`/`as duas` com artigo são
-  tão ou mais comuns no corpus; só uma lista de locuções fixas (`à vontade`, `à disposição`, `às vezes`) resolveria.
-- **Homófonos válidos** (`a viajem` → viagem, `não mecha` → mexa): as duas formas existem; o contexto `a viajem`
-  (1018 no corpus, quase todo erro) até permitiria, mas é uma regra nova de palavra válida × par; medir antes.
+- **Crase fora de locução** (`vou a praia`, `ela foi a feira`, `cheguei as duas`): `a praia`/`as duas` com artigo são
+  tão ou mais comuns; precisaria de análise do verbo (ir/chegar + lugar), fora do alcance de pares.
+- **Locuções**: `data/locucoes.txt` cresce com uso; antes de pôr uma de duas palavras, conte os dois lados no
+  `bigramas.txt` (`=a` → `vontade` contra `=à` → `vontade`) e use três palavras ou exceções quando empatar.
 - **Fonético gerado, ainda errado**: `pessa` → pessoa (peça), `pesso` → pessoa (peço): letra faltando e dígrafo
   custam parecido e `pessoa` é mais frequente. `eçe`/`axa`/`xão` não corrigem (3 letras: regra de palavra curta).
