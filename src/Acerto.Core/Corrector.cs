@@ -1,6 +1,6 @@
 namespace Acerto.Core;
 
-public enum CorrectionKind { Shortcut, Fixed, Accent, Typo }
+public enum CorrectionKind { Shortcut, Fixed, Accent, Typo, Case }
 
 public sealed record Correction(string Replacement, CorrectionKind Kind);
 
@@ -69,6 +69,21 @@ public sealed class Corrector
     /// <param name="prev">Palavra anterior em minúsculas, <see cref="BigramModel.SentenceStart"/> no começo da frase,
     /// ou null se não se sabe. Com ela a escolha leva o contexto em conta ("minha cas" → casa, "esse cas" → caso).</param>
     public Correction? Correct(string word, bool atSentenceStart = false, string? prev = null)
+    {
+        var r = CorrectWord(word, atSentenceStart, prev);
+        var o = CarefulField ? TypoOptions.Careful : _typos.Options;
+        // Nome próprio em minúscula (joao, curitiba, brasil): o dicionário só o conhece com maiúscula, então é ela.
+        // No começo da frase a maiúscula automática já resolve. Quem apagar e digitar de novo em minúscula ensina.
+        var final = r?.Replacement ?? word;
+        // Com 4 letras ou mais: "big", "man", "down" também são nomes no dicionário, mas mais ainda são inglês.
+        if (o.CapitalizeNames && final.Length >= 4 && char.IsLower(final[0]) && !atSentenceStart && !TextUtil.IsMixedCase(final) && !final.Contains('-')
+            && !_data.Personal.Contains(final) && !_data.Shortcuts.TryGet(final, out _)
+            && !_data.Lexicon.IsValid(final) && _data.Lexicon.IsValid(char.ToUpper(final[0], TextUtil.PtBr) + final[1..]))
+            return new Correction(char.ToUpper(final[0], TextUtil.PtBr) + final[1..], r?.Kind ?? CorrectionKind.Case);
+        return r;
+    }
+
+    private Correction? CorrectWord(string word, bool atSentenceStart, string? prev)
     {
         if (word.Length == 0) return null;
         bool looksLikeName = char.IsUpper(word[0]) && !atSentenceStart;

@@ -286,3 +286,45 @@ estou a disposicao	Estou à disposição
 o homen chegou	O homem chegou
 a viajem foi otima	A viagem foi ótima
 vou viajar nas ferias	Vou viajar nas férias
+
+# lote 4: nomes em minúscula, verbos no futuro, plurais acentuados, palavras longas
+falei com o joao ontem	Falei com o João ontem
+a maria chegou cedo	A Maria chegou cedo
+moro em sao paulo	Moro em São Paulo
+fui para curitiba	Fui para Curitiba
+o brasil ganhou	O Brasil ganhou
+ela fara o possivel	Ela fará o possível
+ele tera que esperar	Ele terá que esperar
+isso vira moda	Isso vira moda
+o pedido chegara amanha	O pedido chegará amanhã
+voce dara conta	Você dará conta
+ficara pronto hoje	Ficará pronto hoje
+estara disponivel em breve	Estará disponível em breve
+sera que vai dar certo?	Será que vai dar certo?
+os orgaos publicos	Os órgãos públicos
+os cidadaos reclamaram	Os cidadãos reclamaram
+comprei dois paes	Comprei dois pães
+os irmaos vieram	Os irmãos vieram
+as maes se reuniram	As mães se reuniram
+varios alemaes	Vários alemães
+tres caes latindo	Três cães latindo
+o desenvolvimeto do projeto	O desenvolvimento do projeto
+a responsabilidde e sua	A responsabilidade é sua
+aproximadamnte dez pessoas	Aproximadamente dez pessoas
+a disponibilidae do sistema	A disponibilidade do sistema
+infelizmnete nao deu	Infelizmente não deu
+provavlemente amanha	Provavelmente amanhã
+a administracao decidiu	A administração decidiu
+o departamneto financeiro	O departamento financeiro
+a comunicaçao falhou	A comunicação falhou
+o funcionamneto e simples	O funcionamento é simples
+exatamnete isso	Exatamente isso
+a sequencia esta errada	A sequência está errada
+a frequencia caiu	A frequência caiu
+o cafe esta frio	O café está frio
+voce tem um minuto?	Você tem um minuto?
+o relatorio esta na pasta	O relatório está na pasta
+eles sao de la	Eles são de lá
+a agua acabou	A água acabou
+nos vamos juntos	Nós vamos juntos
+nos ajude com isso	Nos ajude com isso

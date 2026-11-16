@@ -14,7 +14,7 @@ Você digita `nao`, aperta espaço e ele já virou `não`. Sem sublinhado vermel
 - **Usa o contexto** para escolher a correção certa, como o celular: `minha cas` → `casa`, `esse cas` → `caso`, `ele esta` → `ele está`. Olha também a palavra seguinte: em `isso e muito`, quando o `muito` termina, o `e` vira `é` (Tab desfaz). E o contexto ganha até da lista de erros comuns: `bom dai` → `bom dia`, não `daí`. Locuções que a estatística não decide vêm de uma lista feita à mão (`data/locucoes.txt`): `isso ai` → `isso aí`, `fica a vontade` → `à vontade`, `as vezes` → `às vezes` (mas `todas as vezes` fica), `a viajem` → `a viagem`.
 - **Sugestões ao digitar**: uma barrinha perto do cursor mostra até três palavras para completar a atual (mesmo com erro: `obrgi` → `obrigado`) ou adiantar a próxima. **Tab** aceita a primeira. Logo depois de uma correção, a barrinha mostra o que você digitou e outras opções: **Tab** desfaz a correção.
 - **Aprende o seu jeito**: as palavras e sequências que você mais usa passam na frente nas sugestões e nas correções.
-- **Maiúscula automática** no começo da frase.
+- **Maiúscula automática** no começo da frase e em nomes que o dicionário só conhece com maiúscula: `fui para curitiba` → `Curitiba`, `londres` → `Londres` (a partir de 4 letras).
 - **Dois espaços viram ponto final.**
 - **Atalhos de texto** personalizáveis: `vlw` → `valeu`, `att` → `Atenciosamente,`.
 - **Aprende com você**: apagou a correção e digitou a palavra de novo? Ele mantém e não corrige mais.
@@ -64,7 +64,7 @@ Medido com `tests/Acerto.Eval` (erros gerados nas palavras mais usadas e frases 
 - acerta **~94%** dos erros de digitação no modo "Corrigir mais"
 - com contexto, em frases reais: **92,7%** de acerto contra 89,7% sem contexto
 - palavras certas estragadas em texto real: **0,12%**
-- frases do dia a dia com erros reais (`tests/Acerto.Eval/frases-reais.txt`, 273 frases): **93,8%** saem certas, nenhuma frase certa é mexida
+- frases do dia a dia com erros reais (`tests/Acerto.Eval/frases-reais.txt`, 313 frases): **92,3%** saem certas, nenhuma frase certa é mexida
 - erros de escrita por som gerados (`x`/`ch`, `ss`/`ç`, `s`/`z`, `g`/`j`): **87%** corrigidos
 - sugestões: o Tab economiza **~29%** das letras das palavras de 4 letras ou mais
 

@@ -66,3 +66,12 @@ deixamos a disposição	deixamos à disposição
 totalmente a disposição	totalmente à disposição
 inteiramente a disposição	inteiramente à disposição
 sempre a disposição	sempre à disposição
+de la	de lá
+por la	por lá
+pra la	pra lá
+para la	para lá
+até la	até lá
+fiquei la	fiquei lá
+estava la	estava lá
+estou la	estou lá
+chegou la	chegou lá

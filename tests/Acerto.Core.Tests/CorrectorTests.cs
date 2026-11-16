@@ -152,7 +152,15 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
     [InlineData("voice")] [InlineData("mail")] [InlineData("office")] [InlineData("apps")] [InlineData("build")]
     [InlineData("curitiba")] [InlineData("richard")]
     [InlineData("deploy")] [InlineData("commit")] [InlineData("teams")] [InlineData("jira")] // pouco usadas, à mão
-    public void Protegidas_Ficam(string palavra) => Assert.Null(_c.Correct(palavra));
+    public void Protegidas_Ficam(string palavra) => Assert.True(_c.Correct(palavra) is null or { Kind: CorrectionKind.Case }); // só maiúscula de nome
+
+    // Nome próprio que o dicionário só tem com maiúscula ganha a maiúscula; palavra comum e começo de frase não
+    [Theory]
+    [InlineData("curitiba", "Curitiba")] [InlineData("londres", "Londres")] [InlineData("alemanha", "Alemanha")] // joão, maria, brasil: o VERO aceita em minúscula
+    public void Nome_Em_Minuscula_Ganha_Maiuscula(string typed, string want) => Assert.Equal(want, _c.Correct(typed)?.Replacement);
+    [Fact] public void Palavra_Comum_Nao_Ganha_Maiuscula() => Assert.Null(_c.Correct("casa"));
+    [Fact] public void Nome_No_Comeco_Da_Frase_Fica_Para_A_Maiuscula_Automatica() => Assert.Null(_c.Correct("curitiba", atSentenceStart: true));
+    [Fact] public void Nome_Em_Minuscula_No_Texto() => Assert.Equal(" fui para Curitiba ", TypeAll(" fui para curitiba "));
 
     private string TypeAll(string keys, TextEngine? engine = null)
     {

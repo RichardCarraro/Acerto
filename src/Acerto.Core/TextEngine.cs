@@ -282,7 +282,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
             else if (corr is not null)
             {
                 _lastCorrectedWord = word;
-                _lastCorrectionLearns = corr.Kind is CorrectionKind.Fixed or CorrectionKind.Accent or CorrectionKind.Typo;
+                _lastCorrectionLearns = corr.Kind is not CorrectionKind.Shortcut;
                 _backspacedSinceCorrection = false;
             }
             else

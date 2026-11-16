@@ -137,6 +137,18 @@ if (positional.Length > 1 && positional[1] == "trocas")
     return;
 }
 
+// modo "caixa": AcertoEval data caixa [quantas=60000] — palavras frequentes do corpus que ganhariam maiúscula de nome
+if (positional.Length > 1 && positional[1] == "caixa")
+{
+    int n = positional.Length > 2 ? int.Parse(positional[2]) : 60000;
+    var changed = data.Frequency.Entries.Where(e => e.Word.All(char.IsLetter)).OrderByDescending(e => e.Count).Take(n)
+        .Select(e => (e.Word, e.Count, R: corrector.Correct(e.Word))).Where(x => x.R is { Kind: CorrectionKind.Case }).ToList();
+    Console.Error.WriteLine($"{changed.Count} de {n} ganhariam maiúscula");
+    foreach (var c in changed) Console.WriteLine($"{c.Word}>{c.R!.Replacement}	{c.Count}");
+    Directory.Delete(userDir, true);
+    return;
+}
+
 // modo mineração: AcertoEval data minerar [contagem mínima=10] [razão mínima=200]
 // Lista palavras do corpus que parecem erro de digitação de uma palavra muito mais usada, para revisão manual.
 if (positional.Length > 1 && positional[1] == "minerar")

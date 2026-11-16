@@ -126,6 +126,9 @@ public sealed record TypoOptions
     /// </summary>
     public int FixedContextMinPair { get; init; }
 
+    /// <summary>Nome próprio em minúscula que o dicionário só tem com maiúscula ganha a maiúscula (curitiba → Curitiba).</summary>
+    public bool CapitalizeNames { get; init; }
+
     /// <summary>Palavras de 3 letras também são corrigidas quando há inversão (cmo → com).</summary>
     public bool ShortWordTransposition { get; init; }
 
@@ -161,6 +164,8 @@ public sealed record TypoOptions
         // acerto (errado 5,2% → 2,7%) sem mudar as trocas
         AttestedPhoneticRatio = 10,
         SpellingSubstitution = 0.4,
+        // 1184 das 60 mil palavras frequentes do corpus ganhariam maiúscula, quase todas nomes (john, europa, alemanha)
+        CapitalizeNames = true,
     };
 
     /// <summary>Perfil cuidadoso: na dúvida, não troca. É o que os testes de corpus exigem com zero trocas indevidas.</summary>
