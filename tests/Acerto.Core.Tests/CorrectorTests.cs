@@ -245,6 +245,18 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
         Assert.Equal("bom ", TypeAll("bom ", engine));    // segue normal, sem corrigir de novo
     }
 
+    // O host anima Insert[..WordLength]: a troca pela seguinte cobre as duas palavras quando a atual também mudou
+    [Theory]
+    [InlineData(" isso e mutio ", "é muito")]
+    [InlineData(" isso e muito ", "é")]
+    public void Acento_Pela_Seguinte_Anima_O_Que_Mudou(string typed, string animated)
+    {
+        var engine = new TextEngine(_c, _ => { });
+        var last = EngineAction.None;
+        foreach (var ch in typed) if (engine.OnChar(ch) is { Swallow: true } a) last = a;
+        Assert.Equal(animated, last.Insert[..last.WordLength]);
+    }
+
     [Fact]
     public void Acento_Pela_Seguinte_Apagado_Nao_Insiste()
     {

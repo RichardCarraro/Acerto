@@ -169,6 +169,16 @@ internal sealed class InputHooks : IDisposable
             if ((k.flags & LLKHF_INJECTED) != 0 && k.dwExtraInfo == InputSender.Marker)
                 return CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
 
+            // O evento de foco pode chegar antes da troca valer (janela trazida à frente por SetForegroundWindow) e
+            // deixar o Acertô preso na janela anterior: excluída, não corrige nada; outra, cancela toda correção.
+            // Conferir aqui custa uma chamada barata; a tecla que perceber a troca passa direto (foco em checagem).
+            if (GetForegroundWindow() != _fg.Hwnd)
+            {
+                ResetAll("foco");
+                _fg.Refresh();
+                if (Diag.On) Diag.Log($"FOCO ev=tecla proc={_fg.ProcessName}");
+            }
+
             if (!Active)
             {
                 if (Diag.On) Diag.Log($"KEY inativo paused={_settings.Paused} own={_fg.IsOwnProcess} elev={_fg.IsElevated} full={_fg.IsFullScreenApp} resolved={_fg.FocusResolved} pwd={_fg.FocusIsPassword} auto={_fg.FocusInlineAutocomplete} excl={_settings.IsExcluded(_fg.ProcessName)} proc={_fg.ProcessName}");

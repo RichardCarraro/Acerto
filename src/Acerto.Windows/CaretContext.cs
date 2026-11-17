@@ -121,6 +121,7 @@ internal static class CaretContext
             var r = rects[^1]; // palavra quebrada em duas linhas: anima o pedaço final
             // retângulo absurdo (linha inteira, altura enorme): alguns apps informam errado
             if (r.Height < 4 || r.Height > 120 || r.Width < 4 || r.Width > word.Length * r.Height * 1.6 + 8) return null;
+            if (Diag.On) Diag.Log($"REALCE uia letras={word.Length} ret={(int)r.X},{(int)r.Y},{(int)r.Width},{(int)r.Height} partes={rects.Length}");
             return r;
         }
         catch (Exception)
@@ -187,6 +188,7 @@ internal static class CaretContext
         lock (Gate) letter = _letter > 0 && Math.Abs(caret.Height - _letterHeight) <= 2 ? _letter : caret.Height * 0.5;
         double right = caret.Left - trailing * letter;
         double width = Math.Max(length, 1) * letter;
+        if (Diag.On) Diag.Log($"REALCE estimado letras={length} depois={trailing} letra={letter:0.0} cursor={(int)caret.X},{(int)caret.Y},{(int)caret.Height}");
         return length == 0 ? new System.Windows.Rect(caret.Left, caret.Top, 1, caret.Height)
             : new System.Windows.Rect(right - width, caret.Top, width, caret.Height);
     }

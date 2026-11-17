@@ -322,7 +322,9 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
                 else
                 {
                     var rest = " " + result + c;
-                    action = new EngineAction(true, pw.Word.Length + 1 + word.Length, byNext.Replacement + rest, byNext.Replacement.Length);
+                    // a atual também corrigida ("e mutio" → "é muito"): anima as duas, senão só a de trás ganha realce
+                    int span = byNext.Replacement.Length + (corr is null ? 0 : 1 + result.Length);
+                    action = new EngineAction(true, pw.Word.Length + 1 + word.Length, byNext.Replacement + rest, span);
                     _undo = c == ' ' ? new Undo(pw.Word, byNext.Replacement, pw.Prev, " " + result, Learns: false) : null;
                     _lastByNext = pw.Word;
                     _byNextUndone = false;

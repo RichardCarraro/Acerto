@@ -1,4 +1,6 @@
-// Uso: AcertoBancada.exe [frases=12] [semente=N] [alvo=caixa|chrome|edge|endereco] [saida=bancada.txt] [rapido=1] [foto=tela.png]
+// Uso: AcertoBancada.exe [frases=12] [semente=N] [alvo=caixa|chrome|edge|firefox|endereco] [rico=1] [saida=bancada.txt] [rapido=1]
+//      [foto=tela.png] [texto="frase fixa"] [quadros=pasta]
+// Navegadores abrem num processo separado com perfil temporário (nunca na sessão de quem usa o PC) e são fechados no fim.
 // alvo=endereco: barra de endereço do Chrome (uma frase só, sem Enter, que navegaria). foto: tira uma foto da tela
 // antes de ler o resultado, para ver a barra de sugestões.
 // Com o Acertô rodando: sorteia frases, estraga palavras (acento esquecido, letra trocada, faltando, invertida...),
@@ -21,6 +23,12 @@ string target = opt.GetValueOrDefault("alvo", "caixa");
 string output = opt.GetValueOrDefault("saida", "bancada.txt");
 bool fast = opt.GetValueOrDefault("rapido") == "1";
 string? photo = opt.GetValueOrDefault("foto");
+string? fixedText = opt.GetValueOrDefault("texto"); // digita só este texto, como está (para a demonstração do README)
+string? framesDir = opt.GetValueOrDefault("quadros"); // pasta: grava a janela de teste a ~15 quadros/s (GIF do README, análise da animação)
+bool rich = opt.GetValueOrDefault("rico") == "1";
+const string TestTitle = "Acerto bancada";
+string TempProfile = Path.Combine(Path.GetTempPath(), $"acerto-bancada-{target}");
+nint testWindow = 0;
 if (target == "endereco") count = 1;
 var rng = new Random(seed);
 
@@ -49,11 +57,26 @@ var typedLines = originals.Select(o =>
     injected.Add(errs);
     return Spoil(o, rng, errs);
 }).ToList();
+if (fixedText is not null)
+{
+    originals = [fixedText];
+    typedLines = [fixedText];
+    injected = [[]];
+}
 
 ApplicationConfiguration.Initialize();
 var form = new Form { Text = "Acertô — bancada", Width = 900, Height = 420, TopMost = true, StartPosition = FormStartPosition.CenterScreen };
 var box = new TextBox { Multiline = true, Dock = DockStyle.Fill, Font = new Font("Segoe UI", 12), ScrollBars = ScrollBars.Vertical };
+if (framesDir is not null)
+{
+    // limpo para a gravação: margem branca, sem borda nem barra de rolagem, letra maior
+    form.Height = 260;
+    form.Padding = new Padding(28, 24, 28, 0);
+    form.BackColor = Color.White;
+    (box.BorderStyle, box.ScrollBars, box.Font) = (BorderStyle.None, ScrollBars.None, new Font("Segoe UI", 16));
+}
 form.Controls.Add(box);
+bool typingDone = false;
 string real = "";
 var oracleDoc = new StringBuilder();
 var stamps = new List<DateTime>();
@@ -64,31 +87,77 @@ form.Shown += async (_, _) =>
     if (target == "caixa")
     {
         form.Activate();
+        BringToFront(form.Handle);
+        // se ainda assim não vier para a frente, espera a pessoa clicar nela (até 30 s)
+        box.Text = "Clique aqui para começar";
+        for (int i = 0; i < 300 && GetForegroundWindow() != form.Handle; i++) await Task.Delay(100);
+        box.Text = "";
         box.Focus();
     }
     else
     {
         form.WindowState = FormWindowState.Minimized;
-        var exe = target == "edge" ? @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-            : @"C:\Program Files\Google\Chrome\Application\chrome.exe";
-        var page = target == "endereco" ? "about:blank"
-            : "data:text/html;charset=utf-8,<title>Acerto bancada</title><textarea autofocus style='width:95vw;height:90vh;font-size:18px'></textarea>";
-        browser = Process.Start(exe, $"--new-window \"{page}\"");
-        await Task.Delay(4000);
-        if (target == "endereco") Chord(VK_CONTROL, 'L');
+        var exe = target switch
+        {
+            "edge" => @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+            "firefox" => @"C:\Program Files\Mozilla Firefox\firefox.exe",
+            _ => @"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        };
+        // rico=1: campo editável como o do WhatsApp Web e do Gmail, em vez de textarea
+        var field = rich
+            ? "<div id=c contenteditable style='width:90vw;height:80vh;font:18px Segoe UI;outline:none'></div><script>c.focus()</script>"
+            : "<textarea autofocus style='width:95vw;height:90vh;font-size:18px'></textarea>";
+        var page = $"data:text/html;charset=utf-8,<title>{TestTitle}</title>{field}";
+        // Navegador separado, com perfil temporário: nunca abre aba nem mexe na sessão de quem usa o PC.
+        // Só a caixa e navegadores: app que guarda sessão (Bloco de Notas com abas) já perdeu abas não salvas num teste.
+        Directory.CreateDirectory(TempProfile);
+        browser = Process.Start(exe, target == "firefox"
+            ? $"-no-remote -profile \"{TempProfile}\" -new-window \"{page}\""
+            : $"--user-data-dir=\"{TempProfile}\" --no-first-run --no-default-browser-check --new-window \"{page}\"");
+        // a janela de teste tem título único; sem achar e trazer ela para a frente, não digita nada
+        for (int i = 0; i < 100 && testWindow == 0; i++)
+        {
+            await Task.Delay(100);
+            testWindow = FindWindowByTitle(TestTitle);
+        }
+        if (testWindow != 0)
+        {
+            await Task.Delay(1500); // a página termina de carregar e põe o foco no campo
+            BringToFront(testWindow);
+            for (int i = 0; i < 30 && GetForegroundWindow() != testWindow; i++) await Task.Delay(100);
+        }
+        if (target == "endereco" && GetForegroundWindow() == testWindow) Chord(VK_CONTROL, 'L');
     }
     await Task.Delay(1200); // o Acertô confere o campo (senha? texto antes do cursor?) em segundo plano
 
     oracle.ConfirmContext(oracle.Generation, "");
+    Task recording = Task.CompletedTask;
+    if (framesDir is not null)
+    {
+        Directory.CreateDirectory(framesDir);
+        var area = form.RectangleToScreen(form.ClientRectangle);
+        if (testWindow != 0 && GetWindowRect(testWindow, out var wr))
+            area = Rectangle.Intersect(Rectangle.FromLTRB(wr.Left, wr.Top, wr.Right, wr.Bottom), SystemInformation.VirtualScreen);
+        if (area.Width < 10 || area.Height < 10) area = Screen.FromHandle(testWindow).Bounds; // minimizada na hora de medir: grava a tela
+        File.WriteAllText(Path.Combine(framesDir, "area.txt"), $"{area.X},{area.Y},{area.Width},{area.Height}");
+        recording = Task.Run(() => Record(framesDir, area, () => typingDone));
+    }
+    nint formHandle = form.Handle;
+    bool aborted = false;
     await Task.Run(() =>
     {
-        var hkl = GetKeyboardLayout(GetWindowThreadProcessId(GetForegroundWindow(), out _));
-        for (int li = 0; li < typedLines.Count; li++)
+        // Segurança: as teclas só vão para a janela que estava na frente no começo (na caixa, tem de ser ela).
+        // Se a pessoa trocar de janela ou a caixa não ganhar o foco, para na hora em vez de digitar em outro programa.
+        nint expected = GetForegroundWindow();
+        if (expected != (target == "caixa" ? formHandle : testWindow)) { aborted = true; return; }
+        var hkl = GetKeyboardLayout(GetWindowThreadProcessId(expected, out _));
+        for (int li = 0; li < typedLines.Count && !aborted; li++)
         {
             stamps.Add(DateTime.Now);
             var line = typedLines[li] + (li < typedLines.Count - 1 ? "\n" : " ");
             foreach (var c in line)
             {
+                if (GetForegroundWindow() != expected) { aborted = true; break; }
                 TypeChar(c, hkl);
                 var act = oracle.OnChar(c);
                 if (act.Swallow)
@@ -102,13 +171,23 @@ form.Shown += async (_, _) =>
                 Thread.Sleep(wait);
             }
         }
-        Thread.Sleep(600);
+        Thread.Sleep(framesDir is null ? 600 : 1800); // na gravação, deixa o resultado parado um pouco no fim
     });
+    typingDone = true;
+    await recording;
+    if (aborted)
+    {
+        File.WriteAllText(output, "PARADA: a janela da frente não era a do teste (foco em outro programa). Nada foi digitado fora dela.");
+        CloseBrowser();
+        form.Close();
+        return;
+    }
     if (photo is not null) TakePhoto(photo);
 
     try
     {
         if (target == "caixa") real = box.Text;
+        else if (GetForegroundWindow() != testWindow) real = "(não li: a janela de teste saiu da frente)";
         else
         {
             Chord(VK_CONTROL, 'A');
@@ -119,8 +198,6 @@ form.Shown += async (_, _) =>
             sta.SetApartmentState(ApartmentState.STA);
             sta.Start();
             sta.Join();
-            if (target == "endereco") Tap(0x1B, false, GetKeyboardLayout(0)); // Esc: fecha a lista de sugestões do Chrome
-            Chord(VK_CONTROL, 'W');
         }
         Report();
     }
@@ -128,11 +205,21 @@ form.Shown += async (_, _) =>
     {
         File.WriteAllText(output, $"semente={seed} FALHA NA BANCADA: {e}");
     }
+    CloseBrowser();
     form.Close();
 };
 Application.Run(form);
 
 // ---------------------------------------------------------------------------------------------------------------
+
+// O navegador é só nosso (perfil temporário): fecha pelo processo, sem atalho de teclado, e apaga o perfil
+void CloseBrowser()
+{
+    if (browser is null) return;
+    try { browser.Kill(entireProcessTree: true); browser.WaitForExit(5000); } catch (Exception) { }
+    Thread.Sleep(500);
+    try { Directory.Delete(TempProfile, recursive: true); } catch (Exception) { }
+}
 
 void Report()
 {
@@ -183,6 +270,62 @@ static void TakePhoto(string path)
     using var bmp = new Bitmap(b.Width, b.Height);
     using (var g = Graphics.FromImage(bmp)) g.CopyFromScreen(b.Location, Point.Empty, b.Size);
     bmp.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+}
+
+static nint FindWindowByTitle(string part)
+{
+    nint found = 0;
+    EnumWindows((h, _) =>
+    {
+        if (!IsWindowVisible(h)) return true;
+        var sb = new StringBuilder(512);
+        GetWindowTextW(h, sb, sb.Capacity);
+        if (sb.ToString().Contains(part, StringComparison.OrdinalIgnoreCase)) { found = h; return false; }
+        return true;
+    }, 0);
+    return found;
+}
+
+// O Windows só deixa trazer janela para a frente quem tem o foco: liga a fila de entrada à da janela da frente por um instante
+static void BringToFront(nint hwnd)
+{
+    uint fg = GetWindowThreadProcessId(GetForegroundWindow(), out _), me = GetCurrentThreadId();
+    AttachThreadInput(me, fg, true);
+    ShowWindow(hwnd, 9); // SW_RESTORE
+    BringWindowToTop(hwnd);
+    SetForegroundWindow(hwnd);
+    AttachThreadInput(me, fg, false);
+    // e clica no meio dela, como uma pessoa: assim o foco chega pelo caminho normal (os apps e o Acertô recebem os
+    // eventos de foco; só o SetForegroundWindow deixou o Acertô achando que a frente ainda era a janela anterior)
+    Thread.Sleep(300);
+    if (GetForegroundWindow() != hwnd || !GetWindowRect(hwnd, out var r)) return;
+    GetCursorPos(out var back);
+    SetCursorPos((r.Left + r.Right) / 2, (r.Top + r.Bottom) / 2);
+    mouse_event(0x0002, 0, 0, 0, 0); // botão esquerdo desce
+    mouse_event(0x0004, 0, 0, 0, 0); // sobe
+    Thread.Sleep(100);
+    SetCursorPos(back.X, back.Y);
+}
+
+// CaptureBlt: sem ele a animação e a barra de sugestões (janelas em camadas) não saem na imagem
+static void Record(string dir, Rectangle area, Func<bool> done)
+{
+    var clock = Stopwatch.StartNew();
+    for (int i = 0; !done(); i++)
+    {
+        using var bmp = new Bitmap(area.Width, area.Height);
+        using (var g = Graphics.FromImage(bmp))
+        {
+            // Graphics.CopyFromScreen recusa SourceCopy | CaptureBlt; o BitBlt aceita
+            nint screen = GetDC(0), target = g.GetHdc();
+            BitBlt(target, 0, 0, area.Width, area.Height, screen, area.X, area.Y, 0x00CC0020 | 0x40000000);
+            g.ReleaseHdc(target);
+            ReleaseDC(0, screen);
+        }
+        bmp.Save(Path.Combine(dir, $"{i:0000}-{clock.ElapsedMilliseconds:000000}.png"), System.Drawing.Imaging.ImageFormat.Png);
+        var next = (i + 1) * 66 - clock.ElapsedMilliseconds;
+        if (next > 0) Thread.Sleep((int)next);
+    }
 }
 
 string Kind(int line, string original) => injected[line].FirstOrDefault(e => e.Original == original).Kind ?? "?";
@@ -317,5 +460,23 @@ partial class Program
     [DllImport("user32.dll")] static extern uint MapVirtualKeyExW(uint code, uint type, nint hkl);
     [DllImport("user32.dll")] static extern nint GetKeyboardLayout(uint thread);
     [DllImport("user32.dll")] static extern nint GetForegroundWindow();
+    [DllImport("user32.dll")] static extern nint GetDC(nint hwnd);
+    [DllImport("user32.dll")] static extern int ReleaseDC(nint hwnd, nint hdc);
+    [DllImport("gdi32.dll")] static extern bool BitBlt(nint dest, int x, int y, int w, int h, nint src, int sx, int sy, uint rop);
     [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(nint hwnd, out uint pid);
+    delegate bool EnumProc(nint hwnd, nint param);
+    [StructLayout(LayoutKind.Sequential)] struct RECT { public int Left, Top, Right, Bottom; }
+    [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc proc, nint param);
+    [DllImport("user32.dll")] static extern bool IsWindowVisible(nint hwnd);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetWindowTextW(nint hwnd, StringBuilder text, int max);
+    [DllImport("user32.dll")] static extern bool GetWindowRect(nint hwnd, out RECT rect);
+    [DllImport("user32.dll")] static extern bool AttachThreadInput(uint from, uint to, bool attach);
+    [DllImport("user32.dll")] static extern bool ShowWindow(nint hwnd, int cmd);
+    [DllImport("user32.dll")] static extern bool BringWindowToTop(nint hwnd);
+    [DllImport("user32.dll")] static extern bool SetForegroundWindow(nint hwnd);
+    [DllImport("kernel32.dll")] static extern uint GetCurrentThreadId();
+    [StructLayout(LayoutKind.Sequential)] struct POINT { public int X, Y; }
+    [DllImport("user32.dll")] static extern bool GetCursorPos(out POINT p);
+    [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
+    [DllImport("user32.dll")] static extern void mouse_event(uint flags, int dx, int dy, uint data, nint extra);
 }
