@@ -367,3 +367,44 @@ reuniao as 10h30, sala 2	Reunião às 10h30, sala 2
 ate la, abracos	Até lá, abraços
 abraco, joao	Abraço, João
 att, maria	Att, Maria
+
+# lote 6: internetês de chat; sem TAB = não pode mudar
+pq vc nao veio?	Pq vc não veio?
+qnd vc chega?	Qnd vc chega?
+qdo puder me avisa	Qdo puder me avisa
+msm assim eu vou	Msm assim eu vou
+é vdd, esqueci	É vdd, esqueci
+sdds de vcs	Sdds de vcs
+tmj, abraço	Tmj, abraço
+kkkk muito bom	Kkkk muito bom
+rsrs que engraçado	Rsrs que engraçado
+né? eu tbm acho	Né? Eu tbm acho
+cê vai?	Cê vai?
+to indo pra la agora	To indo pra lá agora
+ta bom entao	Tá bom então
+to cansado hj	To cansado hj
+vlw mano, flw	Vlw mano, flw
+blz, fds a gente se ve	Blz, fds a gente se vê
+tds os dias a msm coisa	Tds os dias a msm coisa
+mt obrigado	Mt obrigado
+mto bom isso	Mto bom isso
+pfv me responde	Pfv me responde
+oq vc acha?	Oq vc acha?
+oque vc acha?	O que vc acha?
+nd a ver	Nd a ver
+ngm veio	Ngm veio
+tlgd?	Tlgd?
+mds que dia	Mds que dia
+aff que saco	Aff que saco
+eh isso msm	Eh isso msm
+ok dboa	Ok dboa
+ctz que sim	Ctz que sim
+fzr oq?	Fzr oq?
+amg, me liga	Amg, me liga
+bjs, ate dps	Bjs, até dps
+dps a gente ve	Dps a gente vê
+agr nao da	Agr não dá
+soh um minuto	Soh um minuto
+vo la	Vo lá
+tava la ontem	Tava lá ontem
+cmg nao	Cmg não
