@@ -1,0 +1,39 @@
+# Ao subir uma tag v* (ex.: git tag v1.4.1 && git push origin v1.4.1): compila o instalador e publica a versão.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Gerar instalador
+        shell: pwsh
+        run: |
+          ./installer/gerar.ps1
+          $exe = Get-ChildItem dist/Acerto-Setup-*.exe | Select-Object -First 1
+          $versao = $exe.BaseName -replace '^Acerto-Setup-', ''
+          if ("v$versao" -ne "${{ github.ref_name }}") { throw "A tag ${{ github.ref_name }} não bate com a versão do projeto ($versao)" }
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/Acerto-Setup-*.exe
+          generate_release_notes: true
+          body: |
+            ## Baixar
+
+            Baixe o **Acerto-Setup-….exe** logo abaixo, em *Assets*, abra e clique em **Instalar**. Não precisa de administrador.
+            Já tem o Acertô? Rode o instalador novo: suas palavras, atalhos e configurações continuam.
+
+            > O instalador não tem assinatura digital, então o Windows pode mostrar "O Windows protegeu o computador". Clique em **Mais informações → Executar assim mesmo**.

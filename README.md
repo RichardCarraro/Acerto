@@ -1,8 +1,23 @@
+<div align="center">
+
+<img src="docs/img/logo.png" width="96" alt="Logo do Acertô">
+
 # Acertô
 
 **Corretor automático para Windows, em português, que funciona em qualquer programa — igual ao teclado do celular.**
 
-Você digita `nao`, aperta espaço e ele já virou `não`. Sem sublinhado vermelho, sem clicar em nada. Funciona no navegador, no Word, no Teams, no WhatsApp Desktop, no app do Claude, no Bloco de Notas, em qualquer lugar onde se digita.
+[![Baixar para Windows](https://img.shields.io/badge/Baixar_para_Windows-1E63D6?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/RichardCarraro/Acerto/releases/latest)
+
+[![Versão](https://img.shields.io/github/v/release/RichardCarraro/Acerto?label=vers%C3%A3o&color=1E63D6)](https://github.com/RichardCarraro/Acerto/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/RichardCarraro/Acerto/total?label=downloads&color=1E63D6)](https://github.com/RichardCarraro/Acerto/releases)
+![Windows 10 e 11](https://img.shields.io/badge/Windows-10%20e%2011-1E63D6)
+![Funciona offline](https://img.shields.io/badge/funciona-offline-2E7D32)
+
+<img src="docs/img/demo.gif" alt="Digitando 'voce viu a informacao? isso e mutio importante, nao esquece de responder hje' e o Acertô corrigindo cada palavra na hora" width="760">
+
+</div>
+
+Você digita `nao`, aperta espaço e ele já virou `não`. Sem sublinhado vermelho, sem clicar em nada. Funciona no navegador, no Word, no Teams, no WhatsApp Desktop, no app do Claude, no Bloco de Notas — em qualquer lugar onde se digita.
 
 ## O que ele faz
 
@@ -10,26 +25,54 @@ Você digita `nao`, aperta espaço e ele já virou `não`. Sem sublinhado vermel
   - acento e cedilha esquecidos — `informacao` → `informação`, `voce` → `você`, e também em formas que existem sem acento mas quase ninguém usa: `chegara` → `chegará`, `veiculo` → `veículo`
   - erros de digitação — `mutio` → `muito`, `paara` → `para`, `probelma` → `problema`, `hje` → `hoje`
   - erros comuns de escrita — `concerteza` → `com certeza`, `excessao` → `exceção`, `idéia` → `ideia`
-  - trocas de som — `enxente` → `enchente`, `xinelo` → `chinelo`, `paralização` → `paralisação` (`x`/`ch`, `ss`/`ç`, `s`/`z`, `g`/`j` contam como um erro só)
-- **Usa o contexto** para escolher a correção certa, como o celular: `minha cas` → `casa`, `esse cas` → `caso`, `ele esta` → `ele está`. Olha também a palavra seguinte: em `isso e muito`, quando o `muito` termina, o `e` vira `é` (Tab desfaz). E o contexto ganha até da lista de erros comuns: `bom dai` → `bom dia`, não `daí`. Locuções que a estatística não decide vêm de uma lista feita à mão (`data/locucoes.txt`): `isso ai` → `isso aí`, `fica a vontade` → `à vontade`, `as vezes` → `às vezes` (mas `todas as vezes` fica), `a viajem` → `a viagem`.
-- **Sugestões ao digitar**: uma barrinha perto do cursor mostra até três palavras para completar a atual (mesmo com erro: `obrgi` → `obrigado`) ou adiantar a próxima. **Tab** aceita a primeira. Logo depois de uma correção, a barrinha mostra o que você digitou e outras opções: **Tab** desfaz a correção.
-- **Aprende o seu jeito**: as palavras e sequências que você mais usa passam na frente nas sugestões e nas correções.
-- **Maiúscula automática** no começo da frase e em nomes que o dicionário só conhece com maiúscula: `fui para curitiba` → `Curitiba`, `londres` → `Londres` (a partir de 4 letras). Nomes e lugares brasileiros comuns vêm de uma lista (`data/nomes.txt`): `joao` → `João`, `parana` → `Paraná`, `maringa` → `Maringá`.
-- **Dois espaços viram ponto final.**
+  - trocas de som — `enxente` → `enchente`, `xinelo` → `chinelo`, `paralização` → `paralisação`
+- **Usa o contexto**, como o celular: `minha cas` → `casa`, `esse cas` → `caso`, `ele esta` → `ele está`. Olha também a palavra seguinte: em `isso e muito`, quando o `muito` termina, o `e` vira `é`. Locuções vêm de uma lista feita à mão: `isso ai` → `isso aí`, `fica a vontade` → `à vontade`, `as vezes` → `às vezes`, `a viajem` → `a viagem`.
+- **Sugestões ao digitar**: uma barrinha perto do cursor mostra até três palavras para completar a atual (mesmo com erro: `obrgi` → `obrigado`) ou adiantar a próxima. **Tab** aceita a primeira. Logo depois de uma correção, **Tab** desfaz.
+- **Aprende o seu jeito**: as palavras e sequências que você mais usa passam na frente. Apagou a correção e digitou de novo? Ele mantém e não corrige mais.
+- **Maiúscula automática** no começo da frase e em nomes: `fui para curitiba` → `Curitiba`, `joao` → `João`, `maringa` → `Maringá`.
 - **Atalhos de texto** personalizáveis: `vlw` → `valeu`, `att` → `Atenciosamente,`.
-- **Aprende com você**: apagou a correção e digitou a palavra de novo? Ele mantém e não corrige mais.
-- **Animação** rápida sobre a palavra corrigida, para você perceber o que mudou.
+- **Dois espaços viram ponto final**, e uma **animação** rápida mostra o que mudou.
 - **Não mexe** em campos de senha, em programas rodando como administrador, em jogos em tela cheia, nem em editores de código e terminais (configurável).
 
-## Privacidade
+## Telas
 
-Tudo roda no seu computador. O Acertô **não se conecta à internet** e **não grava o seu texto**. Em `%APPDATA%\Acerto` ficam só o número de palavras corrigidas, as palavras que você ensinou, os seus atalhos e, com "Aprender com o que eu escrevo" ligado, a contagem das palavras do dicionário que você usa e de quais vêm uma depois da outra (`historico.txt`). Senhas, números e e-mails nunca entram nessa contagem; dá para desligar ou apagar tudo nas configurações.
+<table>
+<tr>
+<td width="62%" valign="top">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/main-home-escuro.png">
+  <img src="docs/img/main-home-claro.png" alt="Janela de configurações do Acertô">
+</picture>
+</td>
+<td valign="top">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/flyout-escuro.png">
+  <img src="docs/img/flyout-claro.png" alt="Menu do ícone perto do relógio">
+</picture>
+<p><sub>Clique no <b>ô</b> perto do relógio para pausar, abrir as configurações ou sair.</sub></p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/instalador-escuro.png">
+  <img src="docs/img/instalador-claro.png" alt="Janela de instalação">
+</picture>
+<p><sub>Instalação em um clique, sem administrador. Atualizar mantém suas palavras e atalhos.</sub></p>
+</td>
+</tr>
+</table>
 
 ## Instalação
 
-Baixe e rode o `Acerto-Setup-<versão>.exe`. Não precisa de administrador. O ícone **ô** aparece perto do relógio: clique nele para pausar, abrir as configurações ou sair. **Ctrl+Shift+F12** pausa e retoma de qualquer lugar.
+1. Baixe o **`Acerto-Setup-<versão>.exe`** na [página de versões](https://github.com/RichardCarraro/Acerto/releases/latest).
+2. Abra e clique em **Instalar**. Não precisa de administrador.
+3. Pronto: o ícone **ô** aparece perto do relógio. **Ctrl+Shift+F12** pausa e retoma de qualquer lugar.
 
+> [!NOTE]
 > O instalador não tem assinatura digital, então o Windows pode mostrar "O Windows protegeu o computador". Clique em **Mais informações → Executar assim mesmo**.
+
+Para atualizar, basta rodar o instalador novo. Para desinstalar, use **Configurações > Apps**.
+
+## Privacidade
+
+Tudo roda no seu computador. O Acertô **não se conecta à internet** e **não grava o seu texto**. Em `%APPDATA%\Acerto` ficam só o número de palavras corrigidas, as palavras que você ensinou, os seus atalhos e, com "Aprender com o que eu escrevo" ligado, a contagem das palavras do dicionário que você usa (`historico.txt`). Senhas, números e e-mails nunca entram nessa contagem; dá para desligar ou apagar tudo nas configurações.
 
 ## Configurações
 
@@ -45,7 +88,40 @@ Baixe e rode o `Acerto-Setup-<versão>.exe`. Não precisa de administrador. O í
 
 Também dá para editar **atalhos de texto**, **minhas palavras** (que nunca são corrigidas) e **apps excluídos**.
 
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/main-shortcuts-escuro.png">
+  <img src="docs/img/main-shortcuts-claro.png" alt="Página de atalhos de texto" width="560">
+</picture>
+</p>
+
+## Números
+
+Medido com `tests/Acerto.Eval` (erros gerados nas palavras mais usadas e frases reais fora dos dados de treino):
+
+| | |
+|---|---|
+| Erros de digitação corrigidos (modo "Corrigir mais") | **~94%** |
+| Acerto em frases reais, com contexto | **93,0%** (89,7% sem contexto) |
+| Acento esquecido que volta | **83,0%** |
+| Frases do dia a dia com erros reais que saem certas | **92,6%** (419 frases; nenhuma frase certa é mexida) |
+| Erros de escrita por som corrigidos | **87%** |
+| Palavras certas estragadas em texto real | **0,12%** |
+| Letras economizadas pelo Tab (palavras de 4+ letras) | **~29%** |
+
+## Limitações conhecidas
+
+- No modo "Corrigir mais", palavras em inglês digitadas em minúsculo às vezes são trocadas (`list` → `lista`). Apague e digite de novo que ele aprende, ou desligue o modo.
+- Não funciona em programas abertos como administrador (limitação do Windows), a não ser que o Acertô também seja aberto como administrador.
+- A barra de sugestões e a animação só aparecem em programas que informam a posição do cursor. Em apps que informam só o cursor (como o Evernote), a animação é posicionada por estimativa e pode ficar um pouco deslocada.
+- Na pesquisa do Windows a correção funciona, mas a barra de sugestões e a animação ficam atrás dela: o Windows só deixa desenhar por cima da pesquisa programas assinados e instalados em Arquivos de Programas.
+- Na barra de endereço do Chrome, Edge e Firefox a correção usa o perfil cuidadoso (para não trocar nomes de site). Outros campos com autocompletar que seleciona texto (Excel) podem confundir a correção; adicione-os em "Apps excluídos" se acontecer.
+- A troca de acento pela palavra seguinte não acontece quando a seguinte termina com `.` ou `:` (eles esperam para ver se é e-mail ou site).
+
 ## Como funciona
+
+<details>
+<summary>O corretor, a parte do Windows e a estrutura do projeto</summary>
 
 O corretor (`Acerto.Core`) é uma biblioteca .NET independente do Windows:
 
@@ -57,18 +133,24 @@ O corretor (`Acerto.Core`) é uma biblioteca .NET independente do Windows:
 
 A parte do Windows (`Acerto.Windows`) escuta o teclado com um hook global, troca a palavra enviando as teclas de volta ao programa e usa UI Automation para saber onde está o cursor (para a animação, as sugestões e para corrigir já a primeira palavra de um campo). A interface é WPF com o tema do Windows 11.
 
-### Números
+```
+src/Acerto.Core          corretor, contexto, sugestões, motor de texto (sem dependência de Windows)
+src/Acerto.Windows       app de bandeja: hooks, injeção de teclas, interface, instalador
+tests/Acerto.Core.Tests  testes (incluem as 60 mil palavras mais usadas que não podem ser alteradas)
+tests/Acerto.Eval        medição de acerto, mineração de erros comuns, bigramas
+tests/Acerto.SmokePad    teste ponta a ponta que digita numa janela
+tests/Acerto.Bancada     digita frases com erros sorteados e compara o app com o motor
+tests/Acerto.UiShots     gera as imagens das telas
+data/                    dicionário, frequências, correções, locuções, nomes, bigramas
+installer/               gerar.ps1: publica e gera o instalador
+```
 
-Medido com `tests/Acerto.Eval` (erros gerados nas palavras mais usadas e frases reais fora dos dados de treino):
-
-- acerta **~94%** dos erros de digitação no modo "Corrigir mais"
-- com contexto, em frases reais: **93,0%** de acerto contra 89,7% sem contexto; acento esquecido volta em **83,0%** dos casos
-- palavras certas estragadas em texto real: **0,12%**
-- frases do dia a dia com erros reais (`tests/Acerto.Eval/frases-reais.txt`, 419 frases): **92,6%** saem certas, nenhuma frase certa é mexida
-- erros de escrita por som gerados (`x`/`ch`, `ss`/`ç`, `s`/`z`, `g`/`j`): **87%** corrigidos
-- sugestões: o Tab economiza **~29%** das letras das palavras de 4 letras ou mais
+</details>
 
 ## Desenvolvimento
+
+<details>
+<summary>Compilar, testar e publicar uma versão</summary>
 
 Requer só o **.NET 10 SDK**.
 
@@ -80,38 +162,25 @@ dotnet test tests/Acerto.Core.Tests
 powershell -ExecutionPolicy Bypass -File installer/gerar.ps1
 ```
 
-O instalador é o próprio `Acerto.exe` publicado como arquivo único, com os dados embutidos: aberto fora da pasta de instalação, mostra a janela de instalação (no visual do app); instalado, roda normal. Instala em `%LOCALAPPDATA%\Programs\Acerto` sem pedir administrador, cria o atalho no Iniciar e aparece em Configurações > Apps para desinstalar. Para atualizar, basta rodar o instalador novo. Ver `src/Acerto.Windows/Setup.cs`.
+O instalador é o próprio `Acerto.exe` publicado como arquivo único, com os dados embutidos: aberto fora da pasta de instalação, mostra a janela de instalação; instalado, roda normal. Instala em `%LOCALAPPDATA%\Programs\Acerto` sem pedir administrador, cria o atalho no Iniciar e aparece em Configurações > Apps. Ver `src/Acerto.Windows/Setup.cs`.
 
-A versão fica em `src/Acerto.Windows/Acerto.Windows.csproj` (`<Version>`); o instalador lê dela.
+**Publicar uma versão:** mude `<Version>` em `src/Acerto.Windows/Acerto.Windows.csproj`, faça o commit e suba uma tag com o mesmo número:
 
-Estrutura:
-
-```
-src/Acerto.Core        corretor, contexto, sugestões, motor de texto (sem dependência de Windows)
-src/Acerto.Windows     app de bandeja: hooks, injeção de teclas, interface
-tests/Acerto.Core.Tests  testes (incluem as 60 mil palavras mais usadas que não podem ser alteradas)
-tests/Acerto.Eval      medição de acerto (frases, contexto, direita, sugestoes), mineração de erros comuns, bigramas
-tests/Acerto.SmokePad  teste ponta a ponta que digita numa janela
-tests/Acerto.Bancada   digita frases variadas com erros sorteados (caixa, Chrome ou Edge) e compara com o motor
-data/                  dicionário, frequências, correções, locuções, nomes, bigramas
-installer/             gerar.ps1: publica e gera o instalador
+```bash
+git tag v1.4.1
+git push origin v1.4.1
 ```
 
-Com o Acertô aberto, `AcertoBancada.exe frases=20 alvo=chrome saida=bancada.txt` (também `alvo=caixa|edge`, `semente=N`, `rapido=1`) digita como uma pessoa e diz se o app ficou diferente do motor (parada, tecla perdida) e quanto corrigiu certo. Não mexa no mouse e no teclado enquanto ele roda.
+O GitHub Actions (`.github/workflows/release.yml`) compila o instalador e publica a versão em [Releases](https://github.com/RichardCarraro/Acerto/releases) sozinho.
 
-Para depurar sem registrar texto, defina `ACERTO_DIAG=<arquivo>` antes de abrir: ele grava só estados (ativo, foco, motivo de cada reset).
+**Ferramentas:**
 
-Para melhorar o corretor em ciclos medidos (sozinho, com o Claude Code), veja [docs/melhoria-continua.md](docs/melhoria-continua.md).
+- `AcertoBancada.exe frases=20 alvo=chrome saida=bancada.txt` (também `alvo=caixa|edge|firefox`, `rico=1`, `semente=N`, `rapido=1`), com o Acertô aberto, digita como uma pessoa e diz se o app ficou diferente do motor e quanto corrigiu certo. Navegadores abrem num processo separado com perfil temporário. Não mexa no mouse e no teclado enquanto ele roda.
+- `texto="frase" quadros=pasta` grava a correção quadro a quadro (é assim que o GIF acima foi feito).
+- `ACERTO_DIAG=<arquivo>` antes de abrir o Acertô grava só estados (foco, motivo de cada reset, posição do realce), nunca o texto.
+- Para melhorar o corretor em ciclos medidos, veja [docs/melhoria-continua.md](docs/melhoria-continua.md).
 
-## Limitações conhecidas
-
-- A troca de acento pela palavra seguinte não acontece quando a seguinte termina com `.` ou `:` (eles esperam para ver se é e-mail ou site).
-
-- No modo "Corrigir mais", palavras em inglês digitadas em minúsculo às vezes são trocadas (`list` → `lista`). Apague e digite de novo que ele aprende, ou desligue o modo.
-- Não funciona em programas abertos como administrador (limitação do Windows), a não ser que o Acertô também seja aberto como administrador.
-- A barra de sugestões e a animação só aparecem em programas que informam a posição do cursor. Em apps como o Evernote, que informam só o cursor, a animação é posicionada por estimativa e pode ficar um pouco deslocada.
-- Na pesquisa do Windows a correção funciona, mas a barra de sugestões e a animação ficam atrás dela: o Windows só deixa desenhar por cima da pesquisa programas assinados e instalados em Arquivos de Programas.
-- Na barra de endereço do Chrome, Edge e Firefox a correção usa o perfil cuidadoso (para não trocar nomes de site) e apaga antes o trecho que o navegador completa sozinho. Outros campos com autocompletar que seleciona texto (Excel) podem confundir a correção; adicione-os em "Apps excluídos" se acontecer.
+</details>
 
 ## Créditos
 
@@ -124,4 +193,4 @@ Veja [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). Resumo:
 
 ## Apoie
 
-O Acertô é grátis. Se ele te ajuda, considere apoiar o projeto pela página **Apoie** dentro do app.
+O Acertô é grátis. Se ele te ajuda, considere apoiar o projeto pela página **Apoie o projeto** dentro do app. ⭐ Uma estrela aqui no GitHub também ajuda outras pessoas a encontrarem.
