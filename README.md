@@ -184,12 +184,14 @@ O GitHub Actions (`.github/workflows/release.yml`) compila o instalador e public
 
 ## Créditos
 
-Veja [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). Resumo:
+O Acertô usa o trabalho destes projetos:
 
-- Dicionário **VERO** (LibreOffice) — LGPLv3 / MPL
-- **FrequencyWords** (Hermit Dave, OpenSubtitles) — CC BY-SA 4.0
-- **WeCantSpell.Hunspell** — MPL 1.1
-- Bigramas derivados da **Leipzig Corpora Collection** — CC BY; **uso comercial depende de autorização** do projeto. Antes de vender, obtenha a autorização ou gere `data/bigramas.txt` de outro corpus (`AcertoEval data bigramas <frases.txt> data/bigramas.txt`).
+- Dicionário **VERO**, do LibreOffice
+- Lista de frequência **FrequencyWords**, de Hermit Dave
+- Biblioteca **WeCantSpell.Hunspell**
+- Pares de palavras da **Leipzig Corpora Collection**
+
+Licenças completas em [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## Apoie
 
