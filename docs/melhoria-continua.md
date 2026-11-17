@@ -79,7 +79,7 @@ Onde mexer, do mais barato ao mais caro:
 1. Rode o placar inteiro de novo. Se piorou algo que importa, desfaça ou ajuste.
 2. `dotnet test tests/Acerto.Core.Tests` passando.
 3. Atualize os números do `README.md` se mudaram, suba a versão em `src/Acerto.Windows/Acerto.Windows.csproj`.
-4. Gere publish e instalador (comandos no README) e faça commit na `main` com o placar antes → depois na mensagem.
+4. Gere publish e instalador (`powershell -ExecutionPolicy Bypass -File installer/gerar.ps1`) e faça commit na `main` com o placar antes → depois na mensagem.
 5. Acrescente uma linha em "Histórico" abaixo.
 6. Próximo ciclo. Pare quando três ciclos seguidos não acharem melhoria que passe nas regras; então liste o que
    ficou de fora e por quê.

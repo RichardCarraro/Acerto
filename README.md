@@ -70,18 +70,17 @@ Medido com `tests/Acerto.Eval` (erros gerados nas palavras mais usadas e frases 
 
 ## Desenvolvimento
 
-Requer o **.NET 10 SDK** e, para o instalador, o **Inno Setup 7**.
+Requer só o **.NET 10 SDK**.
 
 ```bash
-# testes (≈ 4 min)
+# testes (≈ 6 min)
 dotnet test tests/Acerto.Core.Tests
 
-# programa
-dotnet publish src/Acerto.Windows -c Release -r win-x64 --self-contained -o publish
-
-# instalador (sai em dist/)
-"C:\Program Files\Inno Setup 7\ISCC.exe" installer\acerto.iss
+# programa (publish/) e instalador (dist/Acerto-Setup-<versão>.exe)
+powershell -ExecutionPolicy Bypass -File installer/gerar.ps1
 ```
+
+O instalador é o próprio `Acerto.exe` publicado como arquivo único, com os dados embutidos: aberto fora da pasta de instalação, mostra a janela de instalação (no visual do app); instalado, roda normal. Instala em `%LOCALAPPDATA%\Programs\Acerto` sem pedir administrador, cria o atalho no Iniciar e aparece em Configurações > Apps para desinstalar. Para atualizar, basta rodar o instalador novo. Ver `src/Acerto.Windows/Setup.cs`.
 
 A versão fica em `src/Acerto.Windows/Acerto.Windows.csproj` (`<Version>`); o instalador lê dela.
 
@@ -95,7 +94,7 @@ tests/Acerto.Eval      medição de acerto (frases, contexto, direita, sugestoes
 tests/Acerto.SmokePad  teste ponta a ponta que digita numa janela
 tests/Acerto.Bancada   digita frases variadas com erros sorteados (caixa, Chrome ou Edge) e compara com o motor
 data/                  dicionário, frequências, correções, locuções, nomes, bigramas
-installer/             roteiro do instalador (Inno Setup)
+installer/             gerar.ps1: publica e gera o instalador
 ```
 
 Com o Acertô aberto, `AcertoBancada.exe frases=20 alvo=chrome saida=bancada.txt` (também `alvo=caixa|edge`, `semente=N`, `rapido=1`) digita como uma pessoa e diz se o app ficou diferente do motor (parada, tecla perdida) e quanto corrigiu certo. Não mexa no mouse e no teclado enquanto ele roda.

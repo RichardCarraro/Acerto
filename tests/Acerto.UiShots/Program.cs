@@ -42,6 +42,11 @@ internal static class Shots
                     Save(f, Path.Combine(outDir, "flyout.png"));
                     f.Close();
                     await Correction(outDir);
+                    var setup = new SetupWindow { WindowStartupLocation = WindowStartupLocation.Manual, Left = -30000, Top = 0, ShowActivated = false, ShowInTaskbar = false };
+                    setup.Show();
+                    await Task.Delay(500);
+                    Save(setup, Path.Combine(outDir, "instalador.png"));
+                    setup.Close();
                 }
                 catch (Exception e)
                 {

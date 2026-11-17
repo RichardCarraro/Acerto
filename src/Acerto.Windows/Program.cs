@@ -5,8 +5,22 @@ namespace Acerto.Windows;
 internal static class Program
 {
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
+        // O mesmo exe instala e desinstala (ver Setup): antes do "só um aberto", para poder fechar o que está rodando
+        if (args.Contains(Setup.UninstallArg))
+        {
+            Setup.Uninstall();
+            return;
+        }
+        if (Setup.IsInstaller)
+        {
+            var setup = CreateApplication();
+            setup.ShutdownMode = ShutdownMode.OnMainWindowClose;
+            setup.Run(new UI.SetupWindow());
+            return;
+        }
+
         using var mutex = new Mutex(true, @"Local\Acerto.SingleInstance", out bool first);
         if (!first) return;
 
