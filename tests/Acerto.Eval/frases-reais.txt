@@ -408,3 +408,35 @@ soh um minuto	Soh um minuto
 vo la	Vo lá
 tava la ontem	Tava lá ontem
 cmg nao	Cmg não
+
+# lote 7: erros de digitação variados em frases longas
+eu ja falei pra ele que nao da pra fazer isso hoje	Eu já falei pra ele que não dá pra fazer isso hoje
+voce poderia me enviar o arquivo atualziado?	Você poderia me enviar o arquivo atualizado?
+a gente precisa conversra sobre o projeto	A gente precisa conversar sobre o projeto
+o sistema caiu de nvoo	O sistema caiu de novo
+nao consegui entrar na reuniao online	Não consegui entrar na reunião online
+ele esqueceu a chave do carro em csaa	Ele esqueceu a chave do carro em casa
+minha mae fez um bolo delicioso	Minha mãe fez um bolo delicioso
+a professora passou muito dever de csaa	A professora passou muito dever de casa
+o jogo comeca as oito da noite	O jogo começa às oito da noite
+eu prefiro cafe sem acucar	Eu prefiro café sem açúcar
+o medico disse que nao e nada grave	O médico disse que não é nada grave
+precisamos comprar mais papel higienico	Precisamos comprar mais papel higiênico
+a internet esta lenta demais	A internet está lenta demais
+o onibus estava lotado hoje de manha	O ônibus estava lotado hoje de manhã
+vou fazer uma pausa para o cafe	Vou fazer uma pausa para o café
+ele trabalha numa empresa de tecnologia	Ele trabalha numa empresa de tecnologia
+ela estuda engenharia na universidade	Ela estuda engenharia na universidade
+o aniversario dela e semana que vem	O aniversário dela é semana que vem
+o tempo esta otimo para caminhar	O tempo está ótimo para caminhar
+nao sei se vou conseguir terminar a tempo	Não sei se vou conseguir terminar a tempo
+a conta do restaurante veio errada	A conta do restaurante veio errada
+o vizinho esta fazendo barulho de novo	O vizinho está fazendo barulho de novo
+estou procurnado um apartamento novo	Estou procurando um apartamento novo
+a entrevista de emprego foi otima	A entrevista de emprego foi ótima
+o filme e baseado em uma historia real	O filme é baseado em uma história real
+ele ficou preocuapdo com a noticia	Ele ficou preocupado com a notícia
+a situacao economica esta complicada	A situação econômica está complicada
+precisamos tomar uma decisao logo	Precisamos tomar uma decisão logo
+os alunos fizeram uma excelente apresentacao	Os alunos fizeram uma excelente apresentação
+o hospital esta sem medicos suficientes	O hospital está sem médicos suficientes
