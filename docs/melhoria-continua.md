@@ -90,6 +90,7 @@ Onde mexer, do mais barato ao mais caro:
 
 | Data | Versão | Mudança | Antes → depois |
 |---|---|---|---|
+| 2026-11-17 | 1.3.9 | `e` sozinho antes de dois-pontos vira `é` (`a senha e: abc123`; notícias: 16 `é:` × 0 `e:`), com palavra antes (rótulo `E:` no começo fica) e fora da barra de endereço. Zera a contagem de ciclos sem melhoria | frases reais 92,4% → 92,6% de 419, 0 estragos |
 | 2026-11-17 | — | Ciclo sem melhoria: lote 7 (30 frases longas com erros de digitação) teve 28 certas; as 2 falhas (`dela e semana`, `econômica esta complicada`) não têm par no corpus (`é semana` = 0, `está complicada` = 3 < 5). Lote guardado como regressão. **1º ciclo seguido sem melhoria** | frases reais 92,4% de 419 |
 | 2026-11-16 | 1.3.8 | Lote 6 (internetês de chat: `pq`, `qnd`, `msm`, `vdd`, `sdds`, `tmj`, `kkk`): 36 de 39 já certas; `dboa` virava `boa` → protegidas. `não da` × `não dá` é 139 × 1015 (7:1, e "não da forma…" existe): fica fora das locuções | frases reais 92,3% de 389, 0 estragos |
 | 2026-11-16 | 1.3.7 | Piso da regra de acento 360 → 1200 (`sera` → será, `ficara`, `dara`); reticências não dão mais maiúscula (`certo... não pensei`); lote 5 (mensagens de trabalho com pontuação, caminhos, e-mails, listas) | frases reais 93,6% (313) → 92,3% (350; o lote 5 trouxe `e` → `é` com seguinte que não é palavra); contexto B 82,5% → 83,0%, C 556 → 572 |
@@ -122,7 +123,7 @@ Onde mexer, do mais barato ao mais caro:
   tão ou mais comuns; precisaria de análise do verbo (ir/chegar + lugar), fora do alcance de pares.
 - **`data/nomes.txt`** cresce com uso. Antes de pôr um nome, confira se não é palavra comum (`marcos`, `santos`,
   `natal`): `AcertoEval data explicar <nome>` mostra `válida=` e a contagem no corpus.
-- **`e` → `é` quando a seguinte não é palavra** (`a senha e: abc123`, `o valor e R$`, `a pasta e C:\`) ou a anterior
+- **`e` → `é` quando a seguinte não é palavra** (`o valor e R$`, `a pasta e C:\`; `a senha e:` já resolvido) ou a anterior
   está entre aspas (`o campo "nome" e obrigatório`): a regra pela seguinte precisa de palavra dos dois lados.
   Candidata: com a anterior conhecida e a seguinte "não palavra", decidir só por P(é | anterior) com limiar alto.
 - **Locuções**: `data/locucoes.txt` cresce com uso; antes de pôr uma de duas palavras, conte os dois lados no

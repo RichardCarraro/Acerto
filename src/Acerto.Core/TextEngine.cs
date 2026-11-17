@@ -270,6 +270,10 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
         {
             var word = completed;
             var corr = corrector.Correct(word, atSentenceStart: _capNext, prev: _prev);
+            // "a senha e: abc123" → é. Conjunção antes de dois-pontos quase não existe (notícias: 16 "é:" × 0 "e:").
+            // Com palavra antes, para não mexer em rótulo de opção ("E: nenhuma das anteriores").
+            if (corr is null && c == ':' && !CarefulField && _prev is not null && _prev != BigramModel.SentenceStart && word is "e" or "E")
+                corr = new Correction(word == "E" ? "É" : "é", CorrectionKind.Accent);
 
             if (corr is not null && _backspacedSinceCorrection
                 && string.Equals(word, _lastCorrectedWord, StringComparison.OrdinalIgnoreCase))
