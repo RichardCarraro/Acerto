@@ -8,11 +8,13 @@ public sealed class AccentIndex
 
     public AccentIndex(FrequencyTable freq, Lexicon lex)
     {
-        foreach (var (word, count) in freq.Entries)
+        var accented = freq.Entries.Where(e => e.Count >= MinCount && TextUtil.StripAccents(e.Word) != e.Word).ToArray();
+        var valid = lex.AreValid(accented.Select(e => e.Word).ToArray());
+        for (int i = 0; i < accented.Length; i++)
         {
-            if (count < MinCount) continue;
+            if (!valid[i]) continue;
+            var (word, count) = accented[i];
             var stripped = TextUtil.StripAccents(word);
-            if (stripped == word || !lex.IsValid(word)) continue;
             if (!_map.TryGetValue(stripped, out var list)) _map[stripped] = list = [];
             list.Add((word, count));
         }

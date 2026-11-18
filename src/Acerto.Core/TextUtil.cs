@@ -10,6 +10,7 @@ public static class TextUtil
     /// <summary>Remove acentos e cedilha mantendo a caixa: "Ção" → "Cao".</summary>
     public static string StripAccents(string s)
     {
+        if (System.Text.Ascii.IsValid(s)) return s; // a maioria: sem acento, sem normalizar nem copiar
         var sb = new StringBuilder(s.Length);
         foreach (var ch in s.Normalize(NormalizationForm.FormD))
             if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)

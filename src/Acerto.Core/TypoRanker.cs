@@ -240,9 +240,13 @@ public sealed class TypoRanker
         _bigrams = bigrams ?? BigramModel.Empty;
         _history = history ?? UserHistory.Empty;
         _corpusSize = Math.Max(freq.Total, 1);
-        foreach (var (word, count) in freq.Entries)
+        // o Hunspell é o caro (370 mil consultas): em paralelo, e a inserção segue na ordem do arquivo como antes
+        var entries = freq.Entries.Where(e => e.Count >= MinIndexCount && e.Word.All(char.IsLetter)).ToArray();
+        var valid = lex.AreValid(entries.Select(e => e.Word).ToArray());
+        for (int i = 0; i < entries.Length; i++)
         {
-            if (count < MinIndexCount || !word.All(char.IsLetter) || !lex.IsValid(word)) continue;
+            if (!valid[i]) continue;
+            var (word, count) = entries[i];
             var stripped = TextUtil.StripAccents(word);
             if (!_byStripped.TryGetValue(stripped, out var list))
             {
