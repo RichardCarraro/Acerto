@@ -109,22 +109,22 @@ olhadas uma a uma.
 | Visual | foco de teclado (Tab) em interruptores e menus | sem moldura | moldura do Windows 11 |
 | Visual | "Apoie o projeto" | "QR Code em breve" | QR Code, chave e copia e cola (pedido do autor) |
 
-| Ciclo | Frente | Resultado | Versão |
-|---|---|---|---|
-| 1 | Correção | aprovado: cidades de duas palavras | 1.4.3 |
-| 2 | Visual | aprovado: dica nas caixas vazias | 1.5.0 |
-| 3 | Desempenho | aprovado: Hunspell em paralelo, StripAccents sem cópia | 1.5.1 |
-| 4 | Desempenho | aprovado: arquivos carregam juntos | 1.5.2 |
-| 5 | Correção | sem melhoria: lote 9, 39 de 40 já certas | — |
-| 6 | Desempenho | sem melhoria: Hunspell em blocos | — |
-| 7 | Visual | aprovado: moldura de foco | 1.6.0 |
-| 8 | Correção | aprovado: par mínimo 3 no acento pela seguinte | 1.6.1 |
-| 9 | Desempenho | aprovado: data/validas.txt | 1.6.2 |
-| 10 | Visual | sem melhoria: revisão das telas e da animação | — |
-| 11 | Correção | aprovado: ênfase fica como digitada | 1.6.3 |
-| 12 | Correção | aprovado: termos de contabilidade | 1.7.1 |
+| Ciclo | Frente | Resultado | Versão | Testes do Core antes de publicar |
+|---|---|---|---|---|
+| 1 | Correção | aprovado: cidades de duas palavras | 1.4.3 | 1297, 0 falhas |
+| 2 | Visual | aprovado: dica nas caixas vazias | 1.5.0 | 1297, 0 falhas (Core igual ao da 1.4.3) |
+| 3 | Desempenho | aprovado: Hunspell em paralelo, StripAccents sem cópia | 1.5.1 | 1297, 0 falhas |
+| 4 | Desempenho | aprovado: arquivos carregam juntos | 1.5.2 | 1297, 0 falhas |
+| 5 | Correção | sem melhoria: lote 9, 39 de 40 já certas | — | — |
+| 6 | Desempenho | sem melhoria: Hunspell em blocos | — | — |
+| 7 | Visual | aprovado: moldura de foco | 1.6.0 | 1297, 0 falhas (Core igual ao da 1.5.2) |
+| 8 | Correção | aprovado: par mínimo 3 no acento pela seguinte | 1.6.1 | 1298, 0 falhas |
+| 9 | Desempenho | aprovado: data/validas.txt | 1.6.2 | 1299, 0 falhas |
+| 10 | Visual | sem melhoria: revisão das telas e da animação | — | — |
+| 11 | Correção | aprovado: ênfase fica como digitada | 1.6.3 | 1309, 0 falhas |
+| 12 | Correção | aprovado: termos de contabilidade | 1.7.1 | 1325, 0 falhas |
 
-Parada: 12 ciclos (o limite). O Pix (1.7.0) foi pedido do autor no meio da rodada e não conta como ciclo.
+Parada: 12 ciclos (o limite). O Pix (1.7.0) foi pedido do autor no meio da rodada e não conta como ciclo. Todas as versões da tabela têm release no GitHub com o `Acerto-Setup-<versão>.exe` (conferido pela API).
 
 ## Histórico
 
