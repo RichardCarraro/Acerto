@@ -113,6 +113,7 @@ public class FixedListGuardTests(SharedCorrector s) : IClassFixture<SharedCorrec
         "encima", "secretario", "musica", "tao", "acoes", "apos", "porem", "salario", "experiencia", "conferencia",
         "faco", "video", "oque", "emfim", "anida", "intendi", "intender", "intendeu", "amanha", "medico", "titulo",
         "transito", "policia", "noticia", "agencia", "irma", "dai",
+        "negocio", // 1401 × no corpus contra 62899 × "negócio"; "eu negocio" é raro
         "deslise", "estrupo", // raras/arcaicas no dicionário; na prática, sempre erro de deslize/estupro
         "exite", "exitar", "exitou", "exitei", "exitando", // 77 × "exite" no corpus contra 1075 × "hesite"
     };
@@ -164,6 +165,10 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
     [Theory]
     [InlineData("chegara", "chegará")] [InlineData("tera", "terá")] [InlineData("fara", "fará")] [InlineData("podera", "poderá")]
     public void Valida_Rara_Ganha_Acento(string typed, string want) => Assert.Equal(want, _c.Correct(typed)?.Replacement);
+    // Acima do piso da regra acima (1401 × "negocio", de "eu negocio" e de quem esquece o acento): vem da lista
+    [Theory]
+    [InlineData("negocio", "negócio")] [InlineData("negocios", "negócios")]
+    public void Valida_Da_Lista_Ganha_Acento(string typed, string want) => Assert.Equal(want, _c.Correct(typed)?.Replacement);
     [Theory]
     [InlineData("esta")] [InlineData("sabia")] [InlineData("pais")] [InlineData("critica")] [InlineData("secretaria")]
     public void Valida_Comum_Fica(string typed) => Assert.Null(_c.Correct(typed));

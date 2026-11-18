@@ -117,6 +117,7 @@ conteudo	conteúdo
 agua	água
 familia	família
 historia	história
+negocio	negócio
 experiencia	experiência
 importancia	importância
 frequencia	frequência
