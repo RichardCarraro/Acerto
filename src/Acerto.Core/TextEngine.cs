@@ -31,8 +31,9 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
     /// <param name="Suffix">Correção pela palavra seguinte: o que veio depois (" muito"); o Tab desfaz as duas.</param>
     /// <param name="Learns">Desfazer ensina a palavra ("nao" de propósito). Não para "e"/"é": as duas são normais.</param>
     private readonly record struct Undo(string Typed, string Result, string? Prev, string Suffix = "", bool Learns = true);
-    /// <summary>Palavra que ficou como estava, seguida de espaço: a próxima pode mostrar que faltou acento ("e muito").</summary>
-    private readonly record struct Pending(string Word, string? Prev);
+    /// <summary>Palavra seguida de espaço: a próxima pode mostrar que faltou acento ("e muito"). Se ela já foi corrigida
+    /// (<paramref name="Corrected"/>), só as locuções da lista valem ("sao" → "são", e "paulo" pede "São").</summary>
+    private readonly record struct Pending(string Word, string? Prev, bool Corrected = false);
 
     private readonly StringBuilder _word = new();
     private bool _tokenKnown;      // vimos o começo deste token?
@@ -315,7 +316,7 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
             // a palavra anterior pode ter ficado sem acento: "isso e muito" → "é" (não depois de "." ou ":", que esperam)
             string? pendingFinal = pending?.Word;
             if (pending is { } pw && _deferred is null
-                && corrector.CorrectByNext(pw.Word, pw.Prev, result.ToLower(TextUtil.PtBr)) is { } byNext)
+                && corrector.CorrectByNext(pw.Word, pw.Prev, result.ToLower(TextUtil.PtBr), onlyPairs: pw.Corrected) is { } byNext)
             {
                 if (_byNextUndone && string.Equals(pw.Word, _lastByNext, StringComparison.OrdinalIgnoreCase))
                     _lastByNext = null; // apagou a troca e digitou de novo: fica como quis
@@ -335,9 +336,10 @@ public sealed class TextEngine(Corrector corrector, Action<string> learn)
             // Conta no histórico o que ficou no texto. A palavra que espera a seguinte só entra com a forma final:
             // contada antes, o "esta" recém-digitado já pesaria contra "está". "." e ":" ainda podem virar e-mail.
             // shortcut: a que espera e é abandonada (Backspace, Tab, número em seguida) não é contada; raro, aceito.
-            if (pending is { } done) corrector.Record(done.Prev, pendingFinal!);
-            if (corr is null && c == ' ') _pending = new Pending(result, _prev);
-            else if (_deferred is null) corrector.Record(_prev, result);
+            if (pending is { Corrected: false } done) corrector.Record(done.Prev, pendingFinal!);
+            if (c == ' ' && corr is not { Kind: CorrectionKind.Shortcut }) _pending = new Pending(result, _prev, corr is not null);
+            // a corrigida conta já, como antes; a locução que ainda pode trocá-la ("são" → São) não recontará
+            if ((corr is not null || c != ' ') && _deferred is null) corrector.Record(_prev, result);
             completed = result;
             _capNext = false;
         }

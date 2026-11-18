@@ -33,6 +33,7 @@ de um bom teclado de celular. Trabalhe em ciclos curtos, sempre medindo antes e 
 | Contexto | `$E data contexto <corpus> 30000 perfil=agressivo` | ↑ A e B, C estragadas não sobe |
 | Acento pela seguinte | `$E data direita <corpus> 30000 perfil=agressivo` | ↑ B, C não sobe |
 | Sugestões | `$E data sugestoes <corpus> 2000 perfil=agressivo` | ↑ teclas economizadas, ↑ próxima palavra |
+| Desempenho | `$E data desempenho tests/Acerto.Eval/frases-reais.txt <corpus> 20000 perfil=agressivo` (3 vezes, mediana; com a máquina parada) | ↓ carga e p99; **assinatura das respostas igual** (otimização não muda resposta) |
 | Testes | `dotnet test tests/Acerto.Core.Tests -nologo --logger "console;verbosity=normal" 2>&1 \| grep -E "\[FAIL\]\|Com falha\|Total de testes\|Aprovados\|Expected\|Actual" \| tail -30` (≈ 6 min) | resumo com `Com falha: 0` (ou só `Aprovados: N`). Saída sem o resumo **não** é aprovação: o filtro errou, rode de novo |
 
 `contexto` e `direita` levam ~5 min: rode em segundo plano e em paralelo, com saída em arquivo.
@@ -90,6 +91,7 @@ Onde mexer, do mais barato ao mais caro:
 
 | Data | Versão | Mudança | Antes → depois |
 |---|---|---|---|
+| 2026-11-18 | 1.4.3 | Cidades e estados de duas palavras em `locucoes.txt` (`sao paulo` → São Paulo, `belo horizonte`, `porto alegre`, `santa catarina`, `mato grosso`, `em salvador`); a palavra já corrigida também espera a seguinte, só para as locuções da lista (`sao` → `são` → `São`). `contexto` e `direita` não contam troca só de maiúscula como estrago (o corpus é minúsculo). Lote 8 (40 frases da vida real). Modo `desempenho` no Eval | frases reais 92,6% (419) → 93,2% (459), 0 estragos; contexto, direita, sintéticos e sugestões iguais (C 573 e 189); desempenho: carga 1268 ms + corretor 2638 ms, Correct p99 122 µs, Suggest p99 3,9 ms, 268 MB |
 | 2026-11-17 | 1.3.9 | `e` sozinho antes de dois-pontos vira `é` (`a senha e: abc123`; notícias: 16 `é:` × 0 `e:`), com palavra antes (rótulo `E:` no começo fica) e fora da barra de endereço. Zera a contagem de ciclos sem melhoria | frases reais 92,4% → 92,6% de 419, 0 estragos |
 | 2026-11-17 | — | Ciclo sem melhoria: lote 7 (30 frases longas com erros de digitação) teve 28 certas; as 2 falhas (`dela e semana`, `econômica esta complicada`) não têm par no corpus (`é semana` = 0, `está complicada` = 3 < 5). Lote guardado como regressão. **1º ciclo seguido sem melhoria** | frases reais 92,4% de 419 |
 | 2026-11-16 | 1.3.8 | Lote 6 (internetês de chat: `pq`, `qnd`, `msm`, `vdd`, `sdds`, `tmj`, `kkk`): 36 de 39 já certas; `dboa` virava `boa` → protegidas. `não da` × `não dá` é 139 × 1015 (7:1, e "não da forma…" existe): fica fora das locuções | frases reais 92,3% de 389, 0 estragos |

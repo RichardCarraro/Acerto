@@ -224,6 +224,10 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
     [InlineData(" todas as vezes ", " todas as vezes ")] // exceção de três palavras
     [InlineData(" a viajem foi boa ", " a viagem foi boa ")]
     [InlineData(" disse ai ", " disse ai ")]            // sem locução, "ai" fica
+    [InlineData(" moro em sao paulo ", " moro em São Paulo ")] // "sao" já virou "são": a seguinte ainda decide a maiúscula
+    [InlineData(" fui a belo horizonte ", " fui a Belo Horizonte ")]
+    [InlineData(" mora em salvador ", " mora em Salvador ")]
+    [InlineData(" o salvador da pátria ", " o salvador da pátria ")]
     public void Locucoes(string typed, string want) => Assert.Equal(want, TypeAll(typed));
 
     // A lista embutida manda dai → daí; depois de "bom", é dia. No começo da frase a lista vale ("pao" não vira "Não").

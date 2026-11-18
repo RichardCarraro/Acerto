@@ -14,7 +14,9 @@ int samples = positional.Length > 2 && int.TryParse(positional[2], out var s0) ?
 var userDir = Path.Combine(Path.GetTempPath(), "acerto-eval-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(userDir);
 File.WriteAllText(Path.Combine(userDir, "atalhos.txt"), ""); // sem atalhos: eles mascaram o resultado
+var relogioCarga = System.Diagnostics.Stopwatch.StartNew(); // para o modo desempenho: é a carga que o app faz ao abrir
 var data = CoreData.Load(dataDir, userDir);
+var tempoLoad = relogioCarga.Elapsed;
 // perfil=agressivo usa o perfil padrão do app; sem isso, o cuidadoso
 var opt = args.Contains("perfil=agressivo") ? TypoOptions.Aggressive : TypoOptions.Careful;
 string? prevArg = args.FirstOrDefault(a => a.StartsWith("ant="))?[4..]; // palavra anterior, para o modo explicar
@@ -29,7 +31,86 @@ foreach (var kv in args.Where(a => a.Contains('=') && !a.StartsWith("perfil=") &
     opt = (TypoOptions)opt.GetType().GetMethod("<Clone>$")!.Invoke(opt, null)!;
     prop.SetValue(opt, value);
 }
+relogioCarga.Restart();
 var corrector = new Corrector(data, opt);
+var tempoCorretor = relogioCarga.Elapsed;
+
+// modo "desempenho": AcertoEval data desempenho <frases-reais.txt> <corpus.txt> [palavras=20000] perfil=agressivo
+// Carga (CoreData.Load e Corrector), memória depois de carregar, e média/p50/p99 de Correct por palavra e de Suggest
+// por tecla (cada prefixo da palavra), depois de uma volta de aquecimento. Rode 3 vezes e use a mediana.
+// "assinatura" resume todas as respostas: otimização só vale se ela não mudar.
+if (positional.Length > 1 && positional[1] == "desempenho")
+{
+    int quantas = positional.Length > 4 ? int.Parse(positional[4]) : 20000;
+    var palavra = new System.Text.RegularExpressions.Regex(@"[\p{L}-]+");
+    var itens = new List<(string? Prev, string Word)>();
+    void Junta(string linha)
+    {
+        string? prev = BigramModel.SentenceStart;
+        foreach (System.Text.RegularExpressions.Match m in palavra.Matches(linha))
+        {
+            if (itens.Count >= quantas) return;
+            itens.Add((prev, m.Value));
+            prev = m.Value.ToLowerInvariant();
+        }
+    }
+    foreach (var l in File.ReadLines(positional[2]).Where(l => l.Length > 0 && !l.StartsWith('#'))) Junta(l.Split('\t')[0]);
+    foreach (var l in File.ReadAllLines(positional[3]).TakeLast(20000)) { if (itens.Count >= quantas) break; Junta(l.Split('\t')[^1]); }
+
+    GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect();
+    long gerenciada = GC.GetTotalMemory(true);
+    using var proc = System.Diagnostics.Process.GetCurrentProcess();
+    long privada = proc.PrivateMemorySize64, conjunto = proc.WorkingSet64;
+
+    var assinatura = new System.Text.StringBuilder();
+    double[] TempoCorrect()
+    {
+        var t = new double[itens.Count];
+        for (int i = 0; i < itens.Count; i++)
+        {
+            long a = System.Diagnostics.Stopwatch.GetTimestamp();
+            corrector.Correct(itens[i].Word, false, itens[i].Prev);
+            t[i] = System.Diagnostics.Stopwatch.GetElapsedTime(a).TotalMicroseconds;
+        }
+        return t;
+    }
+    double[] TempoSuggest()
+    {
+        var t = new List<double>();
+        foreach (var (prev, w) in itens)
+            for (int k = 1; k <= w.Length; k++)
+            {
+                long a = System.Diagnostics.Stopwatch.GetTimestamp();
+                corrector.Suggester.Suggest(prev, w[..k].ToLowerInvariant());
+                t.Add(System.Diagnostics.Stopwatch.GetElapsedTime(a).TotalMicroseconds);
+            }
+        return t.ToArray();
+    }
+    TempoCorrect(); TempoSuggest(); // aquecimento (JIT e caches)
+    var tc = TempoCorrect(); var ts = TempoSuggest();
+
+    foreach (var (prev, w) in itens)
+    {
+        assinatura.Append(corrector.Correct(w, false, prev)?.Replacement).Append('|');
+        assinatura.Append(string.Join(",", corrector.Suggester.Suggest(prev, w.ToLowerInvariant()[..Math.Min(3, w.Length)]))).Append('|');
+    }
+    var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(assinatura.ToString())))[..16];
+
+    static string Resumo(double[] t)
+    {
+        var o = t.OrderBy(x => x).ToArray();
+        double P(double q) => o[Math.Min(o.Length - 1, (int)(q * o.Length))];
+        return string.Create(CultureInfo.GetCultureInfo("pt-BR"), $"{o.Length} chamadas; média {t.Average():F1} µs, p50 {P(0.5):F1} µs, p99 {P(0.99):F1} µs, máx {o[^1]:F0} µs");
+    }
+    var ptd = CultureInfo.GetCultureInfo("pt-BR");
+    Console.WriteLine(string.Create(ptd, $"Carga: CoreData.Load {tempoLoad.TotalMilliseconds:F0} ms; Corrector {tempoCorretor.TotalMilliseconds:F0} ms"));
+    Console.WriteLine(string.Create(ptd, $"Memória depois de carregar: gerenciada {gerenciada / 1048576.0:F0} MB; privada {privada / 1048576.0:F0} MB; conjunto de trabalho {conjunto / 1048576.0:F0} MB"));
+    Console.WriteLine($"Correct por palavra: {Resumo(tc)}");
+    Console.WriteLine($"Suggest por tecla:   {Resumo(ts)}");
+    Console.WriteLine($"Assinatura das respostas: {hash} ({itens.Count} palavras)");
+    Directory.Delete(userDir, true);
+    return;
+}
 
 // modo diagnóstico: AcertoEval data explicar palavra1 palavra2 ...
 if (positional.Length > 1 && positional[1] == "explicar")
@@ -263,8 +344,8 @@ if (positional.Length > 1 && positional[1] == "contexto")
                     // C) palavra certa sem acento: não pode mudar
                     plain++;
                     var r = corrector.Correct(tok, false, prev);
-                    // maiúscula de nome (Kind Case) não conta: o corpus é todo minúsculo
-                    if (r is { Kind: not CorrectionKind.Case }) { spoiled++; if (spoiledSamples.Count < 24) spoiledSamples.Add($"{prev} {tok}→{r.Replacement}"); }
+                    // maiúscula de nome não conta (Kind Case, ou locução de cidade: "porto alegre" → Alegre): o corpus é todo minúsculo
+                    if (r is { Kind: not CorrectionKind.Case } && !string.Equals(r.Replacement, tok, StringComparison.OrdinalIgnoreCase)) { spoiled++; if (spoiledSamples.Count < 24) spoiledSamples.Add($"{prev} {tok}→{r.Replacement}"); }
                 }
             }
             prev = tok;
@@ -316,7 +397,7 @@ if (positional.Length > 1 && positional[1] == "direita")
             else
             {
                 plain++;
-                if (r is not null) { spoiled++; var k = $"{prev} {tok}→{r.Replacement} {next}"; spoiledBy[k] = spoiledBy.GetValueOrDefault(k) + 1; }
+                if (r is not null && !string.Equals(r.Replacement, tok, StringComparison.OrdinalIgnoreCase)) { spoiled++; var k = $"{prev} {tok}→{r.Replacement} {next}"; spoiledBy[k] = spoiledBy.GetValueOrDefault(k) + 1; }
             }
         }
     }

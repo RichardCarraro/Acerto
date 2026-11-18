@@ -440,3 +440,45 @@ a situacao economica esta complicada	A situação econômica está complicada
 precisamos tomar uma decisao logo	Precisamos tomar uma decisão logo
 os alunos fizeram uma excelente apresentacao	Os alunos fizeram uma excelente apresentação
 o hospital esta sem medicos suficientes	O hospital está sem médicos suficientes
+
+# lote 8: vida real (trabalho, contas, compras, cidades de duas palavras); Rio de Janeiro fica como regressão: três palavras
+vou pra sao paulo semana que vem	Vou pra São Paulo semana que vem
+ela mora no rio de janeiro	Ela mora no Rio de Janeiro
+a reuniao vai ser em belo horizonte	A reunião vai ser em Belo Horizonte
+passei o fim de semana em porto alegre	Passei o fim de semana em Porto Alegre
+curti muito a viagem para florianopolis	Curti muito a viagem para Florianópolis
+vou passar as ferias em salvador	Vou passar as férias em Salvador
+o negocio fechou ontem	O negócio fechou ontem
+o pagamento ja caiu na conta	O pagamento já caiu na conta
+vou mandar o orcamento ate amanha	Vou mandar o orçamento até amanhã
+tem como voce me ligar depois do almoco	Tem como você me ligar depois do almoço
+bom dia pessoal, segue o relatorio em anexo	Bom dia pessoal, segue o relatório em anexo
+obrigado pela atencao	Obrigado pela atenção
+fico no aguardo do retorno	Fico no aguardo do retorno
+a gente se fala amanha	A gente se fala amanhã
+nossa que video incrivel	Nossa que vídeo incrível
+parabens pelo aniversario, tudo de bom	Parabéns pelo aniversário, tudo de bom
+alguem sabe onde fica a farmacia mais proxima	Alguém sabe onde fica a farmácia mais próxima
+o onibus atrasou de novo	O ônibus atrasou de novo
+preciso trocar a senha do email	Preciso trocar a senha do email
+a internet caiu aqui em casa	A internet caiu aqui em casa
+a promocao acaba na sexta	A promoção acaba na sexta
+nao consegui acessar o sistema	Não consegui acessar o sistema
+o boleto vence dia dez	O boleto vence dia dez
+vamos marcar um cafe semana que vem	Vamos marcar um café semana que vem
+o tecnico vem consertar a geladeira	O técnico vem consertar a geladeira
+a medica pediu uns exames	A médica pediu uns exames
+esqueci o guarda chuva no onibus	Esqueci o guarda chuva no ônibus
+o cachorro fugiu de novo kkkk	O cachorro fugiu de novo kkkk
+me manda a localizacao	Me manda a localização
+o salario caiu hoje	O salário caiu hoje
+sera que vai chover	Será que vai chover
+o codigo de rastreio nao funciona	O código de rastreio não funciona
+consegue revisar o contrato ate sexta	Consegue revisar o contrato até sexta
+a policia fechou a rua	A polícia fechou a rua
+o predio ficou sem agua	O prédio ficou sem água
+vou no medico amanha cedo	Vou no médico amanhã cedo
+o negocio dele esta indo bem	O negócio dele está indo bem
+fechei um bom negocio hoje	Fechei um bom negócio hoje
+o horario de atendimento mudou	O horário de atendimento mudou
+qual o endereco da loja	Qual o endereço da loja

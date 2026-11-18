@@ -75,3 +75,16 @@ fiquei la	fiquei lá
 estava la	estava lá
 estou la	estou lá
 chegou la	chegou lá
+# cidades e estados de duas palavras: a seguinte dá a maiúscula à anterior e a anterior à seguinte (no corpus de
+# notícias quase sempre com maiúscula). Ficam de fora as que têm outro sentido comum: campo grande, rio grande, ponta
+# grossa ("caneta de ponta grossa"). Rio de Janeiro tem três palavras e a regra só alcança a vizinha.
+são paulo	São Paulo
+belo horizonte	Belo Horizonte
+porto alegre	Porto Alegre
+santa catarina	Santa Catarina
+espírito santo	Espírito Santo
+mato grosso	Mato Grosso
+são luís	São Luís
+em salvador	em Salvador
+para salvador	para Salvador
+pra salvador	pra Salvador

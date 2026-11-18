@@ -208,7 +208,8 @@ public sealed class Corrector
     /// <param name="prev">Palavra antes dela, como em <see cref="Correct"/>. Sem ela (depois de vírgula) não troca:
     /// ali "e" é quase sempre a conjunção.</param>
     /// <param name="next">Palavra seguinte, em minúsculas, como ficou no texto.</param>
-    public Correction? CorrectByNext(string word, string? prev, string next)
+    /// <param name="onlyPairs">Só as locuções da lista: a palavra já foi corrigida e não ganha acento pela estatística.</param>
+    public Correction? CorrectByNext(string word, string? prev, string next, bool onlyPairs = false)
     {
         // locução da lista à mão: "a vontade" → à vontade, "as vezes" → às vezes. Com a anterior na chave ("fica a
         // vontade") a entrada vale só nesse caso, e "todas as vezes" → "todas as vezes" serve de exceção à de duas.
@@ -220,6 +221,7 @@ public sealed class Corrector
             else if (_data.Pairs.TryGet(lower + " " + next, out var two)) rep = two.Split(' ')[0];
             if (rep is not null) return rep == lower ? null : new Correction(TextUtil.ApplyCase(word, rep), CorrectionKind.Fixed);
         }
+        if (onlyPairs) return null;
 
         var o = CarefulField ? TypoOptions.Careful : _typos.Options;
         if (o.NextAccentRatio <= 0 || prev is null || word.Length == 0 || TextUtil.IsMixedCase(word) || (TextUtil.IsAllCaps(word) && word.Length > 1)) return null;
