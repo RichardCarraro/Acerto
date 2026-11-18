@@ -8,6 +8,10 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $publish = Join-Path $root 'publish'
 
+# Acertô aberto de dentro de publish\ trava os arquivos: fecha antes, em vez de publicar numa pasta alternativa
+Get-Process -Name Acerto -ErrorAction SilentlyContinue |
+    Where-Object { $_.Path -and $_.Path.StartsWith($publish, [StringComparison]::OrdinalIgnoreCase) } |
+    ForEach-Object { Stop-Process -Id $_.Id -Force; $_.WaitForExit(5000) | Out-Null }
 if (Test-Path $publish) { Remove-Item $publish -Recurse -Force }
 dotnet publish (Join-Path $root 'src\Acerto.Windows') -c Release -r win-x64 --self-contained -nologo -v q `
     -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `

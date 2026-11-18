@@ -484,7 +484,6 @@ $RECYCLE.BIN/
 *.swp
 dist/
 .superpowers/
-publish-novo/
 
 # Vídeo (HyperFrames): artefatos de prévia e render
 video/**/.hyperframes/
