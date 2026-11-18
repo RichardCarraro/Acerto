@@ -34,6 +34,12 @@ internal static class Shots
                         w.Show();
                         await Task.Delay(500);
                         Save(w, Path.Combine(outDir, $"main-{page}.png"));
+                        if (page == "words" && w.FindName("WordBox") is TextBox box) // a dica some quando há texto
+                        {
+                            box.Text = "Acertô";
+                            await Task.Delay(200);
+                            Save(w, Path.Combine(outDir, "main-words-com-texto.png"));
+                        }
                         w.Close();
                     }
                     var f = new TrayFlyout(controller) { PlaceAtTray = false, Left = -30000, Top = 0, ShowActivated = false };

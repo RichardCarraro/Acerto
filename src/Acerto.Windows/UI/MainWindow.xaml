@@ -200,12 +200,18 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <TextBlock Text="Atalho" Style="{StaticResource RowHint}" Margin="0,0,0,4" />
-                                    <TextBox x:Name="ShortcutTrigger" KeyDown="ShortcutBox_KeyDown" />
+                                    <Grid>
+                                        <TextBox x:Name="ShortcutTrigger" KeyDown="ShortcutBox_KeyDown" AutomationProperties.Name="Atalho" />
+                                        <TextBlock Style="{StaticResource Dica}" Tag="{Binding ElementName=ShortcutTrigger}" Text="vlw" />
+                                    </Grid>
                                 </StackPanel>
                                 <TextBlock Grid.Column="1" Style="{StaticResource Glyph}" Text="&#xE72A;" Margin="12,20,12,0" />
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Vira o texto" Style="{StaticResource RowHint}" Margin="0,0,0,4" />
-                                    <TextBox x:Name="ShortcutText" KeyDown="ShortcutBox_KeyDown" />
+                                    <Grid>
+                                        <TextBox x:Name="ShortcutText" KeyDown="ShortcutBox_KeyDown" AutomationProperties.Name="Vira o texto" />
+                                        <TextBlock Style="{StaticResource Dica}" Tag="{Binding ElementName=ShortcutText}" Text="valeu" />
+                                    </Grid>
                                 </StackPanel>
                                 <Button Grid.Column="3" Content="Adicionar" Style="{StaticResource AccentButtonStyle}"
                                         Margin="12,20,0,0" Click="AddShortcut_Click" />
@@ -243,7 +249,11 @@
                             <DockPanel>
                                 <Button DockPanel.Dock="Right" Content="Adicionar" Style="{StaticResource AccentButtonStyle}"
                                         Margin="12,0,0,0" Click="AddWord_Click" />
-                                <TextBox x:Name="WordBox" KeyDown="WordBox_KeyDown" />
+                                <Grid>
+                                    <TextBox x:Name="WordBox" KeyDown="WordBox_KeyDown" AutomationProperties.Name="Nova palavra" />
+                                    <TextBlock Style="{StaticResource Dica}" Tag="{Binding ElementName=WordBox}"
+                                               Text="Nova palavra, como um nome ou uma sigla" />
+                                </Grid>
                             </DockPanel>
                         </Border>
                         <TextBlock x:Name="WordsEmpty" Style="{StaticResource RowHint}" Margin="2,12,0,0"
@@ -275,7 +285,11 @@
                             <DockPanel>
                                 <Button DockPanel.Dock="Right" Content="Adicionar" Style="{StaticResource AccentButtonStyle}"
                                         Margin="12,0,0,0" Click="AddApp_Click" />
-                                <TextBox x:Name="AppBox" KeyDown="AppBox_KeyDown" />
+                                <Grid>
+                                    <TextBox x:Name="AppBox" KeyDown="AppBox_KeyDown" AutomationProperties.Name="Programa a excluir" />
+                                    <TextBlock Style="{StaticResource Dica}" Tag="{Binding ElementName=AppBox}"
+                                               Text="Nome do programa, como Code.exe" />
+                                </Grid>
                             </DockPanel>
                         </Border>
                         <ItemsControl x:Name="AppList" Margin="0,8,0,0">

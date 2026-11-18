@@ -28,6 +28,22 @@
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
+    <!-- Dica cinza dentro da caixa vazia, como o PlaceholderText do WinUI (o TextBox do WPF não tem).
+         Tag = a caixa; some quando há texto. -->
+    <Style x:Key="Dica" TargetType="TextBlock">
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="11,0,8,1" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        <Setter Property="Visibility" Value="Collapsed" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Tag.Text.Length, RelativeSource={RelativeSource Self}}" Value="0">
+                <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
     <!-- Ícones da fonte do sistema (Segoe Fluent Icons no Windows 11, MDL2 no 10) -->
     <Style x:Key="Glyph" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets" />
