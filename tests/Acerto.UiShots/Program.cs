@@ -40,6 +40,8 @@ internal static class Shots
                             await Task.Delay(200);
                             Save(w, Path.Combine(outDir, "main-words-com-texto.png"));
                         }
+                        if (page == "home") // moldura de foco (Tab) no menu lateral e no 1º interruptor, sem tirar o foco de ninguém
+                            Save(w, Path.Combine(outDir, "main-home-foco.png"), First<RadioButton>(w), First<CheckBox>(w));
                         w.Close();
                     }
                     var f = new TrayFlyout(controller) { PlaceAtTray = false, Left = -30000, Top = 0, ShowActivated = false };
@@ -122,8 +124,20 @@ internal static class Shots
         page.Close();
     }
 
+    private static T? First<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var c = VisualTreeHelper.GetChild(root, i);
+            if (c is T t) return t;
+            if (First<T>(c) is { } found) return found;
+        }
+        return null;
+    }
+
     /// <summary>Desenha a janela sobre a cor de fundo do tema (o Mica/acrílico de verdade só existe na tela).</summary>
-    private static void Save(Window w, string path)
+    /// <param name="focused">Controles que ganham a moldura de foco desenhada por cima (o FocusVisualStyle deles), como no Tab.</param>
+    private static void Save(Window w, string path, params FrameworkElement?[] focused)
     {
         int width = (int)w.ActualWidth, height = (int)w.ActualHeight;
         var visual = new DrawingVisual();
@@ -132,6 +146,20 @@ internal static class Shots
             var bg = w.TryFindResource("SolidBackgroundFillColorBaseBrush") as Brush ?? Brushes.White;
             dc.DrawRectangle(bg, null, new Rect(0, 0, width, height));
             dc.DrawRectangle(new VisualBrush(w) { Stretch = Stretch.None, AlignmentX = AlignmentX.Left, AlignmentY = AlignmentY.Top }, null, new Rect(0, 0, width, height));
+            foreach (var el in focused)
+            {
+                if (el is null) continue;
+                var style = el.FocusVisualStyle ?? throw new InvalidOperationException($"{el.GetType().Name} sem moldura de foco");
+                const double pad = 6; // a moldura passa um pouco da borda do controle
+                var box = new Grid { Width = el.ActualWidth + 2 * pad, Height = el.ActualHeight + 2 * pad };
+                box.Children.Add(new Control { Style = style, Margin = new Thickness(pad) });
+                box.Measure(new Size(box.Width, box.Height));
+                box.Arrange(new Rect(0, 0, box.Width, box.Height));
+                box.UpdateLayout();
+                var at = el.TranslatePoint(new Point(-pad, -pad), w);
+                dc.DrawRectangle(new VisualBrush(box) { Stretch = Stretch.None, ViewboxUnits = BrushMappingMode.Absolute, Viewbox = new Rect(0, 0, box.Width, box.Height) },
+                    null, new Rect(at, new Size(box.Width, box.Height)));
+            }
         }
         var bmp = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
         bmp.Render(visual);
