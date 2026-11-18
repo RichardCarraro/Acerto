@@ -91,6 +91,7 @@ Onde mexer, do mais barato ao mais caro:
 
 | Data | Versão | Mudança | Antes → depois |
 |---|---|---|---|
+| 2026-11-18 | — | Ciclo sem melhoria (desempenho): consultas ao Hunspell em blocos de 4096 (`Partitioner.Create`) em vez de uma tarefa por palavra. Respostas iguais, sem ganho: criar o corretor 1390–1463 ms antes, 1516–1818 ms depois. O limite parece ser o próprio Hunspell, não a divisão do trabalho. **2º ciclo seguido sem melhoria** | assinatura de referência com o lote 9: 92D60D7C6C833BD9 |
 | 2026-11-18 | — | Ciclo sem melhoria: lote 9 (40 frases de escola, saúde, compras, esporte, família e trabalho) teve 39 certas; a falha (`pais e na quinta`) é o `e` → `é` sem par no corpus (`é na` = fraco), já em "Tentado e reprovado". Lote guardado como regressão. **1º ciclo seguido sem melhoria** | frases reais 93,2% (459) → 93,6% (499), 0 estragos |
 | 2026-11-18 | 1.5.2 | Desempenho ao abrir: `CoreData.Load` lê o dicionário Hunspell, a frequência e os bigramas ao mesmo tempo (são independentes); o erro de arquivo faltando sai como antes | CoreData.Load 1268 → 875 ms (mediana de 3); criar o corretor igual (~1500 ms); assinatura das respostas igual (22B72E41DDBD6C5A) |
 | 2026-11-18 | 1.5.1 | Desempenho ao abrir: as ~370 mil consultas ao Hunspell do `TypoRanker` e do `AccentIndex` rodam em paralelo (`Lexicon.AreValid`, inserção na mesma ordem); `StripAccents` devolve a própria palavra quando ela é só ASCII (a maioria; roda também a cada tecla nas sugestões) | criar o corretor 2638 → 1501 ms (mediana de 3); CoreData.Load igual (~1270 ms); Suggest média 644 → 595 µs, p99 3,9 → 3,4 ms; Correct p99 122 → 112 µs; memória 268 → 279 MB; assinatura das respostas igual (22B72E41DDBD6C5A), frases e sintéticos iguais |
@@ -110,6 +111,7 @@ Onde mexer, do mais barato ao mais caro:
 
 ### Tentado e reprovado / pistas
 
+- **Hunspell em blocos maiores** (`Partitioner.Create(0, n, 4096)`): sem ganho sobre `Parallel.For` (o paralelo já dá ~2× com 16 núcleos). Para abrir mais rápido de verdade, só evitando as 370 mil consultas ao abrir (por exemplo, gravar a validade junto da frequência na hora de gerar os dados).
 - **Palavra válida rara trocada pela vizinha que a anterior pede** (`tudo cetro` → `certo`, par ≥ 50, par digitado = 0):
   +75 estragos em 416 mil (`de menus` → `menos`). Antes de tentar de novo, crie no Eval uma medida de "erro que
   vira outra palavra válida" para ver o ganho.
