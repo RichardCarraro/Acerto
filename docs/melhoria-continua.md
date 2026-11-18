@@ -100,11 +100,11 @@ olhadas uma a uma.
 | Correção | contexto A com / sem; B; C | 93,0% / 89,7%; 83,0%; 573 | 93,0% / 89,6%; 83,1%; 576 |
 | Correção | direita B; C | 32,7%; 189 | 34,3%; 194 |
 | Correção | sugestões: próxima (1ª / 3); Tab economiza | 11,7% / 20,9%; 28,7% | iguais |
-| Desempenho | CoreData.Load | 1268 ms (1513, 1265, 1268) | ~920 ms (938, 923, 865) |
-| Desempenho | criar o Corrector | 2638 ms (2679, 2638, 2580) | 359 ms (350, 393, 359) |
-| Desempenho | Correct por palavra: média / p99 | 47,5 µs / 122 µs | 49 µs / 117 µs |
-| Desempenho | Suggest por tecla: média / p99 | 644 µs / 3,9 ms | 607 µs / 3,8 ms |
-| Desempenho | memória (gerenciada / conjunto de trabalho) | 177 / 268 MB | 189 / 265 MB |
+| Desempenho | CoreData.Load | 1268 ms (1513, 1265, 1268) | 898 ms (898, 992, 876) |
+| Desempenho | criar o Corrector | 2638 ms (2679, 2638, 2580) | 361 ms (361, 386, 339) |
+| Desempenho | Correct por palavra: média / p99 | 47,5 µs / 122 µs | 55,6 µs / 121 µs (entrada mudou: frases-reais ganhou 140 frases) |
+| Desempenho | Suggest por tecla: média / p99 | 644 µs / 3,9 ms | 608 µs / 3,7 ms |
+| Desempenho | memória (gerenciada / conjunto de trabalho) | 177 / 268 MB | 189 / 269 MB |
 | Visual | caixas de texto vazias | sem dica nem nome acessível | dica cinza e nome acessível |
 | Visual | foco de teclado (Tab) em interruptores e menus | sem moldura | moldura do Windows 11 |
 | Visual | "Apoie o projeto" | "QR Code em breve" | QR Code, chave e copia e cola (pedido do autor) |
