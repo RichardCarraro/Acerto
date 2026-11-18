@@ -12,6 +12,11 @@ public sealed class SharedRanker
     }
 }
 
+/// <summary>Medem tempo: rodam sozinhas, depois das outras (montar o corretor usa todos os núcleos e falseia o p99).</summary>
+[CollectionDefinition("Tempo", DisableParallelization = true)]
+public sealed class TempoCollection;
+
+[Collection("Tempo")]
 public class TypoRankerTests(SharedRanker s) : IClassFixture<SharedRanker>
 {
     [Theory]

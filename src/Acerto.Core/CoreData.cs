@@ -33,9 +33,15 @@ public sealed class CoreData
 
     public static CoreData Load(string dataDir, string userDir)
     {
-        // os três arquivos grandes não dependem um do outro: carregam juntos (o tempo vira o do mais lento).
+        // os arquivos grandes não dependem um do outro: carregam juntos (o tempo vira o do mais lento).
         // GetResult, não .Result: o erro sai como veio (arquivo faltando), sem AggregateException por cima.
-        var lexicon = Task.Run(() => new Lexicon(Path.Combine(dataDir, "pt_BR.aff"), Path.Combine(dataDir, "pt_BR.dic")));
+        var validas = Path.Combine(dataDir, "validas.txt");
+        var known = Task.Run(() => File.Exists(validas) ? File.ReadLines(validas).ToHashSet(StringComparer.Ordinal) : null);
+        // o inicializador roda depois do construtor: a lista lê enquanto o Hunspell carrega
+        var lexicon = Task.Run(() => new Lexicon(Path.Combine(dataDir, "pt_BR.aff"), Path.Combine(dataDir, "pt_BR.dic"))
+        {
+            CorpusValid = known.GetAwaiter().GetResult(),
+        });
         var frequency = Task.Run(() => new FrequencyTable(Path.Combine(dataDir, "frequencia.txt")));
         var bigrams = Task.Run(() => File.Exists(Path.Combine(dataDir, "bigramas.txt")) ? new BigramModel(Path.Combine(dataDir, "bigramas.txt")) : BigramModel.Empty);
         return Build(dataDir, userDir, lexicon.GetAwaiter().GetResult(), frequency.GetAwaiter().GetResult(), bigrams.GetAwaiter().GetResult());

@@ -95,5 +95,16 @@ public class DataTests(SharedData data) : IClassFixture<SharedData>
         var core = CoreData.Load(SharedData.DataDir, SharedData.NewUserDir());
         Assert.True(core.Lexicon.IsValid("casa"));
         Assert.True(core.Shortcuts.TryGet("tbm", out _));
+        Assert.NotNull(core.Lexicon.CorpusValid); // data/validas.txt carregado: o corretor não pergunta ao Hunspell ao abrir
+    }
+
+    // Os índices do corretor saem dessa lista: se ela não bater com o dicionário e a frequência, as respostas mudam
+    [Fact]
+    public void Validas_BateComDicionarioEFrequencia()
+    {
+        var esperado = Lexicon.ValidasDoCorpus(data.Frequency, data.Lexicon).ToList();
+        var arquivo = File.ReadAllLines(Path.Combine(SharedData.DataDir, "validas.txt"));
+        Assert.True(esperado.SequenceEqual(arquivo),
+            $"data/validas.txt desatualizado ({arquivo.Length} linhas, esperado {esperado.Count}): gere de novo com \"AcertoEval data validas\"");
     }
 }

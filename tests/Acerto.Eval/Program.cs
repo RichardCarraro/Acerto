@@ -186,6 +186,19 @@ if (positional.Length > 1 && positional[1] == "bigramas")
     return;
 }
 
+// modo "validas": AcertoEval data validas > data/validas.txt
+// Palavras da tabela de frequência que o Hunspell aceita. O corretor monta os índices com elas ao abrir; sem o
+// arquivo ele pergunta ao Hunspell uma por uma (~370 mil consultas). Gerar de novo ao trocar frequencia.txt ou o
+// dicionário: DataTests confere que o arquivo bate com os dois.
+if (positional.Length > 1 && positional[1] == "validas")
+{
+    Console.OutputEncoding = new System.Text.UTF8Encoding(false);
+    foreach (var w in Lexicon.ValidasDoCorpus(data.Frequency, new Lexicon(Path.Combine(dataDir, "pt_BR.aff"), Path.Combine(dataDir, "pt_BR.dic"))))
+        Console.Out.Write(w + "\n");
+    Directory.Delete(userDir, true);
+    return;
+}
+
 // modo "protegidas": AcertoEval data protegidas > data/protegidas.txt
 // Palavras do corpus que o dicionário pt-BR (VERO) não tem, mas que o corretor do próprio Windows aceita
 // (estrangeirismos e nomes: mail, voice, office, Frazier). Nunca passam pela regra de digitação.
