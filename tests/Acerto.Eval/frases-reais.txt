@@ -482,3 +482,45 @@ o negocio dele esta indo bem	O negócio dele está indo bem
 fechei um bom negocio hoje	Fechei um bom negócio hoje
 o horario de atendimento mudou	O horário de atendimento mudou
 qual o endereco da loja	Qual o endereço da loja
+
+# lote 9: escola, saúde, compras online, esporte, família, trabalho (39 de 40 já certas; "pais e na quinta" é o e→é sem par no corpus)
+a prova de matematica foi dificil	A prova de matemática foi difícil
+o professor passou muita licao de casa	O professor passou muita lição de casa
+minha filha tirou nota maxima	Minha filha tirou nota máxima
+a reuniao de pais e na quinta	A reunião de pais é na quinta
+preciso marcar uma consulta no dentista	Preciso marcar uma consulta no dentista
+to com dor de cabeca desde ontem	To com dor de cabeça desde ontem
+o remedio acabou, vou na farmacia	O remédio acabou, vou na farmácia
+a vacina da gripe ja esta disponivel	A vacina da gripe já está disponível
+comprei um tenis pela internet	Comprei um tênis pela internet
+o pedido ainda nao chegou	O pedido ainda não chegou
+o frete ficou mais caro que o produto	O frete ficou mais caro que o produto
+vou pedir reembolso	Vou pedir reembolso
+o jogo de ontem foi otimo	O jogo de ontem foi ótimo
+o time perdeu de novo	O time perdeu de novo
+vamos assistir a final juntos	Vamos assistir a final juntos
+o juiz roubou demais	O juiz roubou demais
+a vo fez bolo de cenoura	A vó fez bolo de cenoura
+meu irmao vai casar ano que vem	Meu irmão vai casar ano que vem
+o almoco de domingo vai ser la em casa	O almoço de domingo vai ser lá em casa
+feliz aniversario mae, te amo	Feliz aniversário mãe, te amo
+a geladeira quebrou de novo	A geladeira quebrou de novo
+o eletricista vem amanha de manha	O eletricista vem amanhã de manhã
+a conta de luz veio absurda	A conta de luz veio absurda
+precisamos economizar agua	Precisamos economizar água
+o voo atrasou duas horas	O voo atrasou duas horas
+esqueci o carregador no hotel	Esqueci o carregador no hotel
+a praia estava lotada	A praia estava lotada
+o transito hoje ta horrivel	O trânsito hoje ta horrível
+o onibus nao passou	O ônibus não passou
+perdi a hora e cheguei atrasado	Perdi a hora e cheguei atrasado
+o relatorio precisa ser revisado	O relatório precisa ser revisado
+favor confirmar o recebimento	Favor confirmar o recebimento
+segue em anexo a planilha atualizada	Segue em anexo a planilha atualizada
+a apresentacao ficou muito boa	A apresentação ficou muito boa
+podemos remarcar a reuniao?	Podemos remarcar a reunião?
+estou de ferias ate dia vinte	Estou de férias até dia vinte
+qualquer duvida estou a disposicao	Qualquer dúvida estou à disposição
+o sistema esta fora do ar	O sistema está fora do ar
+a senha expirou, como faco para trocar?	A senha expirou, como faço para trocar?
+obrigada pelo retorno rapido	Obrigada pelo retorno rápido
