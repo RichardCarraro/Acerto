@@ -487,5 +487,6 @@ dist/
 publish-novo/
 
 # Vídeo (HyperFrames): artefatos de prévia e render
-video/.hyperframes/
-video/.impeccable/
+video/**/.hyperframes/
+video/**/.impeccable/
+video/tiktok/assets/tiktok-som.wav
