@@ -87,6 +87,45 @@ Onde mexer, do mais barato ao mais caro:
 
 ---
 
+## Rodada de 2026-11-18: linha de base, placar final e os 12 ciclos
+
+Medido com `$E` (placar acima), corpus de notícias fora da amostra, perfil padrão (agressivo). Desempenho: mediana de
+3 rodadas de `AcertoEval data desempenho`, máquina parada. Visual: `AcertoUiShots` nos temas claro e escuro, imagens
+olhadas uma a uma.
+
+| Frente | Medida | Linha de base (1.4.2) | Final (1.7.1) |
+|---|---|---|---|
+| Correção | frases reais certas | 92,6% de 419, 0 estragos | 94,3% de 559, 0 estragos |
+| Correção | sintéticos (certo / ponderado) | 88,3% / 86,3% | 88,3% / 86,2% |
+| Correção | contexto A com / sem; B; C | 93,0% / 89,7%; 83,0%; 573 | 93,0% / 89,6%; 83,1%; 576 |
+| Correção | direita B; C | 32,7%; 189 | 34,3%; 194 |
+| Correção | sugestões: próxima (1ª / 3); Tab economiza | 11,7% / 20,9%; 28,7% | iguais |
+| Desempenho | CoreData.Load | 1268 ms (1513, 1265, 1268) | ~920 ms (938, 923, 865) |
+| Desempenho | criar o Corrector | 2638 ms (2679, 2638, 2580) | 359 ms (350, 393, 359) |
+| Desempenho | Correct por palavra: média / p99 | 47,5 µs / 122 µs | 49 µs / 117 µs |
+| Desempenho | Suggest por tecla: média / p99 | 644 µs / 3,9 ms | 607 µs / 3,8 ms |
+| Desempenho | memória (gerenciada / conjunto de trabalho) | 177 / 268 MB | 189 / 265 MB |
+| Visual | caixas de texto vazias | sem dica nem nome acessível | dica cinza e nome acessível |
+| Visual | foco de teclado (Tab) em interruptores e menus | sem moldura | moldura do Windows 11 |
+| Visual | "Apoie o projeto" | "QR Code em breve" | QR Code, chave e copia e cola (pedido do autor) |
+
+| Ciclo | Frente | Resultado | Versão |
+|---|---|---|---|
+| 1 | Correção | aprovado: cidades de duas palavras | 1.4.3 |
+| 2 | Visual | aprovado: dica nas caixas vazias | 1.5.0 |
+| 3 | Desempenho | aprovado: Hunspell em paralelo, StripAccents sem cópia | 1.5.1 |
+| 4 | Desempenho | aprovado: arquivos carregam juntos | 1.5.2 |
+| 5 | Correção | sem melhoria: lote 9, 39 de 40 já certas | — |
+| 6 | Desempenho | sem melhoria: Hunspell em blocos | — |
+| 7 | Visual | aprovado: moldura de foco | 1.6.0 |
+| 8 | Correção | aprovado: par mínimo 3 no acento pela seguinte | 1.6.1 |
+| 9 | Desempenho | aprovado: data/validas.txt | 1.6.2 |
+| 10 | Visual | sem melhoria: revisão das telas e da animação | — |
+| 11 | Correção | aprovado: ênfase fica como digitada | 1.6.3 |
+| 12 | Correção | aprovado: termos de contabilidade | 1.7.1 |
+
+Parada: 12 ciclos (o limite). O Pix (1.7.0) foi pedido do autor no meio da rodada e não conta como ciclo.
+
 ## Histórico
 
 | Data | Versão | Mudança | Antes → depois |
