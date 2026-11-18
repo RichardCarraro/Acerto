@@ -114,6 +114,7 @@ public class FixedListGuardTests(SharedCorrector s) : IClassFixture<SharedCorrec
         "faco", "video", "oque", "emfim", "anida", "intendi", "intender", "intendeu", "amanha", "medico", "titulo",
         "transito", "policia", "noticia", "agencia", "irma", "dai",
         "negocio", // 1401 × no corpus contra 62899 × "negócio"; "eu negocio" é raro
+        "tributaria", "beneficio", "liquido", "alugueis", // contabilidade: 0/92, 264/3605, 259/4447, 47/356 (verbo raro)
         "deslise", "estrupo", // raras/arcaicas no dicionário; na prática, sempre erro de deslize/estupro
         "exite", "exitar", "exitou", "exitei", "exitando", // 77 × "exite" no corpus contra 1075 × "hesite"
     };

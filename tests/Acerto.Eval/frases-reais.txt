@@ -556,3 +556,35 @@ sdds de vc	Sdds de vc
 fds chegou finalmente	Fds chegou finalmente
 q saudade	Q saudade
 nossa, que absurdo	Nossa, que absurdo
+
+# lote 11: contabilidade, impostos e e-mail formal (alíquota, contábeis, tributável... na lista à mão; "ISS e recolhido" é o e→é sem par)
+prezados, segue o balanco patrimonial	Prezados, segue o balanço patrimonial
+a demonstracao contabil foi aprovada	A demonstração contábil foi aprovada
+o contador enviou a declaracao do imposto de renda	O contador enviou a declaração do imposto de renda
+falta emitir a nota fiscal	Falta emitir a nota fiscal
+a aliquota do ICMS mudou	A alíquota do ICMS mudou
+precisamos fazer a conciliacao bancaria	Precisamos fazer a conciliação bancária
+o patrimonio liquido aumentou	O patrimônio líquido aumentou
+a depreciacao do veiculo foi calculada	A depreciação do veículo foi calculada
+o recolhimento do INSS vence amanha	O recolhimento do INSS vence amanhã
+a anuidade do CRC pode ser parcelada	A anuidade do CRC pode ser parcelada
+o registro profissional esta ativo	O registro profissional está ativo
+a fiscalizacao vai visitar o escritorio	A fiscalização vai visitar o escritório
+o exercicio social termina em dezembro	O exercício social termina em dezembro
+a auditoria encontrou divergencias	A auditoria encontrou divergências
+o credito tributario foi compensado	O crédito tributário foi compensado
+conforme solicitado, segue a planilha	Conforme solicitado, segue a planilha
+atenciosamente, equipe de fiscalizacao	Atenciosamente, equipe de fiscalização
+cordialmente, departamento de registro	Cordialmente, departamento de registro
+solicito a gentileza de confirmar o recebimento	Solicito a gentileza de confirmar o recebimento
+informamos que o prazo foi prorrogado	Informamos que o prazo foi prorrogado
+a reuniao do conselho sera na terca	A reunião do conselho será na terça
+o calculo da folha de pagamento esta errado	O cálculo da folha de pagamento está errado
+o decimo terceiro sera pago em duas parcelas	O décimo terceiro será pago em duas parcelas
+a previdencia privada tem deducao no imposto	A previdência privada tem dedução no imposto
+o ISS e recolhido pelo municipio	O ISS é recolhido pelo município
+o orcamento anual foi aprovado pela diretoria	O orçamento anual foi aprovado pela diretoria
+a certidao negativa ja foi emitida	A certidão negativa já foi emitida
+o profissional precisa de educacao continuada	O profissional precisa de educação continuada
+a escrituracao fiscal digital foi transmitida	A escrituração fiscal digital foi transmitida
+o processo administrativo foi arquivado	O processo administrativo foi arquivado

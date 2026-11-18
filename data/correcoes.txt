@@ -984,3 +984,20 @@ paralizado	paralisado
 paralizada	paralisada
 paralizados	paralisados
 paralizadas	paralisadas
+# contabilidade e impostos: a frequência (legendas) quase não tem esses termos; decididos à mão em 2026-11-18
+aliquota	alíquota
+aliquotas	alíquotas
+contabeis	contábeis
+tributavel	tributável
+tributaveis	tributáveis
+tributaria	tributária
+dedutivel	dedutível
+previdenciario	previdenciário
+previdenciarios	previdenciários
+previdenciarias	previdenciárias
+orcamentaria	orçamentária
+orcamentarias	orçamentárias
+orcamentarios	orçamentários
+beneficio	benefício
+liquido	líquido
+alugueis	aluguéis
