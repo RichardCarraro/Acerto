@@ -10,7 +10,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>Acerto</AssemblyName>
     <!-- Versão do programa: único lugar. A janela (Versão x.y.z) e o instalador leem daqui. -->
-    <Version>1.6.3</Version>
+    <Version>1.7.0</Version>
     <Product>Acertô</Product>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <RootNamespace>Acerto.Windows</RootNamespace>
@@ -31,6 +31,8 @@
     <!-- créditos de terceiros vão junto com o programa -->
     <None Include="..\..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <InternalsVisibleTo Include="AcertoUiShots" />
+    <!-- QR Code do Pix da página "Apoie o projeto" -->
+    <Resource Include="Assets\pix-qr.png" />
   </ItemGroup>
 
   <!-- Publicado como arquivo único (installer/gerar.ps1), o exe leva os dados e vira o próprio instalador (Setup.cs) -->

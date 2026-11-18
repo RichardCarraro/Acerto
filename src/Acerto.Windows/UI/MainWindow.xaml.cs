@@ -14,6 +14,10 @@ internal partial class MainWindow : Window
     private static readonly Brush PausedBrush = new SolidColorBrush(Color.FromRgb(0x8A, 0x8A, 0x8A));
     private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 
+    // Pix do autor (InfinitePay), lido do QR oficial; o CRC16 do fim do código confere. Assets/pix-qr.png é este código.
+    private const string PixKey = "b3dfabd3-5029-4018-bbd8-11132babff4c";
+    private const string PixCode = "00020101021126580014BR.GOV.BCB.PIX0136b3dfabd3-5029-4018-bbd8-11132babff4c5204000053039865802BR5915RICHARD CARRARO6008MATINHOS62070503***63046DFD";
+
     private readonly AppController _app;
 
     public MainWindow(AppController app)
@@ -21,6 +25,7 @@ internal partial class MainWindow : Window
         _app = app;
         InitializeComponent();
         VersionText.Text = "Versão " + (Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0");
+        PixKeyText.Text = PixKey;
 
         _app.StateChanged += Refresh;
         Closed += (_, _) => _app.StateChanged -= Refresh;
@@ -168,6 +173,25 @@ internal partial class MainWindow : Window
         _app.AddWord(word);
         WordBox.Clear();
         WordBox.Focus();
+    }
+
+    private void CopyPixKey_Click(object sender, RoutedEventArgs e) => CopyPix(PixKey, "Chave copiada.");
+
+    private void CopyPixCode_Click(object sender, RoutedEventArgs e) =>
+        CopyPix(PixCode, "Código copiado: cole no Pix copia e cola do app do seu banco.");
+
+    private void CopyPix(string text, string done)
+    {
+        try
+        {
+            Clipboard.SetText(text);
+            PixCopied.Text = done;
+        }
+        catch (System.Runtime.InteropServices.COMException) // área de transferência presa por outro programa
+        {
+            PixCopied.Text = "Não deu para copiar agora. Tente de novo.";
+        }
+        PixCopied.Visibility = Visibility.Visible;
     }
 
     private void RemoveWord_Click(object sender, RoutedEventArgs e)

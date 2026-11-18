@@ -317,14 +317,24 @@
                                    Text="O Acertô é grátis e completo, e sempre vai ser. Se ele te ajuda no dia a dia, considere apoiar com um Pix de qualquer valor." />
                         <Border Style="{StaticResource Card}" Padding="24">
                             <StackPanel HorizontalAlignment="Center">
-                                <Border Width="180" Height="180" CornerRadius="8" BorderThickness="1"
-                                        BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
-                                        Background="{DynamicResource ControlFillColorDefaultBrush}">
-                                    <TextBlock Text="QR Code em breve" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <!-- fundo branco também no tema escuro: o app do banco precisa do contraste para ler -->
+                                <Border Background="White" CornerRadius="8" Padding="14" HorizontalAlignment="Center">
+                                    <!-- 4 px por módulo: nítido em 100%, 125%, 150% e 200% de escala -->
+                                    <Image Source="pack://application:,,,/Acerto;component/Assets/pix-qr.png" Width="180" Height="180" RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                           AutomationProperties.Name="QR Code do Pix para apoiar o Acertô" />
                                 </Border>
-                                <TextBlock Text="Chave Pix: em breve" HorizontalAlignment="Center" Margin="0,14,0,0"
-                                           Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <TextBlock Text="Escaneie com o app do seu banco" HorizontalAlignment="Center" Margin="0,10,0,0"
+                                           Style="{StaticResource RowHint}" />
+                                <TextBlock Text="Chave Pix aleatória" HorizontalAlignment="Center" Margin="0,16,0,2"
+                                           Style="{StaticResource RowHint}" />
+                                <TextBlock x:Name="PixKeyText" HorizontalAlignment="Center" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,14,0,0">
+                                    <Button Content="Copiar chave" Click="CopyPixKey_Click" />
+                                    <Button Content="Copiar Pix copia e cola" Margin="8,0,0,0" Style="{StaticResource AccentButtonStyle}"
+                                            Click="CopyPixCode_Click" />
+                                </StackPanel>
+                                <TextBlock x:Name="PixCopied" HorizontalAlignment="Center" Margin="0,10,0,0" Visibility="Collapsed"
+                                           Style="{StaticResource RowHint}" />
                             </StackPanel>
                         </Border>
                         <TextBlock x:Name="SupportCount" Style="{StaticResource RowHint}" Margin="2,12,0,0" />
