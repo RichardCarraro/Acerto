@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --azul: #1e63d6;
+        --azul-escuro: #123f8f;
+        --roxo: #5e45a8;
+        --lilas: #dccbf7;
+        --fundo: #f3f5fa;
+        --tinta: #14213d;
+        --cinza: #6b7280;
+        --erro: #c2410c;
+        --font: "Acerto Sans", sans-serif;
+      }
+      /* a mesma fonte do app; render local no Windows */
+      @font-face { font-family: "Acerto Sans"; font-weight: 400; src: local("Segoe UI"), local("SegoeUI"); }
+      @font-face { font-family: "Acerto Sans"; font-weight: 600; src: local("Segoe UI Semibold"), local("SegoeUI-Semibold"); }
+      @font-face { font-family: "Acerto Sans"; font-weight: 700; src: local("Segoe UI Bold"), local("SegoeUI-Bold"); }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--fundo); }
+      #root { position: relative; width: 100%; height: 100%; font-family: var(--font); color: var(--tinta); }
+      .cena { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+      .azul { background: radial-gradient(ellipse at 50% 35%, #2f78ee 0%, var(--azul) 45%, var(--azul-escuro) 100%); color: #fff; }
+      .claro { background: radial-gradient(ellipse at 50% 0%, #ffffff 0%, var(--fundo) 70%); }
+      h2 { font-size: 64px; font-weight: 700; letter-spacing: -0.02em; text-align: center; }
+      .sub { font-size: 32px; color: var(--cinza); margin-top: 18px; text-align: center; }
+      .hl { background: var(--lilas); border-radius: 8px; padding: 0 6px; margin: 0 -6px; }
+
+      /* 1. abertura */
+      #logo1 { width: 220px; height: 220px; filter: drop-shadow(0 20px 40px rgba(0,0,0,.25)); }
+      #nome1 { font-size: 150px; font-weight: 700; letter-spacing: -0.03em; margin-top: 20px; }
+      #slogan1 { font-size: 40px; opacity: .92; margin-top: 4px; }
+
+      /* 2. problema */
+      .linha-grande { font-size: 96px; font-weight: 700; letter-spacing: -0.03em; }
+      #erros { display: flex; gap: 36px; margin-top: 60px; }
+      .erro { font-size: 52px; color: var(--erro); text-decoration: underline wavy var(--erro); text-underline-offset: 12px; }
+      #resposta2 { font-size: 48px; margin-top: 70px; color: var(--azul); font-weight: 600; }
+
+      /* janela estilo Windows */
+      .janela { background: #fff; border-radius: 14px; box-shadow: 0 30px 80px rgba(20,33,61,.18), 0 0 0 1px rgba(20,33,61,.08); overflow: hidden; }
+      .barra { height: 52px; display: flex; align-items: center; padding: 0 20px; gap: 12px; font-size: 20px; color: var(--cinza); border-bottom: 1px solid #eceff4; }
+      .barra img { width: 24px; height: 24px; }
+      .barra .botoes { margin-left: auto; letter-spacing: 28px; font-size: 18px; }
+
+      /* 3. demo real */
+      #c3 { justify-content: flex-start; padding-top: 200px; }
+      #janela3 { position: absolute; left: 60px; top: 440px; width: 1800px; height: 293px; }
+      #demo { position: absolute; left: 76px; top: 509px; width: 1768px; height: 208px; z-index: 2; }
+      #selo3 { position: absolute; top: 790px; left: 0; right: 0; justify-content: center; font-size: 28px; color: var(--cinza); display: flex; align-items: center; gap: 12px; }
+      #selo3 b { color: #fff; background: #dc2626; border-radius: 6px; padding: 2px 12px; font-size: 22px; letter-spacing: .05em; }
+
+      /* 4. exemplos */
+      #grade4 { display: grid; grid-template-columns: repeat(3, 520px); gap: 32px; margin-top: 64px; }
+      .card { background: #fff; border-radius: 20px; padding: 32px 36px; box-shadow: 0 10px 30px rgba(20,33,61,.08), 0 0 0 1px rgba(20,33,61,.06); }
+      .tipo { font-size: 22px; font-weight: 600; color: var(--roxo); text-transform: uppercase; letter-spacing: .08em; }
+      .palavra { display: grid; margin-top: 14px; font-size: 46px; height: 64px; }
+      .palavra > span { grid-area: 1 / 1; white-space: nowrap; }
+      .fixo { opacity: 0; }
+      .digitado { clip-path: inset(0 100% 0 0); }
+
+      /* 5. sugestões */
+      #janela5 { width: 1100px; margin-top: 64px; }
+      #texto5 { position: relative; height: 260px; padding: 50px 56px; font-size: 52px; }
+      #texto5 .palavra { display: inline-grid; margin: 0; height: auto; font-size: 52px; vertical-align: top; }
+      .cursor { display: inline-block; width: 3px; height: 58px; background: var(--tinta); vertical-align: -10px; margin-left: 2px; }
+      #sugestoes { position: absolute; left: 200px; top: 140px; display: flex; align-items: center; gap: 22px; background: #1f2430; color: #fff; border-radius: 12px; padding: 12px 22px; font-size: 30px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+      #sugestoes .tab { font-size: 18px; border: 1px solid rgba(255,255,255,.4); border-radius: 6px; padding: 2px 8px; opacity: .8; }
+      #tecla5 { margin-top: 48px; font-size: 34px; font-weight: 600; background: #fff; border-radius: 12px; padding: 14px 34px; border: 2px solid #c9cfdc; box-shadow: 0 6px 0 #c9cfdc; }
+
+      /* 6. telas */
+      .telas { display: flex; align-items: flex-start; gap: 56px; margin-top: 50px; }
+      .telas img { border-radius: 12px; box-shadow: 0 30px 80px rgba(20,33,61,.20), 0 0 0 1px rgba(20,33,61,.08); background: #fff; }
+      .lado { display: flex; flex-direction: column; gap: 28px; width: 560px; }
+      .legenda { font-size: 30px; line-height: 1.35; }
+      .legenda b { color: var(--azul); }
+
+      /* 7. números */
+      #numeros { display: flex; gap: 48px; margin-top: 70px; }
+      .num { width: 500px; background: #fff; border-radius: 24px; padding: 48px 40px; text-align: center; box-shadow: 0 10px 30px rgba(20,33,61,.08), 0 0 0 1px rgba(20,33,61,.06); }
+      .num strong { display: block; font-size: 110px; font-weight: 700; letter-spacing: -0.03em; color: var(--roxo); }
+      .num span { font-size: 30px; color: var(--cinza); line-height: 1.3; display: block; margin-top: 8px; }
+
+      /* 8. encerramento */
+      #logo8 { width: 170px; height: 170px; filter: drop-shadow(0 20px 40px rgba(0,0,0,.25)); }
+      #nome8 { font-size: 110px; font-weight: 700; letter-spacing: -0.03em; margin-top: 12px; }
+      #tags8 { display: flex; gap: 20px; margin-top: 30px; }
+      #tags8 span { font-size: 30px; border: 2px solid rgba(255,255,255,.55); border-radius: 999px; padding: 10px 28px; }
+      #link8 { margin-top: 56px; font-size: 40px; font-weight: 600; background: #fff; color: var(--azul); border-radius: 16px; padding: 20px 44px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="64" data-width="1920" data-height="1080">
+
+      <!-- 1. Abertura -->
+      <section id="c1" class="cena azul clip" data-start="0" data-duration="5">
+        <img id="logo1" src="assets/logo.png" alt="" />
+        <div id="nome1">Acertô</div>
+        <div id="slogan1">O corretor automático do Windows, em português</div>
+      </section>
+
+      <!-- 2. Problema -->
+      <section id="c2" class="cena claro clip" data-start="5" data-duration="5.5">
+        <div id="l2a" class="linha-grande">Você digita rápido.</div>
+        <div id="l2b" class="linha-grande" style="color: var(--erro)">E erra.</div>
+        <div id="erros">
+          <span class="erro">nao</span><span class="erro">voce</span><span class="erro">mutio</span><span class="erro">concerteza</span><span class="erro">hje</span>
+        </div>
+        <div id="resposta2">O Acertô corrige na hora, em qualquer programa.</div>
+      </section>
+
+      <!-- 3. Gravação real -->
+      <section id="c3" class="cena claro clip" data-start="10.5" data-duration="13.5">
+        <h2 id="t3">Veja funcionando</h2>
+        <div id="s3" class="sub">Sem acento, com erros de digitação. Ele acerta quando a palavra termina.</div>
+        <div id="janela3" class="janela">
+          <div class="barra"><img src="assets/logo.png" alt="" />Qualquer programa: navegador, Word, Teams, WhatsApp…<span class="botoes">–□✕</span></div>
+        </div>
+        <div id="selo3"><b>REAL</b> Gravação do Acertô em uso, sem edição</div>
+      </section>
+      <!-- fora da seção: vídeo aninhado em elemento temporizado sai dessincronizado -->
+      <video id="demo" class="clip" src="assets/demo.mp4" muted playsinline data-start="11.3" data-duration="12.03"></video>
+
+      <!-- 4. Exemplos -->
+      <section id="c4" class="cena claro clip" data-start="24" data-duration="12">
+        <h2 id="t4">Corrige sozinho quando a palavra termina</h2>
+        <div id="grade4">
+          <div class="card"><div class="tipo">Acento e cedilha</div><div class="palavra"><span class="digitado">informacao</span><span class="fixo"><span class="hl">informação</span></span></div></div>
+          <div class="card"><div class="tipo">Erro de digitação</div><div class="palavra"><span class="digitado">mutio</span><span class="fixo"><span class="hl">muito</span></span></div></div>
+          <div class="card"><div class="tipo">Erro de escrita</div><div class="palavra"><span class="digitado">concerteza</span><span class="fixo"><span class="hl">com certeza</span></span></div></div>
+          <div class="card"><div class="tipo">Usa o contexto</div><div class="palavra"><span class="digitado">isso e muito</span><span class="fixo">isso <span class="hl">é</span> muito</span></div></div>
+          <div class="card"><div class="tipo">Maiúscula em nomes</div><div class="palavra"><span class="digitado">fui para curitiba</span><span class="fixo">fui para <span class="hl">Curitiba</span></span></div></div>
+          <div class="card"><div class="tipo">Atalhos de texto</div><div class="palavra"><span class="digitado">vlw</span><span class="fixo"><span class="hl">valeu</span></span></div></div>
+        </div>
+      </section>
+
+      <!-- 5. Sugestões -->
+      <section id="c5" class="cena claro clip" data-start="36" data-duration="7">
+        <h2 id="t5">Sugestões perto do cursor</h2>
+        <div id="s5" class="sub">Completa a palavra mesmo com erro. <b>Tab</b> aceita.</div>
+        <div id="janela5" class="janela">
+          <div class="barra"><img src="assets/logo.png" alt="" />Mensagem<span class="botoes">–□✕</span></div>
+          <div id="texto5">Muito <span class="palavra"><span id="d5" class="digitado">obrgi<span class="cursor"></span></span><span id="f5" class="fixo"><span class="hl">obrigado</span> <span class="cursor"></span></span></span>
+            <div id="sugestoes"><b>obrigado</b><span class="tab">Tab</span><span>obrigada</span><span>obrigação</span></div>
+          </div>
+        </div>
+        <div id="tecla5">Tab</div>
+      </section>
+
+      <!-- 6a. Telas: início -->
+      <section id="c6" class="cena claro clip" data-start="43" data-duration="6">
+        <h2 id="t6">Tudo em uma tela simples</h2>
+        <div class="telas">
+          <img id="home6" src="assets/main-home-claro.png" alt="" style="width: 704px" />
+          <div class="lado">
+            <img id="flyout6" src="assets/flyout-claro.png" alt="" style="width: 348px" />
+            <div id="leg6a" class="legenda">Clique no <b>ô</b> perto do relógio para pausar ou abrir as configurações.</div>
+            <div id="leg6b" class="legenda"><b>Ctrl+Shift+F12</b> pausa e retoma de qualquer lugar.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6b. Telas: atalhos e instalação -->
+      <section id="c7" class="cena claro clip" data-start="49" data-duration="6">
+        <h2 id="t7">Do seu jeito</h2>
+        <div class="telas">
+          <img id="atalhos7" src="assets/main-shortcuts-claro.png" alt="" style="width: 704px" />
+          <div class="lado">
+            <div id="leg7a" class="legenda">Crie <b>atalhos de texto</b> e ensine as <b>suas palavras</b>. Ele aprende como você escreve.</div>
+            <img id="inst7" src="assets/instalador-claro.png" alt="" style="width: 552px" />
+            <div id="leg7b" class="legenda">Instala em <b>um clique</b>, sem precisar de administrador.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. Números -->
+      <section id="c8" class="cena claro clip" data-start="55" data-duration="4.5">
+        <h2 id="t8">Preciso e privado</h2>
+        <div id="numeros">
+          <div class="num"><strong>93%</strong><span>de acerto em frases reais, usando o contexto</span></div>
+          <div class="num"><strong>0,12%</strong><span>de palavras certas alteradas por engano</span></div>
+          <div class="num"><strong>Offline</strong><span>o que você digita nunca sai do computador</span></div>
+        </div>
+      </section>
+
+      <!-- 8. Encerramento -->
+      <section id="c9" class="cena azul clip" data-start="59.5" data-duration="4.5">
+        <img id="logo8" src="assets/logo.png" alt="" />
+        <div id="nome8">Acertô</div>
+        <div id="tags8"><span>Grátis</span><span>Windows 10 e 11</span><span>Funciona offline</span></div>
+        <div id="link8">github.com/RichardCarraro/Acerto</div>
+      </section>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const entra = (alvo, t, extra = {}) => tl.from(alvo, { opacity: 0, y: 40, duration: 0.6, ease: "power3.out", ...extra }, t);
+      const sai = (cena, t) => tl.to(cena, { opacity: 0, duration: 0.4, ease: "power1.in" }, t);
+      // "digita" da esquerda para a direita, letra a letra
+      const digita = (alvo, t, letras) => tl.to(alvo, { clipPath: "inset(0 0% 0 0)", duration: letras * 0.07, ease: `steps(${letras})` }, t);
+      const corrige = (card, t) => {
+        tl.to(card.querySelector(".digitado"), { opacity: 0, duration: 0.15 }, t);
+        tl.fromTo(card.querySelector(".fixo"), { opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }, t);
+        tl.from(card.querySelectorAll(".hl"), { backgroundColor: "#b493f0", duration: 0.8 }, t);
+      };
+
+      // 1. abertura
+      // logo já visível no quadro 0 (é a miniatura nos players)
+      tl.from("#logo1", { scale: 0.8, rotation: -12, duration: 0.9, ease: "back.out(1.7)" }, 0);
+      entra("#nome1", 0.7);
+      entra("#slogan1", 1.1);
+      sai("#c1", 4.6);
+
+      // 2. problema
+      entra("#l2a", 5.3);
+      entra("#l2b", 6.1, { scale: 1.2, y: 0, ease: "back.out(2)" });
+      tl.from("#erros .erro", { opacity: 0, y: 30, stagger: 0.15, duration: 0.4 }, 6.7);
+      entra("#resposta2", 7.6);
+      sai("#c2", 10.1);
+
+      // 3. gravação real
+      entra("#t3", 10.6);
+      entra("#s3", 10.8);
+      entra(["#janela3", "#demo"], 11, { y: 60 });
+      entra("#selo3", 11.6);
+      sai(["#c3", "#demo"], 23.0);
+
+      // 4. exemplos: cada card digita e depois vira a correção
+      entra("#t4", 24.2);
+      document.querySelectorAll("#grade4 .card").forEach((card, i) => {
+        const t = 24.8 + i * 1.5;
+        entra(card, t, { y: 30, duration: 0.4 });
+        const d = card.querySelector(".digitado");
+        digita(d, t + 0.2, d.textContent.length);
+        corrige(card, t + 0.35 + d.textContent.length * 0.07);
+      });
+      sai("#c4", 35.6);
+
+      // 5. sugestões
+      entra("#t5", 36.2);
+      entra("#s5", 36.4);
+      entra("#janela5", 36.6, { y: 60 });
+      digita("#d5", 37.4, 5);
+      tl.from("#sugestoes", { opacity: 0, y: -10, duration: 0.3 }, 38.0);
+      entra("#tecla5", 38.6);
+      tl.to("#tecla5", { y: 6, boxShadow: "0 0px 0 #c9cfdc", duration: 0.12, yoyo: true, repeat: 1 }, 39.8);
+      tl.to("#sugestoes", { opacity: 0, duration: 0.15 }, 39.9);
+      corrige(document.querySelector("#texto5"), 39.9);
+      sai("#c5", 42.6);
+
+      // 6. telas
+      entra("#t6", 43.2);
+      entra("#home6", 43.5, { y: 80, duration: 0.8 });
+      entra("#flyout6", 44.2, { x: 60, y: 0 });
+      entra("#leg6a", 44.6);
+      entra("#leg6b", 45.4);
+      sai("#c6", 48.6);
+
+      entra("#t7", 49.2);
+      entra("#atalhos7", 49.5, { y: 80, duration: 0.8 });
+      entra("#leg7a", 50.2);
+      entra("#inst7", 51.0, { x: 60, y: 0 });
+      entra("#leg7b", 51.6);
+      sai("#c7", 54.6);
+
+      // 7. números
+      entra("#t8", 55.2);
+      tl.from("#numeros .num", { opacity: 0, y: 50, scale: 0.95, stagger: 0.25, duration: 0.6, ease: "power3.out" }, 55.5);
+      sai("#c8", 59.1);
+
+      // 8. encerramento
+      tl.from("#logo8", { opacity: 0, scale: 0.6, duration: 0.7, ease: "back.out(1.7)" }, 59.7);
+      entra("#nome8", 60.0);
+      tl.from("#tags8 span", { opacity: 0, y: 20, stagger: 0.12, duration: 0.4 }, 60.4);
+      entra("#link8", 61.0, { scale: 0.9, y: 0 });
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

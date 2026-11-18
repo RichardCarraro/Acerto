@@ -485,3 +485,7 @@ $RECYCLE.BIN/
 dist/
 .superpowers/
 publish-novo/
+
+# Vídeo (HyperFrames): artefatos de prévia e render
+video/.hyperframes/
+video/.impeccable/
