@@ -83,6 +83,21 @@ public sealed class Corrector
         return r;
     }
 
+    /// <summary>
+    /// Ênfase de propósito: vogal 3+ vezes no fim ("naoooo" virava "namoro", "muitooo"). Vogal tripla no meio
+    /// ("compreeendo") e consoante tripla ("issso", "passs") são tecla presa e seguem para a correção. Preço medido:
+    /// 0,1 ponto a menos nos erros gerados, de casos artificiais como "topo" → "tooo" (tecla vizinha).
+    /// </summary>
+    private static bool IsEmphasis(string lower)
+    {
+        for (int i = 1, run = 1; i < lower.Length; i++)
+        {
+            run = lower[i] == lower[i - 1] ? run + 1 : 1;
+            if (run >= 3 && i == lower.Length - 1 && "aeiouáéíóúâêôãõà".Contains(lower[i])) return true;
+        }
+        return false;
+    }
+
     private Correction? CorrectWord(string word, bool atSentenceStart, string? prev)
     {
         if (word.Length == 0) return null;
@@ -101,6 +116,9 @@ public sealed class Corrector
 
         // 2. Palavra ensinada pelo usuário
         if (_data.Personal.Contains(w)) return null;
+
+        // 2-. Ênfase: "naoooo" (virava "namoro"), "muitooo". Tecla presa ("issso", "compreeendo") segue.
+        if (IsEmphasis(w)) return null;
 
         // 2a. Nome ou lugar brasileiro da lista (joao → João, parana → Paraná, que a regra de digitação faria "parada")
         if (o.CapitalizeNames && _data.Names.TryGet(TextUtil.StripAccents(w), out var name))

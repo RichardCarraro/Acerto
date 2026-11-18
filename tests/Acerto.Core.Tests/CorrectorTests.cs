@@ -216,6 +216,14 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
     [InlineData("paralização", "paralisação")] // 20 no corpus, contra 177
     public void Troca_Fonetica(string typed, string want) => Assert.Equal(want, _c.Correct(typed)?.Replacement);
 
+    // Letra repetida para dar ênfase fica como foi digitada ("naoooo" virava "namoro"); tripla no meio é tecla presa
+    [Theory]
+    [InlineData("naoooo")] [InlineData("muitooo")] [InlineData("simmm")] [InlineData("simmmm")] [InlineData("lindooo")] [InlineData("Naoooo")]
+    public void Enfase_Fica(string typed) => Assert.Null(_c.Correct(typed));
+    [Theory]
+    [InlineData("carrro", "carro")] [InlineData("issso", "isso")] [InlineData("compreeendo", "compreendo")] [InlineData("álcoool", "álcool")]
+    public void Tecla_Presa_Corrige(string typed, string want) => Assert.Equal(want, _c.Correct(typed)?.Replacement);
+
     // Locuções da lista à mão (data/locucoes.txt): a vizinha decide o que a estatística não decide
     [Theory]
     [InlineData(" isso ai ", " isso aí ")]
