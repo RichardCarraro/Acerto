@@ -166,6 +166,9 @@ public sealed record TypoOptions
         // regra da palavra anterior deixava passar (e→é, esta→está, ha→há), estragando 0,054% das palavras certas.
         // 10 → 7: +294 acertos, +58 estragos; 5 já troca "maior e melhor" → é
         NextAccentRatio = 7,
+        // par (acentuada, seguinte) mínimo 5 → 3: +125 acentos voltam e +7 estragos em 30 mil frases (18:1);
+        // pega "econômica esta complicada" (par "está complicada" = 3). Estrago visto: "hilário e irônico" → é
+        NextMinPairCount = 3,
         // "bom dai" → dia. Com 200 não muda nada nas 30 mil frases de notícias (com 50, B cai 0,1 ponto)
         FixedContextMinPair = 200,
         // erro de escrita (enxente, xinelo, paralização): razão 10 troca 21 palavras frequentes a mais do corpus, metade

@@ -201,6 +201,7 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
     [InlineData(" isso e muito bom ", " isso é muito bom ")]
     [InlineData(" o almoço esta pronto ", " o almoço está pronto ")]
     [InlineData(" a situacao e dificil ", " a situação é difícil ")]
+    [InlineData(" a situação econômica esta complicada ", " a situação econômica está complicada ")] // par "está complicada" = 3 no corpus
     [InlineData(" a casa e a mesa ", " a casa e a mesa ")]          // conjunção fica
     [InlineData(" pão, e uma laranja ", " pão, e uma laranja ")]    // depois de vírgula não se sabe: fica
     [InlineData(" isso e muito\t", " isso e muito\t")]              // Tab não corrige

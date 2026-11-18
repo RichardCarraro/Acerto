@@ -104,7 +104,7 @@ Medido com `tests/Acerto.Eval` (erros gerados nas palavras mais usadas e frases 
 | Erros de digitação corrigidos (modo "Corrigir mais") | **~94%** |
 | Acerto em frases reais, com contexto | **93,0%** (89,7% sem contexto) |
 | Acento esquecido que volta | **83,0%** |
-| Frases do dia a dia com erros reais que saem certas | **93,6%** (499 frases; nenhuma frase certa é mexida) |
+| Frases do dia a dia com erros reais que saem certas | **93,8%** (499 frases; nenhuma frase certa é mexida) |
 | Erros de escrita por som corrigidos | **87%** |
 | Palavras certas estragadas em texto real | **0,12%** |
 | Letras economizadas pelo Tab (palavras de 4+ letras) | **~29%** |
