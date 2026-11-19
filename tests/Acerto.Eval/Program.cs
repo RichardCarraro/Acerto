@@ -108,6 +108,32 @@ if (positional.Length > 1 && positional[1] == "desempenho")
     Console.WriteLine($"Correct por palavra: {Resumo(tc)}");
     Console.WriteLine($"Suggest por tecla:   {Resumo(ts)}");
     Console.WriteLine($"Assinatura das respostas: {hash} ({itens.Count} palavras)");
+
+    // Teclada: a pessoa esmaga o teclado numa risada ("ksljlkajcalkçcj..."). Tudo isso roda na thread que atende os
+    // hooks de teclado e mouse do Windows: tecla lenta aqui trava o PC inteiro. Pior tecla = OnChar + Suggestions.
+    var teclas = "asdfghjklçqwertyuiopzxcvbnm";
+    var sorteio = new Random(42);
+    var motor = new TextEngine(corrector, _ => { });
+    foreach (int n in (int[])[8, 16, 30, 50, 100])
+    {
+        motor.Reset();
+        motor.ConfirmContext(motor.Generation, "");
+        double pior = 0, soma = 0;
+        for (int i = 0; i < n; i++)
+        {
+            char ch = teclas[sorteio.Next(teclas.Length)];
+            long a = System.Diagnostics.Stopwatch.GetTimestamp();
+            motor.OnChar(ch);
+            motor.Suggestions();
+            double ms = System.Diagnostics.Stopwatch.GetElapsedTime(a).TotalMilliseconds;
+            pior = Math.Max(pior, ms);
+            soma += ms;
+        }
+        long e = System.Diagnostics.Stopwatch.GetTimestamp();
+        motor.OnChar(' ');
+        double espaco = System.Diagnostics.Stopwatch.GetElapsedTime(e).TotalMilliseconds;
+        Console.WriteLine(string.Create(ptd, $"Teclada de {n,3} letras: pior tecla {pior:F2} ms; soma {soma:F1} ms; espaço {espaco:F2} ms"));
+    }
     Directory.Delete(userDir, true);
     return;
 }

@@ -22,6 +22,15 @@ public sealed class Suggester
         _data = data;
         _sorted = ranker.IndexedWords.Where(w => w.Count >= MinCount).ToArray();
         Array.Sort(_sorted, (a, b) => string.CompareOrdinal(a.Stripped, b.Stripped));
+        _maxLength = _sorted.Length == 0 ? 0 : _sorted.Max(s => s.Stripped.Length);
+    }
+
+    private readonly int _maxLength;
+
+    private bool HasPrefix(string prefix)
+    {
+        int i = LowerBound(prefix);
+        return i < _sorted.Length && _sorted[i].Stripped.StartsWith(prefix, StringComparison.Ordinal);
     }
 
     /// <param name="prev">Palavra anterior em minúsculas, início de frase ou null.</param>
@@ -45,8 +54,9 @@ public sealed class Suggester
         }
 
         foreach (var (stripped, word, count) in StartingWith(prefix)) Consider(stripped, word, count, 0);
-        if (prefix.Length >= MinFuzzyPrefix)
-            foreach (var (near, cost) in _ranker.NearPrefixes(prefix))
+        // uma variação tem no máximo uma letra a menos: além disso nenhuma palavra indexada começa com ela (teclada)
+        if (prefix.Length >= MinFuzzyPrefix && prefix.Length <= _maxLength + 1)
+            foreach (var (near, cost) in _ranker.NearPrefixes(prefix, HasPrefix))
                 foreach (var (stripped, word, count) in StartingWith(near)) Consider(stripped, word, count, cost);
 
         // palavras do usuário que o corpus não tem (ou quase não tem): nomes de sistema, jargão

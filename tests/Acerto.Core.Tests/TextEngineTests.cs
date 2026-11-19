@@ -268,3 +268,38 @@ public class TextEngineOptionsTests(SharedCorrector s) : IClassFixture<SharedCor
     public void SemEspacoDuplo() =>
         Assert.Equal(" Fim  ", Type(new TextEngine(s.Corrector, _ => { }) { DoubleSpacePeriod = false }, " Fim  "));
 }
+
+/// <summary>
+/// Teclada numa risada ("ksljlkajcalkçcj..."): OnChar e Suggestions rodam na thread que atende o teclado e o mouse do
+/// Windows. Em 1.7.1 a teclada de 100 letras levava 3 s numa tecla só e travava o PC inteiro.
+/// </summary>
+[Collection("Tempo")]
+public class TextEngineTecladaTests(SharedCorrector s) : IClassFixture<SharedCorrector>
+{
+    [Fact]
+    public void Teclada_CadaTeclaRapida()
+    {
+        const string teclas = "asdfghjklçqwertyuiopzxcvbnm";
+        var engine = new TextEngine(s.Corrector, _ => { });
+        var sorteio = new Random(42);
+        double pior = 0, espaco = 0;
+        for (int volta = 0; volta < 2; volta++) // a primeira só aquece (JIT)
+        {
+            engine.Reset();
+            engine.ConfirmContext(engine.Generation, "");
+            pior = 0;
+            for (int i = 0; i < 100; i++)
+            {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                engine.OnChar(teclas[sorteio.Next(teclas.Length)]);
+                engine.Suggestions();
+                pior = Math.Max(pior, sw.Elapsed.TotalMilliseconds);
+            }
+            var e = System.Diagnostics.Stopwatch.StartNew();
+            engine.OnChar(' ');
+            espaco = e.Elapsed.TotalMilliseconds;
+        }
+        Assert.True(pior <= 5, $"pior tecla = {pior:F2} ms");
+        Assert.True(espaco <= 5, $"espaço = {espaco:F2} ms");
+    }
+}

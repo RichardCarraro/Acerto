@@ -292,9 +292,11 @@ public sealed class TypoRanker
     /// Começos de palavra a um erro de <paramref name="stripped"/> (sem acento), com o custo do erro: para sugerir
     /// "obrigado" quando já se digitou "obrgi".
     /// </summary>
-    public IEnumerable<(string Prefix, double Cost)> NearPrefixes(string stripped) =>
+    /// <param name="useful">Só as variações que levam a alguma palavra: o custo (O(n²)) fica só para essas. Sem o
+    /// filtro, uma teclada de 50 letras custava 355 ms por tecla na thread que atende o teclado do Windows.</param>
+    public IEnumerable<(string Prefix, double Cost)> NearPrefixes(string stripped, Func<string, bool> useful) =>
         stripped.Length == 0 || !stripped.All(c => c is >= 'a' and <= 'z') ? []
-            : Edits1(stripped).Where(e => e.Length > 0 && e != stripped).Distinct().Select(e => (e, Cost(stripped, e)));
+            : Edits1(stripped).Where(e => e.Length > 0 && e != stripped).Distinct().Where(useful).Select(e => (e, Cost(stripped, e)));
 
     /// <param name="prev">Palavra anterior em minúsculas, <see cref="BigramModel.SentenceStart"/> ou null se desconhecida.</param>
     /// <param name="options">Limiares desta consulta; null = <see cref="Options"/>.</param>
