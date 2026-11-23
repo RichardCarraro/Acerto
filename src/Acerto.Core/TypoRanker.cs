@@ -92,6 +92,13 @@ public sealed record TypoOptions
     public double ContextWeight { get; init; } = 0.75;
 
     /// <summary>
+    /// O mesmo peso, só para ordenar as sugestões de completar palavra (a barra), sem mexer nas correções. Medido em
+    /// 2026-11-23 (AcertoEval sugestoes, 2000 frases): 0,75 → 28,7% das letras economizadas com Tab; 0,85 → 28,9%;
+    /// 0,9 → 29,0% (1ª sugestão certa antes do fim 67,7% → 68,0%); 0,95 → 29,0% e 67,9%.
+    /// </summary>
+    public double SuggestContextWeight { get; init; } = 0.9;
+
+    /// <summary>
     /// Com contexto, troca só de acento entre duas palavras que existem ("ele esta" → "ele está") quando a forma
     /// acentuada é pelo menos isso vezes mais provável depois da palavra anterior. 0 = nunca.
     /// </summary>
@@ -270,22 +277,24 @@ public sealed class TypoRanker
     /// Frequência da palavra levando em conta a palavra anterior e o que o usuário costuma escrever. Sem contexto
     /// (ou contexto desconhecido) e sem histórico é a contagem geral.
     /// </summary>
-    public double EffectiveCount(string word, long count, string? prev)
+    /// <param name="contextWeight">Peso do contexto desta consulta; null = <see cref="TypoOptions.ContextWeight"/>.</param>
+    public double EffectiveCount(string word, long count, string? prev, double? contextWeight = null)
     {
+        double weight = contextWeight ?? _o.ContextWeight;
         double user = 0;
         if (!_history.IsEmpty)
         {
             double alone = _history.Count(word) / (_history.Total + UserSmoothing);
             int context = prev is null ? 0 : _history.ContextTotal(prev);
             double p = context == 0 ? alone
-                : (1 - _o.ContextWeight) * alone + _o.ContextWeight * _history.PairCount(prev!, word) / (context + UserPairSmoothing);
+                : (1 - weight) * alone + weight * _history.PairCount(prev!, word) / (context + UserPairSmoothing);
             user = UserWeight * _corpusSize * p;
         }
         if (prev is null) return count + user;
         long total = _bigrams.ContextTotal(prev);
         if (total == 0) return count + user;
         double afterPrev = (double)_bigrams.Count(prev, word) / total;
-        return (1 - _o.ContextWeight) * count + _o.ContextWeight * _corpusSize * afterPrev + user;
+        return (1 - weight) * count + weight * _corpusSize * afterPrev + user;
     }
 
     /// <summary>

@@ -48,7 +48,7 @@ public sealed class Suggester
         {
             if (word == lower) return;                                     // já é o que está digitado
             if (stripped.Length == prefix.Length && prefix != lower) return; // só mudaria acento que a pessoa já pôs
-            double score = Math.Log(Math.Max(_ranker.EffectiveCount(word, count, prev), 0.01))
+            double score = Math.Log(Math.Max(_ranker.EffectiveCount(word, count, prev, _ranker.Options.SuggestContextWeight), 0.01))
                 - _ranker.Options.CostWeight * cost;
             if (!best.TryGetValue(word, out var s) || score > s) best[word] = score;
         }

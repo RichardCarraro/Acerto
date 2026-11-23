@@ -107,7 +107,7 @@ Medido com `tests/Acerto.Eval` (erros gerados nas palavras mais usadas e frases 
 | Frases do dia a dia com erros reais que saem certas | **94,6%** (589 frases; nenhuma frase certa é mexida) |
 | Erros de escrita por som corrigidos | **87%** |
 | Palavras certas estragadas em texto real | **0,12%** |
-| Letras economizadas pelo Tab (palavras de 4+ letras) | **~29%** |
+| Letras economizadas pelo Tab (palavras de 4+ letras) | **29,0%** |
 
 ## Limitações conhecidas
 
