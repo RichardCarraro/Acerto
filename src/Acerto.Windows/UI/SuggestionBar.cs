@@ -53,8 +53,11 @@ internal sealed class SuggestionBar : Window
         SetWindowLongW(_hwnd, GWL_EXSTYLE, GetWindowLongW(_hwnd, GWL_EXSTYLE) | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
     }
 
-    public void SetItems(IReadOnlyList<string> suggestions)
+    /// <param name="sameWord">Mais uma letra da mesma palavra: a barra só cresce (encolher a cada letra fazia ela pular).
+    /// Outra palavra, ou Backspace: volta ao tamanho do conteúdo.</param>
+    public void SetItems(IReadOnlyList<string> suggestions, bool sameWord = false)
     {
+        _root.MinWidth = sameWord && IsShowing ? Math.Max(_root.MinWidth, _root.ActualWidth) : 0;
         _items.Children.Clear();
         for (int i = 0; i < suggestions.Count; i++)
         {
@@ -82,9 +85,9 @@ internal sealed class SuggestionBar : Window
     }
 
     /// <param name="anchor">Retângulo (pixels) da palavra em andamento, ou do cursor; a barra aparece logo abaixo.</param>
-    public void ShowAt(Rect anchor, IReadOnlyList<string> suggestions)
+    public void ShowAt(Rect anchor, IReadOnlyList<string> suggestions, bool sameWord = false)
     {
-        SetItems(suggestions);
+        SetItems(suggestions, sameWord);
         if (!IsVisible) Show(); // ShowActivated=false: não rouba o foco
         UpdateLayout();
 
@@ -96,8 +99,9 @@ internal sealed class SuggestionBar : Window
         if (y + height > area.Bottom) y = (int)anchor.Top - height - 6; // sem espaço embaixo: mostra em cima
         SetWindowPos(_hwnd, HWND_TOPMOST, x, y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE);
         // surge em 90 ms quando aparece; trocando de sugestão a cada tecla fica parada (senão piscaria)
+        // sem "From": se ainda estava sumindo, volta de onde está em vez de piscar no zero
         if (!IsShowing && SystemParameters.ClientAreaAnimation)
-            _root.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(90)));
+            _root.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(1, TimeSpan.FromMilliseconds(90)));
         else
         {
             _root.BeginAnimation(OpacityProperty, null);
@@ -106,12 +110,21 @@ internal sealed class SuggestionBar : Window
         IsShowing = true;
     }
 
-    /// <summary>Some da tela. A janela continua existindo (esconder e mostrar de novo faria ela piscar).</summary>
+    /// <summary>
+    /// Some da tela em 80 ms (na hora, com "Efeitos de animação" desligado). Para o Tab ela já sumiu agora. A janela
+    /// continua existindo (esconder e mostrar de novo faria ela piscar).
+    /// </summary>
     public void Conceal()
     {
-        _root.BeginAnimation(OpacityProperty, null);
-        _root.Opacity = 0;
+        bool wasShowing = IsShowing;
         IsShowing = false;
+        if (wasShowing && SystemParameters.ClientAreaAnimation)
+            _root.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, TimeSpan.FromMilliseconds(80)));
+        else
+        {
+            _root.BeginAnimation(OpacityProperty, null);
+            _root.Opacity = 0;
+        }
     }
 
     [DllImport("user32.dll")] private static extern int GetWindowLongW(nint hwnd, int index);

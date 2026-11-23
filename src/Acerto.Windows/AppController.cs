@@ -34,6 +34,7 @@ internal sealed class AppController
     private HighlightOverlay? _overlay;
     private SuggestionBar? _bar;
     private int _suggestionSequence;
+    private int _barWordLength; // tamanho da palavra das últimas sugestões mostradas (0 = nenhuma)
     private bool _settingsDirty;
     private readonly bool _preview;
 
@@ -242,6 +243,8 @@ internal sealed class AppController
         int sequence = ++_suggestionSequence;
         var hooks = _hooks;
         if (hooks is null) return;
+        bool sameWord = wordLength > 0 && wordLength > _barWordLength; // mais uma letra da mesma palavra
+        _barWordLength = suggestions.Count == 0 ? 0 : wordLength;
         if (suggestions.Count == 0)
         {
             _bar?.Conceal();
@@ -250,7 +253,7 @@ internal sealed class AppController
         if (_bar is { IsShowing: true })
         {
             // mesma palavra, mais uma letra: troca o conteúdo já, e reposiciona quando a posição chegar
-            _bar.SetItems(suggestions);
+            _bar.SetItems(suggestions, sameWord);
             hooks.VisibleSuggestions = suggestions;
         }
         _ui.BeginInvoke(async () =>
@@ -263,7 +266,7 @@ internal sealed class AppController
             if (Diag.On) Diag.Log($"BARRA posicao={(anchor is { } p ? $"{(int)p.Left},{(int)p.Top}" : "nenhuma")}");
             if (anchor is { } a)
             {
-                (_bar ??= new SuggestionBar()).ShowAt(a, suggestions);
+                (_bar ??= new SuggestionBar()).ShowAt(a, suggestions, sameWord);
                 hooks.VisibleSuggestions = suggestions;
             }
             else

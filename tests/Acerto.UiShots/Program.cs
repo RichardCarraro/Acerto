@@ -122,6 +122,18 @@ internal static class Shots
         bar.ShowAt(new Rect(0, 0, 10, 10), ["e", "ele", "era"]);
         await Task.Delay(300);
         Save(bar, Path.Combine(outDir, "barra-sugestoes.png"));
+        // mesma palavra, mais uma letra e sugestões mais curtas: a barra não pode encolher (pulava a cada letra)
+        bar.ShowAt(new Rect(0, 0, 10, 10), ["obrigado", "obrigada", "obrigação"]);
+        await Task.Delay(150);
+        double wide = bar.ActualWidth;
+        bar.ShowAt(new Rect(0, 0, 10, 10), ["obrigado"], sameWord: true);
+        await Task.Delay(150);
+        Save(bar, Path.Combine(outDir, "barra-mesma-palavra.png"));
+        if (bar.ActualWidth < wide - 0.5) throw new InvalidOperationException($"a barra encolheu na mesma palavra: {wide:F0} → {bar.ActualWidth:F0}");
+        // saída: no meio dos 80 ms ainda aparece, um pouco apagada
+        bar.Conceal();
+        await Task.Delay(40);
+        Save(bar, Path.Combine(outDir, "barra-saindo.png"));
         bar.Close();
         overlay.Close();
         page.Close();
