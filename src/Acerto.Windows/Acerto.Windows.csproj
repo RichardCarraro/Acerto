@@ -10,7 +10,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>Acerto</AssemblyName>
     <!-- Versão do programa: único lugar. A janela (Versão x.y.z) e o instalador leem daqui. -->
-    <Version>1.7.9</Version>
+    <Version>1.7.10</Version>
     <Product>Acertô</Product>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <RootNamespace>Acerto.Windows</RootNamespace>

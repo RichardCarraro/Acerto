@@ -619,3 +619,16 @@ aff que preguica	Aff que preguiça
 mds que susto kkkk	Mds que susto kkkk
 voce e muito engracado kkkkkk	Você é muito engraçado kkkkkk
 agora entendi KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK	Agora entendi KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+# lote 13 (2026-11-23): inglês do trabalho e das redes no meio da frase
+nao esquece de dar save no arquivo	Não esquece de dar save no arquivo
+preciso do password do wifi	Preciso do password do wifi
+o user nao consegue entrar no sistema	O user não consegue entrar no sistema
+a party de ontem foi otima	A party de ontem foi ótima
+bora tomar um coffee depois da reuniao	Bora tomar um coffee depois da reunião
+o dark mode ficou muito bom	O dark mode ficou muito bom
+tenho one on one com o gestor amanha	Tenho one on one com o gestor amanhã
+o makeup dela estava lindo	O makeup dela estava lindo
+faz o code review antes do merge	Faz o code review antes do merge
+manda a list de presenca pra mim	Manda a list de presença pra mim
+o level do jogo ta dificil	O level do jogo tá difícil
+essa playlist ta no mood certo	Essa playlist tá no mood certo

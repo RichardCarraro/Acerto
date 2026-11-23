@@ -10637,3 +10637,35 @@ deboa
 # risada em espanhol (jaja virava haja, jajaja virava jamais)
 jaja
 jajaja
+# inglês comum digitado em minúsculo (trabalho, TI, redes): viravam outra palavra (put → puta, one → onde, save → sabe,
+# password → pássaro, code → pode, coffee → chefe, door → dor). Medido em 2026-11-23; video, camera, texto, imagem,
+# mensagem, evento e problema ficam de fora (erro plausível de quem escreve em português)
+save
+list
+one
+put
+toad
+user
+password
+party
+coffee
+sale
+screen
+makeup
+influencer
+level
+invoice
+code
+coding
+plugin
+slow
+dark
+part
+door
+photos
+cheers
+mood
+cancel
+leader
+name
+mode

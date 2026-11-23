@@ -156,6 +156,12 @@ public class AggressiveCorrectorTests : IClassFixture<SharedData>
     [InlineData("deploy")] [InlineData("commit")] [InlineData("teams")] [InlineData("jira")] // pouco usadas, à mão
     public void Protegidas_Ficam(string palavra) => Assert.True(_c.Correct(palavra) is null or { Kind: CorrectionKind.Case }); // só maiúscula de nome
 
+    // inglês comum em minúsculo, no meio da frase: virava outra palavra (put → puta, one → onde, password → pássaro)
+    [Theory]
+    [InlineData("put")] [InlineData("one")] [InlineData("save")] [InlineData("password")] [InlineData("code")]
+    [InlineData("coffee")] [InlineData("door")] [InlineData("dark")] [InlineData("user")] [InlineData("list")]
+    public void Ingles_Fica(string palavra) => Assert.Null(_c.Correct(palavra, prev: "o"));
+
     // Nome próprio que o dicionário só tem com maiúscula ganha a maiúscula; palavra comum e começo de frase não
     [Theory]
     [InlineData("curitiba", "Curitiba")] [InlineData("londres", "Londres")] [InlineData("alemanha", "Alemanha")] // joão, maria, brasil: o VERO aceita em minúscula
