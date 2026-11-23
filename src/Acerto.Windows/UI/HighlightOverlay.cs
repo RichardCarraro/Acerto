@@ -36,14 +36,18 @@ internal sealed class HighlightOverlay : Window
         ResizeMode = ResizeMode.NoResize;
         Width = Height = 1;
 
-        var accent = SystemColors.AccentColor;
-        _fill = new Border { CornerRadius = new CornerRadius(4), Background = new SolidColorBrush(Color.FromArgb(0x59, accent.R, accent.G, accent.B)) };
-        _line = new Border { Height = 2, VerticalAlignment = VerticalAlignment.Bottom, Background = new SolidColorBrush(accent), CornerRadius = new CornerRadius(1) };
+        // Cor de destaque do tema (Fluent): tom mais escuro no tema claro e mais claro no escuro, onde o tom puro some no
+        // fundo; acompanha sozinha a troca de cor ou de tema com o app aberto. O fundo fica translúcido pela opacidade
+        // fixa do Grid em volta; a animação mexe só na opacidade do próprio realce.
+        _fill = new Border { CornerRadius = new CornerRadius(4) };
+        _fill.SetResourceReference(Border.BackgroundProperty, "AccentFillColorDefaultBrush");
+        _line = new Border { Height = 2, VerticalAlignment = VerticalAlignment.Bottom, CornerRadius = new CornerRadius(1) };
+        _line.SetResourceReference(Border.BackgroundProperty, "AccentFillColorDefaultBrush");
         _fill.Opacity = 0;
         _line.Opacity = 0;
         _fill.RenderTransformOrigin = new Point(0.5, 0.5);
         _fill.RenderTransform = _pop;
-        Content = new Grid { Children = { _fill, _line } };
+        Content = new Grid { Children = { new Grid { Opacity = 0.35, Children = { _fill } }, _line } };
     }
 
     protected override void OnSourceInitialized(EventArgs e)

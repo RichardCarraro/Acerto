@@ -74,17 +74,20 @@ internal static class Shots
     {
         const string before = "Isso ", word = "é", after = " muito importante";
         var font = new FontFamily("Segoe UI");
-        var text = new TextBlock { Text = before + word + after, FontFamily = font, FontSize = 22, Margin = new Thickness(24, 28, 0, 0), Foreground = Brushes.Black, VerticalAlignment = VerticalAlignment.Top };
+        // no tema escuro, a frase num app escuro (fundo #202020, letra branca): é onde o realce translúcido some mais
+        bool dark = Application.Current.ThemeMode == ThemeMode.Dark;
+        var ink = dark ? Brushes.White : Brushes.Black;
+        var text = new TextBlock { Text = before + word + after, FontFamily = font, FontSize = 22, Margin = new Thickness(24, 28, 0, 0), Foreground = ink, VerticalAlignment = VerticalAlignment.Top };
         var page = new Window
         {
             WindowStyle = WindowStyle.None, ResizeMode = ResizeMode.NoResize, Left = -30000, Top = 0, Width = 460, Height = 120,
-            ShowActivated = false, ShowInTaskbar = false, Background = Brushes.White, Content = text,
+            ShowActivated = false, ShowInTaskbar = false, Background = dark ? new SolidColorBrush(Color.FromRgb(0x20, 0x20, 0x20)) : Brushes.White, Content = text,
         };
         page.Show();
         await Task.Delay(300);
         double scale = VisualTreeHelper.GetDpi(page).DpiScaleX;
         double Width(string s) => new FormattedText(s, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
-            new Typeface(font, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal), 22, Brushes.Black, scale).WidthIncludingTrailingWhitespace;
+            new Typeface(font, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal), 22, ink, scale).WidthIncludingTrailingWhitespace;
         var wordDip = new Rect(page.Left + 24 + Width(before), page.Top + 28, Width(word), text.ActualHeight);
         var wordPx = new Rect(wordDip.X * scale, wordDip.Y * scale, wordDip.Width * scale, wordDip.Height * scale);
 
