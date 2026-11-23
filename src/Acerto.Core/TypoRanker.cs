@@ -223,7 +223,9 @@ public sealed class TypoRanker
     /// <summary>Pode ser trocado em uso (interruptor "corrigir mais" nas configurações).</summary>
     public TypoOptions Options { get => _o; set => _o = value; }
     // forma sem acento → palavras reais (com acento) e contagem
-    private readonly Dictionary<string, List<(string Word, long Count)>> _byStripped = new(StringComparer.Ordinal);
+    // array do tamanho exato: quase toda forma tem uma palavra só, e uma List por forma (objeto + sobra de capacidade)
+    // custava ~30 MB a mais no app de bandeja
+    private readonly Dictionary<string, (string Word, long Count)[]> _byStripped;
     // (1ª letra, tamanho) → formas sem acento; usado na busca de distância 2
     private readonly Dictionary<(char, int), List<string>> _buckets = [];
 
@@ -253,19 +255,23 @@ public sealed class TypoRanker
         // o Hunspell é o caro (370 mil consultas): em paralelo, e a inserção segue na ordem do arquivo como antes
         var entries = freq.Entries.Where(e => e.Count >= MinIndexCount && e.Word.All(char.IsLetter)).ToArray();
         var valid = lex.AreValid(entries.Select(e => e.Word).ToArray());
+        // direto em arrays, sem estrutura temporária (ela subia o pico de memória, que o processo não devolve ao sistema);
+        // só as poucas formas com mais de uma palavra (pais/país) crescem o array, na ordem do arquivo como antes
+        _byStripped = new(StringComparer.Ordinal);
         for (int i = 0; i < entries.Length; i++)
         {
             if (!valid[i]) continue;
             var (word, count) = entries[i];
             var stripped = TextUtil.StripAccents(word);
-            if (!_byStripped.TryGetValue(stripped, out var list))
+            if (_byStripped.TryGetValue(stripped, out var list))
             {
-                _byStripped[stripped] = list = [];
-                var key = (stripped[0], stripped.Length);
-                if (!_buckets.TryGetValue(key, out var b)) _buckets[key] = b = [];
-                b.Add(stripped);
+                _byStripped[stripped] = [.. list, (word, count)];
+                continue;
             }
-            list.Add((word, count));
+            _byStripped[stripped] = [(word, count)];
+            var key = (stripped[0], stripped.Length);
+            if (!_buckets.TryGetValue(key, out var b)) _buckets[key] = b = [];
+            b.Add(stripped);
         }
     }
 
