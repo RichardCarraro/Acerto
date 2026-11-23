@@ -62,6 +62,7 @@ internal sealed class InputHooks : IDisposable
     /// <summary>O foco é uma barra de endereço: lá a UI Automation informa a posição errada (o começo do campo).</summary>
     public bool FocusInlineAutocomplete => _fg.FocusInlineAutocomplete;
     private bool _suggestionsShown; // já avisamos alguém de uma lista não vazia
+    private bool _suggestionsQueued; // há um PublishSuggestions na fila da UI (mesma thread do hook: sem trava)
 
     private SynchronizationContext _ui = null!; // capturado no Install, na thread da UI
 
@@ -190,7 +191,17 @@ internal sealed class InputHooks : IDisposable
             _fedChars = 0;
             _engine.CarefulField = _fg.FocusInlineAutocomplete;
             var action = Handle(k);
-            _ui.Post(_ => PublishSuggestions(), null); // depois que o callback voltar: aqui dentro tem que ser rápido
+            // depois que o callback voltar: aqui dentro tem que ser rápido. Uma só na fila, calculada para o estado
+            // mais recente: na teclada, uma por tecla enfileirava trabalho que já nasceu velho.
+            if (!_suggestionsQueued)
+            {
+                _suggestionsQueued = true;
+                _ui.Post(_ =>
+                {
+                    _suggestionsQueued = false;
+                    PublishSuggestions();
+                }, null);
+            }
             // Clicou num campo com o texto todo selecionado (barra de endereço, busca): a consulta logo depois do clique
             // vê a seleção e desiste. Depois da primeira tecla a seleção já foi trocada pelo que se digitou.
             if (!_engine.ContextKnown && !_probedAfterTyping && !_probeTimer.Enabled)
