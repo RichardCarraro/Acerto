@@ -14,6 +14,12 @@ internal static class Shots
         var outDir = args.Length > 0 ? args[0] : "shots";
         Directory.CreateDirectory(outDir);
 
+        // palavra em pedaços na mesma linha ("q" + "uanto"): o realce cobre tudo; quebrada em duas linhas: só a última
+        var joined = CaretContext.LastLine([new Rect(100, 10, 8, 20), new Rect(108, 10, 40, 20)]);
+        if (joined != new Rect(100, 10, 48, 20)) throw new InvalidOperationException($"realce sem o começo da palavra: {joined}");
+        var wrapped = CaretContext.LastLine([new Rect(300, 10, 30, 20), new Rect(10, 34, 20, 20)]);
+        if (wrapped != new Rect(10, 34, 20, 20)) throw new InvalidOperationException($"realce juntou duas linhas: {wrapped}");
+
         var app = Program.CreateApplication();
         if (args.Length > 1) app.ThemeMode = args[1] == "dark" ? ThemeMode.Dark : ThemeMode.Light;
         var controller = new AppController(app, preview: true);

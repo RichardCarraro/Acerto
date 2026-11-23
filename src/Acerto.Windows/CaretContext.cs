@@ -78,7 +78,7 @@ internal static class CaretContext
             if (range.MoveEndpointByUnit(TextPatternRangeEndpoint.Start, TextUnit.Character, -back) != -back) return null;
             var rects = range.GetBoundingRectangles();
             if (rects.Length == 0) return null;
-            var r = rects[^1];
+            var r = LastLine(rects);
             if (r.Height < 4 || r.Height > 120) return null;
             return wordLength > 0 ? r : new System.Windows.Rect(r.Right, r.Top, 1, r.Height);
         }
@@ -127,7 +127,7 @@ internal static class CaretContext
 
             var rects = range.GetBoundingRectangles();
             if (rects.Length == 0) return null;
-            var r = rects[^1]; // palavra quebrada em duas linhas: anima o pedaço final
+            var r = LastLine(rects);
             // retângulo absurdo (linha inteira, altura enorme): alguns apps informam errado
             if (r.Height < 4 || r.Height > 120 || r.Width < 4 || r.Width > word.Length * r.Height * 1.6 + 8) return null;
             if (Diag.On) Diag.Log($"REALCE uia letras={word.Length} ret={(int)r.X},{(int)r.Y},{(int)r.Width},{(int)r.Height} partes={rects.Length}");
@@ -137,6 +137,19 @@ internal static class CaretContext
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// A palavra na última linha em que aparece (quebrada em duas linhas: anima o pedaço final). O app pode informar a
+    /// palavra em pedaços na mesma linha (o Chrome mandou "q" + "uanto" e o realce deixava o "q" de fora): junta todos.
+    /// </summary>
+    internal static System.Windows.Rect LastLine(System.Windows.Rect[] rects)
+    {
+        var r = rects[^1];
+        double middle = r.Top + r.Height / 2;
+        foreach (var p in rects)
+            if (p.Top <= middle && p.Bottom >= middle) r.Union(p);
+        return r;
     }
 
     /// <summary>
