@@ -82,15 +82,36 @@ public sealed class UserHistory
 
     public void Save()
     {
-        if (_path is null) return;
-        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-        var lines = _words.Select(kv => $"{kv.Key}\t{kv.Value}")
-            .Concat(_next.SelectMany(p => p.Value.Select(kv => $"{p.Key}\t{kv.Key}\t{kv.Value}")));
-        var tmp = _path + ".tmp";
-        File.WriteAllLines(tmp, lines); // arquivo inteiro de uma vez: queda de energia não deixa metade gravada
-        File.Move(tmp, _path, overwrite: true);
-        Dirty = false;
+        var write = SaveLater();
+        try { write(); }
+        catch { Dirty = true; throw; }
     }
+
+    /// <summary>
+    /// Copia o estado agora (na thread que usa o histórico) e devolve a gravação, que pode rodar em outra thread:
+    /// gravar 50 mil pares leva ~20 ms, e o app grava na thread que atende o teclado. Quem chama roda uma gravação de
+    /// cada vez e, se ela falhar, chama <see cref="MarkDirty"/> para tentar de novo.
+    /// </summary>
+    public Action SaveLater()
+    {
+        Dirty = false;
+        if (_path is null) return () => { };
+        var words = _words.ToArray();
+        var pairs = _next.Select(p => (p.Key, p.Value.ToArray())).ToArray();
+        var path = _path;
+        return () =>
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            var lines = words.Select(kv => $"{kv.Key}\t{kv.Value}")
+                .Concat(pairs.SelectMany(p => p.Item2.Select(kv => $"{p.Key}\t{kv.Key}\t{kv.Value}")));
+            var tmp = path + ".tmp";
+            File.WriteAllLines(tmp, lines); // arquivo inteiro de uma vez: queda de energia não deixa metade gravada
+            File.Move(tmp, path, overwrite: true);
+        };
+    }
+
+    /// <summary>A gravação falhou (arquivo travado, disco cheio): grava de novo na próxima vez.</summary>
+    public void MarkDirty() => Dirty = true;
 
     private void Pair(string prev, string word, int n)
     {

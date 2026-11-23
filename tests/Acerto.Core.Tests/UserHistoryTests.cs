@@ -24,6 +24,23 @@ public class UserHistoryTests(SharedCorrector s) : IClassFixture<SharedCorrector
     }
 
     [Fact]
+    public void GravaDepois_ComACopiaDaHora()
+    {
+        var path = Path.Combine(SharedData.NewUserDir(), "historico.txt");
+        var h = new UserHistory(path);
+        h.Record("minha", "casa");
+        var write = h.SaveLater();
+        Assert.False(h.Dirty);
+        h.Clear(); // "Apagar histórico" depois da cópia: a gravação leva o que havia na hora
+        h.Record(null, "senha");
+        write();
+        var back = new UserHistory(path);
+        Assert.Equal(1, back.Count("casa"));
+        Assert.Equal(0, back.Count("senha"));
+        Assert.True(h.Dirty); // o que mudou depois ainda vai para o disco na próxima
+    }
+
+    [Fact]
     public void PalavraUsada_SobeNaSugestao()
     {
         var history = new UserHistory(null);

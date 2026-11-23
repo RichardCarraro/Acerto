@@ -280,25 +280,29 @@ public class TextEngineTecladaTests(SharedCorrector s) : IClassFixture<SharedCor
     public void Teclada_CadaTeclaRapida()
     {
         const string teclas = "asdfghjklçqwertyuiopzxcvbnm";
-        var engine = new TextEngine(s.Corrector, _ => { });
         var sorteio = new Random(42);
-        double pior = 0, espaco = 0;
-        for (int volta = 0; volta < 2; volta++) // a primeira só aquece (JIT)
+        var teclada = Enumerable.Range(0, 100).Select(_ => teclas[sorteio.Next(teclas.Length)]).ToArray();
+        var engine = new TextEngine(s.Corrector, _ => { });
+        // a mesma teclada 4 vezes (a 1ª aquece o JIT); vale o menor tempo de cada tecla: lentidão do algoritmo aparece
+        // em todas as voltas, uma pausa do GC ou da máquina numa só (rodando junto com a suíte inteira, isso aconteceu)
+        var menor = Enumerable.Repeat(double.MaxValue, teclada.Length + 1).ToArray();
+        for (int volta = 0; volta < 4; volta++)
         {
             engine.Reset();
             engine.ConfirmContext(engine.Generation, "");
-            pior = 0;
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i <= teclada.Length; i++)
             {
                 var sw = System.Diagnostics.Stopwatch.StartNew();
-                engine.OnChar(teclas[sorteio.Next(teclas.Length)]);
-                engine.Suggestions();
-                pior = Math.Max(pior, sw.Elapsed.TotalMilliseconds);
+                if (i < teclada.Length)
+                {
+                    engine.OnChar(teclada[i]);
+                    engine.Suggestions();
+                }
+                else engine.OnChar(' ');
+                if (volta > 0) menor[i] = Math.Min(menor[i], sw.Elapsed.TotalMilliseconds);
             }
-            var e = System.Diagnostics.Stopwatch.StartNew();
-            engine.OnChar(' ');
-            espaco = e.Elapsed.TotalMilliseconds;
         }
+        double pior = menor[..^1].Max(), espaco = menor[^1];
         Assert.True(pior <= 5, $"pior tecla = {pior:F2} ms");
         Assert.True(espaco <= 5, $"espaço = {espaco:F2} ms");
     }

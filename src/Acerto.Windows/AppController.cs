@@ -163,7 +163,8 @@ internal sealed class AppController
     public void ClearHistory()
     {
         Data?.History.Clear();
-        TryIo(() => Data?.History.Save());
+        SaveHistory();
+        StateChanged?.Invoke();
     }
 
     public void OpenMainWindow(string page = "home")
@@ -182,6 +183,7 @@ internal sealed class AppController
     public void Exit()
     {
         SaveIfDirty();
+        _historyWrite.Wait(TimeSpan.FromSeconds(5)); // sair sem esperar perderia o que acabou de ir para a fila
         _hooks?.Dispose();
         _tray.Visible = false;
         _tray.Dispose();
@@ -330,11 +332,27 @@ internal sealed class AppController
     {
         if (_settingsDirty) Save();
         // o histórico muda a cada palavra; vai junto com o contador, no timer (fora do hook) e ao sair
-        if (Data?.History is { Dirty: true } history)
+        if (Data?.History is { Dirty: true }) SaveHistory();
+    }
+
+    private Task _historyWrite = Task.CompletedTask;
+
+    /// <summary>
+    /// Copia o histórico aqui e grava em segundo plano (~20 ms com 50 mil pares; a thread da UI atende o teclado e o
+    /// mouse do Windows). Uma gravação de cada vez, na ordem: "Apagar histórico" nunca é desfeito por uma mais velha.
+    /// </summary>
+    private void SaveHistory()
+    {
+        if (Data?.History is not { } history) return;
+        var write = history.SaveLater();
+        _historyWrite = _historyWrite.ContinueWith(_ =>
         {
-            try { history.Save(); }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
-        }
+            try { write(); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                _ui.BeginInvoke(history.MarkDirty); // tenta de novo no próximo timer
+            }
+        }, TaskScheduler.Default);
     }
 
     /// <summary>Círculo colorido com um "ô" branco, desenhado em tempo de execução.</summary>
