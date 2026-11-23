@@ -87,6 +87,65 @@ Onde mexer, do mais barato ao mais caro:
 
 ---
 
+## Rodada de 2026-11-19: travamento na teclada, depois barra, animação, correção, memória e telas
+
+Goal em `docs/goal-2026-11-19.md`. Medido como na rodada anterior; desempenho em mediana de 3 de `AcertoEval data
+desempenho` (que ganhou o bloco "teclada": letras aleatórias do ABNT2, semente fixa, tecla a tecla no `TextEngine`).
+
+| Frente | Medida | Linha de base (1.7.1) | Final (1.7.12) |
+|---|---|---|---|
+| Teclada | pior tecla (OnChar + sugestões): 30 / 50 / 100 letras | 66 ms / 355 ms / 3070 ms (soma 79 s) | 0,11 ms / 0,13 ms / 0,24 ms (soma 1,5 ms) |
+| Teclada | sugestões na fila da UI na teclada | uma por tecla | no máximo uma |
+| Teclada | consultas de UI Automation ao mesmo tempo | uma por tecla com pausa ≥ 30 ms | no máximo uma |
+| Teclada | gravar o histórico (50 mil pares) na thread do teclado | ~20 ms a cada 30 s | só a cópia; grava em segundo plano |
+| Teclada | espaço depois de teclada de 8 letras (correção no hook) | 5 ms (1 medida) | 15 ms (10, 15, 23): **pendente**, ver abaixo |
+| Correção | frases reais certas | 94,3% de 559, 0 estragos | 94,3% de 601, 0 estragos (lotes 12 e 13: risadas e inglês) |
+| Correção | sintéticos (certo / ponderado) | 88,3% / 86,2% | iguais |
+| Correção | contexto A com / sem; B; C | 93,0% / 89,6%; 83,1%; 576 | iguais |
+| Correção | direita B; C | 34,3%; 194 | iguais |
+| Correção | inglês em minúsculo (`put`, `one`, `save`, `password`, `code`...) | 29 viravam outra palavra | ficam |
+| Sugestões | próxima (1ª / 3); Tab economiza | 11,7% / 20,9%; 28,7% | 11,7% / 20,9%; 29,0% |
+| Sugestões | Suggest por tecla em texto normal: média / p99 | 608 µs / 3,7 ms | 271 µs / 2,7 ms |
+| Desempenho | CoreData.Load; criar o Corrector | 898 ms; 361 ms | 897 ms; 363 ms |
+| Desempenho | Correct por palavra: média / p99 | 55,6 µs / 121 µs | 64,0 µs / 141 µs (entrada mudou: +42 frases; máquina mais ocupada também nas sugestões) |
+| Desempenho | memória gerenciada / privada / conjunto de trabalho | 189 / 247 / 267 MB | 180 / 239 / 260 MB |
+| Visual | barra de sugestões na mesma palavra | pulava de largura a cada letra; sumia seca | só cresce; some em 80 ms |
+| Visual | realce no tema escuro | sublinhado roxo-escuro quase some | tom claro da cor de destaque (Fluent), acompanha troca de cor |
+| Diagnóstico | latência do hook | sem medida | `LATENCIA` a cada 5 s com `ACERTO_DIAG` (`docs/teste-manual.md`) |
+
+| Ciclo | Frente | Resultado | Versão | Testes do Core antes de publicar |
+|---|---|---|---|---|
+| 1 | Teclada | aprovado: custo só das variações que levam a palavra; medida "teclada" e teste de orçamento | 1.7.2 | 1326, 0 falhas |
+| 2 | Teclada | aprovado: uma sugestão na fila | 1.7.3 | Core igual ao da 1.7.2 |
+| 3 | Teclada | aprovado: uma consulta de UIA por vez | 1.7.4 | Core igual ao da 1.7.2 |
+| 4 | Teclada | aprovado: histórico gravado em segundo plano | 1.7.5 | 1327, 0 falhas |
+| 5 | Correção | aprovado: risadas (`jaja`, `jajaja`), lote 12 | 1.7.6 | 1329, 0 falhas |
+| 6 | Teclada | aprovado: medida de latência do hook no diagnóstico | 1.7.7 | Core igual ao da 1.7.6 |
+| 7 | Sugestões | aprovado: `SuggestContextWeight` 0,9 | 1.7.8 | 1329, 0 falhas |
+| 8 | Animação | aprovado: cor de destaque do tema | 1.7.9 | Core igual ao da 1.7.8 |
+| 9 | Correção | aprovado: inglês em minúsculo protegido, lote 13 | 1.7.10 | 1339, 0 falhas |
+| 10 | Barra | aprovado: largura só cresce, saída de 80 ms | 1.7.11 | Core igual ao da 1.7.10 |
+| 11 | Memória | aprovado: índice de erros em arrays | 1.7.12 | 1339, 0 falhas |
+| 12 | Telas | sem melhoria: configurações, bandeja e instalador revisados nos dois temas | — | — |
+
+Parada: 12 ciclos (o limite). Todas as versões da tabela têm release no GitHub com o instalador (conferido pela API).
+
+**Ficou de fora, em ordem de valor:**
+
+1. **Correção no espaço depois de teclada de 6 a 12 letras** (roda dentro do hook de teclado): p50 ~10 ms, p90 ~50 ms,
+   máximo 74 ms em 300 palavras aleatórias de 8 letras. É a busca de distância 2 do `TypoRanker.Candidates` (palavra com
+   6+ letras sem candidata a um erro varre o balde da 1ª letra com 4 tamanhos, com a programação dinâmica do `Cost`
+   alocando um `double[,]` por palavra). O item 3 do goal foi dispensado no ciclo 2 por engano: a medida só olhava
+   100 letras, onde os baldes estão vazios. Caminhos: `Cost` com faixa diagonal e buffer reaproveitado, um filtro
+   barato antes da DP, ou desistir da distância 2 quando o digitado tem cara de teclada. O teste
+   `Teclada_CadaTeclaRapida` deve passar a cobrir 6–12 letras.
+2. **Conferir na máquina real**: o autor rodar a teclada com `ACERTO_DIAG` e olhar `LATENCIA` (só ele pode). Se
+   `fila max` ainda passar de ~30 ms, o item 6 do goal: hooks numa thread própria.
+3. `test`, `nice`, `wall`, `sales` → maiúscula de nome (a lista de protegidas não barra a maiúscula; o teste
+   `Protegidas_Ficam` aceita isso de propósito) e `cache` → cachê (o acento vem antes da lista).
+4. `ta` → `tá` não acontece em `ta difícil`, `ta no` (falhas do lote 13).
+5. Barra: escolher a 2ª/3ª sugestão por atalho precisa de decisão do autor (Ctrl+número conflita com apps).
+
 ## Rodada de 2026-11-18: linha de base, placar final e os 12 ciclos
 
 Medido com `$E` (placar acima), corpus de notícias fora da amostra, perfil padrão (agressivo). Desempenho: mediana de
