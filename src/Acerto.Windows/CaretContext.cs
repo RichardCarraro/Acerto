@@ -93,13 +93,21 @@ internal static class CaretContext
     /// cursor. Só devolve se o texto nessa posição for exatamente <paramref name="word"/>: se o app ainda não recebeu
     /// a correção ou o cursor já está em outro lugar, é melhor não animar do que animar no lugar errado.
     /// </summary>
-    public static System.Windows.Rect? WordRect(string word, int trailing, bool preferCaret = false) =>
-        preferCaret
-            ? (MsaaCaret() is { } p ? EstimateWord(p, word.Length, trailing) : UiaWordRect(word, trailing))
-            : UiaWordRect(word, trailing) ?? (MsaaCaret() is { } c ? EstimateWord(c, word.Length, trailing) : null);
-
-    private static System.Windows.Rect? UiaWordRect(string word, int trailing)
+    /// <param name="lastTry">Última tentativa: se o app lê o texto mas ainda não mostra a palavra, estima pelo cursor.
+    /// Antes disso espera, porque no meio da troca o cursor está noutro lugar (primeira palavra do campo: a correção
+    /// apaga tudo e o cursor volta ao começo, e o realce caía no botão ao lado).</param>
+    public static System.Windows.Rect? WordRect(string word, int trailing, bool preferCaret = false, bool lastTry = true)
     {
+        if (preferCaret) return MsaaCaret() is { } p ? EstimateWord(p, word.Length, trailing) : UiaWordRect(word, trailing, out _);
+        if (UiaWordRect(word, trailing, out bool readsText) is { } r) return r;
+        if (readsText && !lastTry) return null;
+        return MsaaCaret() is { } c ? EstimateWord(c, word.Length, trailing) : null;
+    }
+
+    /// <param name="readsText">O app informa o texto e o cursor pela UI Automation (o null é "ainda não", não "não sei").</param>
+    private static System.Windows.Rect? UiaWordRect(string word, int trailing, out bool readsText)
+    {
+        readsText = false;
         try
         {
             var el = AutomationElement.FocusedElement;
@@ -110,6 +118,7 @@ internal static class CaretContext
             if (selection.Length != 1) return null;
             var range = selection[0].Clone();
             if (range.GetText(1).Length != 0) return null;
+            readsText = true;
 
             int back = word.Length + trailing;
             if (range.MoveEndpointByUnit(TextPatternRangeEndpoint.Start, TextUnit.Character, -back) != -back) return null;

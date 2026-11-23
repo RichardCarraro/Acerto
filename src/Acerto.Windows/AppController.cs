@@ -218,14 +218,15 @@ internal sealed class AppController
             if (_window is not null || _flyout is not null) StateChanged?.Invoke(); // contador ao vivo
             if (!animate) return;
             // O app leva alguns milissegundos para receber o texto corrigido; tenta três vezes e desiste.
-            foreach (int wait in (int[])[50, 80, 140])
+            int[] waits = [50, 80, 140];
+            for (int i = 0; i < waits.Length; i++)
             {
-                await Task.Delay(wait);
+                await Task.Delay(waits[i]);
                 int extra = hooks!.CharsSinceCorrection;                        // o que a pessoa digitou depois da correção
                 if (hooks.CorrectionSequence != sequence || extra < 0) return;  // já houve outra correção, ou perdeu o fio
                 int back = trailing + extra;
-                bool preferCaret = hooks.FocusInlineAutocomplete;
-                var rect = await OneAtATime(() => CaretContext.WordRect(word, back, preferCaret),
+                bool preferCaret = hooks.FocusInlineAutocomplete, lastTry = i == waits.Length - 1;
+                var rect = await OneAtATime(() => CaretContext.WordRect(word, back, preferCaret, lastTry),
                     () => hooks.CorrectionSequence == sequence && hooks.CharsSinceCorrection >= 0);
                 if (hooks.CorrectionSequence != sequence || hooks.CharsSinceCorrection < 0) return;
                 if (rect is { } r)
@@ -250,9 +251,10 @@ internal sealed class AppController
             _bar?.Conceal();
             return;
         }
-        if (_bar is { IsShowing: true })
+        if (sameWord && _bar is { IsShowing: true })
         {
             // mesma palavra, mais uma letra: troca o conteúdo já, e reposiciona quando a posição chegar
+            // (palavra nova não: o conteúdo novo aparecia no lugar da palavra velha e pulava para o lugar certo)
             _bar.SetItems(suggestions, sameWord);
             hooks.VisibleSuggestions = suggestions;
         }
