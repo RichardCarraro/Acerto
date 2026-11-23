@@ -222,7 +222,8 @@ internal sealed class AppController
                 if (hooks.CorrectionSequence != sequence || extra < 0) return;  // já houve outra correção, ou perdeu o fio
                 int back = trailing + extra;
                 bool preferCaret = hooks.FocusInlineAutocomplete;
-                var rect = await Task.Run(() => CaretContext.WordRect(word, back, preferCaret));
+                var rect = await OneAtATime(() => CaretContext.WordRect(word, back, preferCaret),
+                    () => hooks.CorrectionSequence == sequence && hooks.CharsSinceCorrection >= 0);
                 if (hooks.CorrectionSequence != sequence || hooks.CharsSinceCorrection < 0) return;
                 if (rect is { } r)
                 {
@@ -255,7 +256,7 @@ internal sealed class AppController
             await Task.Delay(30); // o app precisa receber a tecla antes de informar onde o texto está
             if (sequence != _suggestionSequence) return;
             bool preferCaret = hooks.FocusInlineAutocomplete;
-            var anchor = await Task.Run(() => CaretContext.CaretAnchor(wordLength, preferCaret));
+            var anchor = await OneAtATime(() => CaretContext.CaretAnchor(wordLength, preferCaret), () => sequence == _suggestionSequence);
             if (sequence != _suggestionSequence) return;
             if (Diag.On) Diag.Log($"BARRA posicao={(anchor is { } p ? $"{(int)p.Left},{(int)p.Top}" : "nenhuma")}");
             if (anchor is { } a)
@@ -270,6 +271,22 @@ internal sealed class AppController
                 hooks.VisibleSuggestions = [];
             }
         });
+    }
+
+    private Task _uia = Task.CompletedTask;
+
+    /// <summary>
+    /// Consulta de posição (UI Automation) numa tarefa por vez: app ocupado demora para responder e, na teclada, as
+    /// consultas se empilhavam no pool. Roda na thread da UI; quem esperou confere a própria sequência na volta.
+    /// </summary>
+    /// <param name="wanted">Conferido depois da espera: a consulta que ficou velha na fila nem começa (devolve null).</param>
+    private async Task<System.Windows.Rect?> OneAtATime(Func<System.Windows.Rect?> query, Func<bool> wanted)
+    {
+        while (!_uia.IsCompleted) await _uia; // as consultas do CaretContext não lançam exceção
+        if (!wanted()) return null;
+        var task = Task.Run(query);
+        _uia = task;
+        return await task;
     }
 
     private void OnStateChanged()
