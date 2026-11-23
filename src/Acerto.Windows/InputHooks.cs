@@ -116,6 +116,7 @@ internal sealed class InputHooks : IDisposable
         _watchdog = new System.Windows.Forms.Timer { Interval = 5000 };
         _watchdog.Tick += (_, _) =>
         {
+            if (Diag.On) LogLatency();
             var info = new LASTINPUTINFO { cbSize = (uint)Marshal.SizeOf<LASTINPUTINFO>() };
             if (GetLastInputInfo(ref info) && unchecked((int)(info.dwTime - _lastHookTick)) > 2000)
             {
@@ -159,7 +160,38 @@ internal sealed class InputHooks : IDisposable
         !_settings.Paused && !_fg.IsOwnProcess && !_fg.IsElevated && !_fg.IsFullScreenApp
         && _fg.FocusResolved && !_fg.FocusIsPassword && !_settings.IsExcluded(_fg.ProcessName);
 
+    // Diagnóstico de latência (só com ACERTO_DIAG): tempo dentro do callback e quanto a tecla esperou na fila desta
+    // thread antes de ser atendida. Enquanto a thread da UI está ocupada, o teclado e o mouse do Windows esperam.
+    private int _diagKeys;
+    private double _diagInsideSum, _diagInsideMax;
+    private uint _diagQueueMax;
+
     private nint KeyboardProc(int nCode, nint wParam, nint lParam)
+    {
+        if (!Diag.On) return KeyboardCore(nCode, wParam, lParam);
+        long start = System.Diagnostics.Stopwatch.GetTimestamp();
+        var result = KeyboardCore(nCode, wParam, lParam);
+        if (nCode >= 0 && wParam is WM_KEYDOWN or WM_SYSKEYDOWN)
+        {
+            double inside = System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+            uint queued = (uint)Environment.TickCount - Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam).time;
+            _diagKeys++;
+            _diagInsideSum += inside;
+            _diagInsideMax = Math.Max(_diagInsideMax, inside);
+            if (queued < 60_000) _diagQueueMax = Math.Max(_diagQueueMax, queued); // relógio dá a volta: ignora
+        }
+        return result;
+    }
+
+    /// <summary>Resumo da latência desde o último (vigia, a cada 5 s, só com teclas no período).</summary>
+    private void LogLatency()
+    {
+        if (_diagKeys == 0) return;
+        Diag.Log($"LATENCIA teclas={_diagKeys} dentro media={_diagInsideSum / _diagKeys:F2}ms max={_diagInsideMax:F1}ms fila max={_diagQueueMax}ms");
+        (_diagKeys, _diagInsideSum, _diagInsideMax, _diagQueueMax) = (0, 0, 0, 0);
+    }
+
+    private nint KeyboardCore(int nCode, nint wParam, nint lParam)
     {
         _lastHookTick = (uint)Environment.TickCount;
         if (nCode < 0 || (wParam != WM_KEYDOWN && wParam != WM_SYSKEYDOWN))

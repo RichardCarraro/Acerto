@@ -97,3 +97,17 @@ Saída sem esse preço: lista de palavras em inglês/espanhol em `data/protegida
 
 Limites conhecidos: a barra só aparece em programas que informam a posição do texto (Claude, Chrome, Teams, Word,
 Bloco de Notas). Com a barra visível, o Tab aceita a sugestão em vez de mudar de campo.
+
+## Teclada numa risada não pode travar o PC (1.7.7) — conferir no uso
+
+Em 1.7.1, esmagar o teclado (`KSLJLKAJCALKÇCJALKJCALÇKJCALÇKJCA`) travava teclado e mouse do Windows inteiro: as
+sugestões levavam até segundos por tecla na thread que atende os hooks. 1.7.2 a 1.7.5 tiraram esse trabalho de lá.
+Para medir na sua máquina:
+
+1. Feche o Acertô (ícone **ô** → Sair).
+2. No PowerShell: `$env:ACERTO_DIAG = "$env:TEMP\acerto-diag.txt"; & "$env:LOCALAPPDATA\Programs\Acerto\Acerto.exe"`
+   (ou o caminho onde ele está instalado).
+3. Esmague o teclado por uns 10 segundos num Bloco de Notas **novo**, mexendo o mouse junto.
+4. Abra `%TEMP%\acerto-diag.txt` e procure as linhas `LATENCIA` (uma a cada 5 s): `dentro max` é o maior tempo de
+   uma tecla dentro do Acertô; `fila max` é quanto uma tecla esperou para ser atendida. Bom: as duas abaixo de ~30 ms.
+   O arquivo guarda só estados e tempos, nunca o que foi digitado. Feche e abra o Acertô de novo sem a variável.
